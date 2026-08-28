@@ -4,9 +4,10 @@ import { PaginationFilter } from "../models/base/PaginationFilter";
 import { Result } from "../models/base/Result";
 import { IService } from "./IService";
 import { FileUploadResult } from "../models/base/FileUploadResult";
+import { toast } from "sonner";
+import Swal from "sweetalert2";
 
-
-export class Service<TEntity, TCreateRequest = Partial<TEntity>,
+export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
     TUpdateRequest = Partial<TEntity>,
     TId = number> implements IService<TEntity, TCreateRequest, TUpdateRequest, TId> {
     constructor(
@@ -42,8 +43,14 @@ export class Service<TEntity, TCreateRequest = Partial<TEntity>,
         return response.data;
     }
 
-    async getByParams(params?: PaginationFilter): Promise<PagedResult<TEntity>> {
-        const response = await api.get<PagedResult<TEntity>>(this.endpoint, { params });
+    async getByParams(
+        params?: PaginationFilter
+    ): Promise<PagedResult<TEntity>> {
+        const response = await api.get<PagedResult<TEntity>>(
+            `${this.endpoint}/getbrands`,
+            { params }
+        );
+
         return response.data;
     }
     async getById(id: TId): Promise<Result<TEntity>> {
@@ -52,14 +59,39 @@ export class Service<TEntity, TCreateRequest = Partial<TEntity>,
     }
     async create(request: TCreateRequest): Promise<Result<TEntity>> {
         const response = await api.post<Result<TEntity>>(this.endpoint, request);
+        toast.success("Thêm mới dữ liệu thành công!");
         return response.data;
     }
     async update(id: TId, request: TUpdateRequest): Promise<Result<TEntity>> {
         const response = await api.put<Result<TEntity>>(`${this.endpoint}/${id}`, request);
+        toast.success("Cập nhật dữ liệu thành công!");
         return response.data;
     }
-    async delete(id: TId): Promise<Result<TEntity>> {
-        const response = await api.delete<Result<TEntity>>(`${this.endpoint}/${id}`);
+    async delete(id: TId): Promise<Result<TEntity> | null> {
+        const result = await Swal.fire({
+            title: "Bạn có chắc muốn xóa?",
+            text: "Hãng sản xuất này sẽ bị xóa.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Xóa",
+            cancelButtonText: "Hủy",
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#6b7280",
+            reverseButtons: true,
+        });
+
+        if (!result.isConfirmed) {
+            return null;
+        }
+
+        const response = await api.delete<Result<TEntity>>(
+            `${this.endpoint}/${id}`
+        );
+        Swal.fire({
+            title: "Xóa bỏ!",
+            text: "Đã loại bỏ dữ liệu thành công.",
+            icon: "success"
+        });
         return response.data;
     }
     async uploadFile(file: File): Promise<FileUploadResult> {

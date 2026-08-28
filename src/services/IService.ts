@@ -15,7 +15,7 @@ export interface IService<TEntity, TCreateRequest = Partial<TEntity>, TUpdateReq
 
     update(id: TId, request: TUpdateRequest): Promise<Result<TEntity>>;
 
-    delete(id: TId): Promise<Result<TEntity>>;
+    delete(id: TId): Promise<Result<TEntity> | null>;
 
     uploadFile(file: File): Promise<FileUploadResult>;
 
