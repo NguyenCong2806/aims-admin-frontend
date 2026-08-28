@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import {
   Table,
@@ -27,6 +28,8 @@ import {
 } from "../../query/brand/brandQuery";
 import { toast } from "sonner";
 import { PaginationFilter } from "../../models/base/PaginationFilter";
+import Pagination from "../../components/ui/pagination";
+import SearchInput from "../../components/ui/search/SearchInput";
 
 const BrandsPage: React.FC = () => {
   // =====================================================
@@ -34,7 +37,10 @@ const BrandsPage: React.FC = () => {
   // =====================================================
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [maxPageSize, setmaxPageSize] = useState<number>(100);
+  const [pageIndex, setpageIndex] = useState<number>(1);
+  const [pageSize, setpageSize] = useState<number>(2);
+  const [keyword, setkeyword] = useState<string>("");
   // null = thêm mới
   // number = chỉnh sửa
   const [brandId, setBrandId] = useState<number | null>(null);
@@ -43,13 +49,13 @@ const BrandsPage: React.FC = () => {
   // QUERY
   // =====================================================
 
-   const filter: PaginationFilter = {
-    MaxPageSize: 100,
-    PageIndex: 1,
-    PageSize:5,
-    Keyword: "HP"
+  const filter: PaginationFilter = {
+    MaxPageSize: maxPageSize,
+    PageIndex: pageIndex,
+    PageSize: pageSize,
+    Keyword: keyword
   }
-  
+
   const {
     data,
     isLoading,
@@ -65,7 +71,7 @@ const BrandsPage: React.FC = () => {
   // =====================================================
   // MUTATION
   // =====================================================
-  
+
   const createBrand = usecreateBrand();
   const updateBrand = useupdateBrand();
   const deleteBrand = useremoveBrand();
@@ -73,10 +79,7 @@ const BrandsPage: React.FC = () => {
   // =====================================================
   // DATA
   // =====================================================
-
   const items = (data?.items ?? []) as Array<brand>;
-  console.log(data?.items);
-
   // =====================================================
   // ADD
   // =====================================================
@@ -211,6 +214,11 @@ const BrandsPage: React.FC = () => {
 
   return (
     <>
+   <SearchInput
+      value={keyword}
+      onChange={setkeyword}
+      placeholder="Tìm hãng sản xuất..."
+    />
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
 
         {/* HEADER */}
@@ -338,7 +346,13 @@ const BrandsPage: React.FC = () => {
           </Table>
         </div>
       </div>
-
+      <Pagination
+        page={pageIndex}
+        pageSize={pageSize}
+        totalCount={data?.pagination.totalRecords ?? 0}
+        totalPages={data?.pagination.totalPages ?? 0}
+        onPageChange={setpageIndex}
+      />
       {/* =====================================================
           MODAL
       ===================================================== */}

@@ -47,7 +47,7 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
         params?: PaginationFilter
     ): Promise<PagedResult<TEntity>> {
         const response = await api.get<PagedResult<TEntity>>(
-            `${this.endpoint}/getbrands`,
+            `${this.endpoint}/paged`,
             { params }
         );
 
