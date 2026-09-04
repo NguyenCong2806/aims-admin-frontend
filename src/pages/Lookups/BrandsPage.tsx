@@ -39,7 +39,7 @@ const BrandsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [maxPageSize, setmaxPageSize] = useState<number>(100);
   const [pageIndex, setpageIndex] = useState<number>(1);
-  const [pageSize, setpageSize] = useState<number>(2);
+  const [pageSize, setpageSize] = useState<number>(10);
   const [keyword, setkeyword] = useState<string>("");
   // null = thêm mới
   // number = chỉnh sửa
@@ -215,9 +215,10 @@ const BrandsPage: React.FC = () => {
   return (
     <>
    <SearchInput
-      value={keyword}
-      onChange={setkeyword}
+      initialValue={keyword}
+      onSearch={setkeyword}
       placeholder="Tìm hãng sản xuất..."
+      className="mb-4"
     />
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
 
@@ -326,8 +327,8 @@ const BrandsPage: React.FC = () => {
                   </TableRow>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell className="px-5 py-12 text-center">
+                <TableRow className="bg-gray-50 dark:bg-white/5">
+                  <TableCell className="px-5 py-12 text-center justify-center" colSpan={3}>
                     <div className="flex flex-col items-center">
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Chưa có hãng sản xuất
@@ -352,6 +353,7 @@ const BrandsPage: React.FC = () => {
         totalCount={data?.pagination.totalRecords ?? 0}
         totalPages={data?.pagination.totalPages ?? 0}
         onPageChange={setpageIndex}
+        onPageSizeChange={setpageSize}
       />
       {/* =====================================================
           MODAL
