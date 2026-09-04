@@ -74,7 +74,7 @@ const othersItems: NavItem[] = [
     name: "Tài sản & Phần cứng",
     subItems: [
       { name: "Nhóm / Danh mục tài sản", path: "/alerts", pro: false },
-      { name: "Hãng sản xuất", path: "/brands", pro: false },
+      { name: "Hãng sản xuất", path: "/hang-san-xuat", pro: false },
       { name: "Model thiết bị", path: "/avatars", pro: false },
       { name: "Trạng thái", path: "/avatars", pro: false },
     ],

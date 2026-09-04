@@ -43,7 +43,7 @@ export default function App() {
             <Route path="/basic-tables" element={<BasicTables />} />
 
             {/* Ui Elements */}
-            <Route path="/brands" element={<BrandsPage />} />
+            <Route path="/hang-san-xuat" element={<BrandsPage />} />
             <Route path="/avatars" element={<Avatars />} />
             <Route path="/badge" element={<Badges />} />
             <Route path="/buttons" element={<Buttons />} />
