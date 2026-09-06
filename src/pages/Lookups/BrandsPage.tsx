@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import {
   Table,
@@ -7,7 +6,6 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
-
 import Button from "../../components/ui/button/Button";
 import {
   PencilIcon,
@@ -16,15 +14,14 @@ import {
 } from "../../icons";
 
 import BrandModal from "./BrandModal";
-
 import type { brand, creatbrand, updatebrand } from "../../models/Lookup/brand/brand";
-
 import {
-  usecreateBrand,
-  usequeryByIdBrand,
-  useupdateBrand,
-  useremoveBrand,
-  usequeryBrandParams,
+  useBrandParams as usequeryBrandParams,
+  useBrandById as usequeryByIdBrand,
+  useCreateBrand as usecreateBrand,
+  useUpdateBrand as useupdateBrand,
+  useRemoveBrand as useremoveBrand,
+  usePrefetchBrandPage,
 } from "../../query/brand/brandQuery";
 import { toast } from "sonner";
 import { PaginationFilter } from "../../models/base/PaginationFilter";
@@ -35,30 +32,27 @@ const BrandsPage: React.FC = () => {
   // =====================================================
   // STATE
   // =====================================================
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [maxPageSize, setmaxPageSize] = useState<number>(100);
-  const [pageIndex, setpageIndex] = useState<number>(1);
-  const [pageSize, setpageSize] = useState<number>(10);
-  const [keyword, setkeyword] = useState<string>("");
-  // null = thêm mới
-  // number = chỉnh sửa
+  const [maxPageSize] = useState<number>(100);
+  const [pageIndex, setPageIndex] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [keyword, setKeyword] = useState<string>("");
   const [brandId, setBrandId] = useState<number | null>(null);
 
   // =====================================================
   // QUERY
   // =====================================================
-
   const filter: PaginationFilter = {
     MaxPageSize: maxPageSize,
     PageIndex: pageIndex,
     PageSize: pageSize,
-    Keyword: keyword
-  }
+    Keyword: keyword,
+  };
 
   const {
     data,
-    isLoading,
+    isPending,
+    isFetching,
     isError,
     error,
   } = usequeryBrandParams(filter);
@@ -71,113 +65,102 @@ const BrandsPage: React.FC = () => {
   // =====================================================
   // MUTATION
   // =====================================================
-
   const createBrand = usecreateBrand();
   const updateBrand = useupdateBrand();
   const deleteBrand = useremoveBrand();
 
-  // =====================================================
-  // DATA
-  // =====================================================
-  const items = (data?.items ?? []) as Array<brand>;
-  // =====================================================
-  // ADD
-  // =====================================================
+  const isSubmitting = createBrand.isPending || updateBrand.isPending;
 
-  const handleAdd = () => {
-    // Quan trọng: reset ID trước
-    setBrandId(null);
-
-    // Sau đó mở modal
-    setIsModalOpen(true);
+  // =====================================================
+  // HANDLERS
+  // =====================================================
+  const handleSearch = (val: string) => {
+    setKeyword(val);
+    setPageIndex(1); // Luôn đưa về trang 1 khi người dùng gõ từ khóa mới
   };
 
-  // =====================================================
-  // EDIT
-  // =====================================================
+  const handleAdd = () => {
+    setBrandId(null);
+    setIsModalOpen(true);
+  };
 
   const handleEdit = (id: number) => {
     setBrandId(id);
     setIsModalOpen(true);
   };
 
-  // =====================================================
-  // CLOSE
-  // =====================================================
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
-
-    // Reset ID để lần sau bấm thêm mới
-    // form không lấy lại dữ liệu cũ
     setBrandId(null);
   };
 
-  // =====================================================
-  // SUBMIT
-  // =====================================================
-
-  const handleSubmit = async (formData: {
-    name: string;
-    code: string;
-  }) => {
+  const handleSubmit = async (formData: { name: string; code: string }) => {
     try {
-      // ADD
       if (brandId === null) {
-        const brand: creatbrand = {
+        const payload: creatbrand = {
           name: formData.name,
           code: formData.code,
-          id: 0
+          id: 0,
         };
-        await createBrand.mutateAsync(brand);
-      }
-
-      // UPDATE
-      else {
-        const brand: updatebrand = {
+        await createBrand.mutateAsync(payload);
+        toast.success("Thêm mới hãng sản xuất thành công!");
+      } else {
+        const payload: updatebrand = {
           name: formData.name,
           code: formData.code,
-          id: brandId
+          id: brandId,
         };
         await updateBrand.mutateAsync({
           id: brandId,
-          params: brand,
+          params: payload,
         });
+        toast.success("Cập nhật thông tin hãng thành công!");
       }
 
       handleCloseModal();
-    } catch (error) {
-      console.error("Save brand error:", error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Đã có lỗi xảy ra.";
+      toast.error(`Lưu thông tin thất bại: ${message}`);
     }
   };
+  // Bên trong component BrandsPage:
+  const prefetchPage = usePrefetchBrandPage();
 
-  // =====================================================
-  // DELETE
-  // =====================================================
-
+  const handlePageHover = (targetPage: number) => {
+    prefetchPage(targetPage, {
+      MaxPageSize: maxPageSize,
+      PageSize: pageSize,
+      Keyword: keyword,
+    });
+  };
   const handleDelete = async (id: number) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa hãng sản xuất này?")) return;
+
     try {
       await deleteBrand.mutateAsync(id);
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Không thể xóa hãng sản xuất.";
+      toast.success("Đã xóa hãng sản xuất.");
 
-      toast.error(`Xóa hãng sản xuất thất bại: ${message}`);
+      // Nếu xóa phần tử duy nhất ở trang hiện tại, lùi về trang trước
+      if (items.length === 1 && pageIndex > 1) {
+        setPageIndex((prev) => prev - 1);
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Không thể xóa hãng sản xuất.";
+      toast.error(`Xóa thất bại: ${message}`);
     }
   };
 
   // =====================================================
-  // LOADING
+  // DATA
   // =====================================================
+  const items = (data?.items ?? []) as Array<brand>;
 
-  if (isLoading) {
+  // Chỉ loading toàn màn hình ở lần nạp đầu tiên (chưa có cache)
+  if (isPending) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center">
+      <div className="flex min-h-[350px] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="size-8 animate-spin rounded-full border-4 border-gray-200 border-t-brand-500" />
-
           <span className="text-sm text-gray-500 dark:text-gray-400">
             Đang tải dữ liệu...
           </span>
@@ -186,10 +169,6 @@ const BrandsPage: React.FC = () => {
     );
   }
 
-  // =====================================================
-  // ERROR
-  // =====================================================
-
   if (isError) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
@@ -197,41 +176,39 @@ const BrandsPage: React.FC = () => {
           <p className="text-sm font-medium text-red-500">
             Không thể tải danh sách hãng sản xuất.
           </p>
-
           <p className="mt-1 text-xs text-red-400">
-            {error instanceof Error
-              ? error.message
-              : "Đã xảy ra lỗi không xác định."}
+            {error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định."}
           </p>
         </div>
       </div>
     );
   }
 
-  // =====================================================
-  // RENDER
-  // =====================================================
-
   return (
     <>
-   <SearchInput
-      initialValue={keyword}
-      onSearch={setkeyword}
-      placeholder="Tìm hãng sản xuất..."
-      className="mb-4"
-    />
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+      <SearchInput
+        initialValue={keyword}
+        onSearch={handleSearch}
+        placeholder="Tìm hãng sản xuất..."
+        className="mb-4"
+      />
 
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
         {/* HEADER */}
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-white/[0.05]">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-              Hãng sản xuất
-            </h2>
-
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Quản lý danh sách hãng sản xuất
-            </p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                Hãng sản xuất
+              </h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Quản lý danh sách hãng sản xuất
+              </p>
+            </div>
+            {/* Hiển thị ngầm chỉ báo đang cập nhật dữ liệu */}
+            {isFetching && (
+              <span className="size-2 animate-ping rounded-full bg-brand-500" title="Đang đồng bộ..." />
+            )}
           </div>
 
           <Button
@@ -247,40 +224,33 @@ const BrandsPage: React.FC = () => {
         {/* TABLE */}
         <div className="max-w-full overflow-x-auto">
           <Table>
-
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
-
                 <TableCell
                   isHeader
                   className="px-5 py-3 text-start font-medium text-gray-500 text-theme-xs dark:text-gray-400"
                 >
                   Tên hãng sản xuất
                 </TableCell>
-
                 <TableCell
                   isHeader
                   className="px-5 py-3 text-start font-medium text-gray-500 text-theme-xs dark:text-gray-400"
                 >
                   Mã hãng
                 </TableCell>
-
                 <TableCell
                   isHeader
                   className="px-5 py-3 text-center font-medium text-gray-500 text-theme-xs dark:text-gray-400"
                 >
                   Chức năng
                 </TableCell>
-
               </TableRow>
             </TableHeader>
 
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-
               {items.length > 0 ? (
                 items.map((item) => (
                   <TableRow key={item.id}>
-
                     {/* NAME */}
                     <TableCell className="px-5 py-4 text-start">
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
@@ -298,7 +268,6 @@ const BrandsPage: React.FC = () => {
                     {/* ACTION */}
                     <TableCell className="px-5 py-4">
                       <div className="flex items-center justify-center gap-2">
-
                         {/* EDIT */}
                         <Button
                           type="button"
@@ -315,15 +284,14 @@ const BrandsPage: React.FC = () => {
                           type="button"
                           size="sm"
                           variant="outline"
+                          disabled={deleteBrand.isPending}
                           className="!size-9 !rounded-full !border-red-500 !p-0 !text-red-500 hover:!bg-red-50 hover:!text-red-600 dark:hover:!bg-red-500/10"
                           onClick={() => handleDelete(item.id!)}
                         >
                           <TrashBinIcon fontSize={18} />
                         </Button>
-
                       </div>
                     </TableCell>
-
                   </TableRow>
                 ))
               ) : (
@@ -333,7 +301,6 @@ const BrandsPage: React.FC = () => {
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Chưa có hãng sản xuất
                       </p>
-
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         Hãy thêm hãng sản xuất đầu tiên.
                       </p>
@@ -341,33 +308,27 @@ const BrandsPage: React.FC = () => {
                   </TableCell>
                 </TableRow>
               )}
-
             </TableBody>
-
           </Table>
         </div>
       </div>
+
       <Pagination
         page={pageIndex}
         pageSize={pageSize}
-        totalCount={data?.pagination.totalRecords ?? 0}
-        totalPages={data?.pagination.totalPages ?? 0}
-        onPageChange={setpageIndex}
-        onPageSizeChange={setpageSize}
+        totalCount={data?.pagination?.totalRecords ?? 0}
+        totalPages={data?.pagination?.totalPages ?? 0}
+        onPageChange={setPageIndex}
+        onPageSizeChange={setPageSize}
+        onPageHover={handlePageHover}
       />
-      {/* =====================================================
-          MODAL
-      ===================================================== */}
 
+      {/* MODAL */}
       <BrandModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        brand={
-          brandId !== null
-            ? brandDetail?.data ?? null
-            : null
-        }
-        isLoading={isLoadingDetail}
+        brand={brandId !== null ? brandDetail?.data ?? null : null}
+        isLoading={isLoadingDetail || isSubmitting}
         onSubmit={handleSubmit}
       />
     </>

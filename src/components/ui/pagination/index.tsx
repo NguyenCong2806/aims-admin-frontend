@@ -8,6 +8,7 @@ interface PaginationProps {
   pageSizeOptions?: number[];
   onPageChange: (page: number) => void;
   onPageSizeChange: (newPageSize: number) => void;
+  onPageHover?: (page: number) => void; // Hỗ trợ Prefetch khi hover
 }
 
 const Pagination: React.FC<PaginationProps> = ({
@@ -15,9 +16,10 @@ const Pagination: React.FC<PaginationProps> = ({
   pageSize,
   totalCount,
   totalPages,
-  pageSizeOptions = [5, 10, 15, 20, 25, 50,75, 100],
+  pageSizeOptions = [5, 10, 15, 20, 25, 50, 75, 100],
   onPageChange,
   onPageSizeChange,
+  onPageHover,
 }) => {
   if (totalCount === 0) {
     return null;
@@ -29,9 +31,44 @@ const Pagination: React.FC<PaginationProps> = ({
   const handlePageSizeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSize = Number(e.target.value);
     onPageSizeChange(newSize);
-    // Khi đổi số lượng bản ghi hiển thị, nên đưa về trang 1
     onPageChange(1);
   };
+
+  // Thuật toán tính danh sách hiển thị có dấu ba chấm (...)
+  const getPageNumbers = () => {
+    const delta = 2; // Số trang hiển thị cạnh trang hiện tại
+    const range: (number | string)[] = [];
+    const rangeWithDots: (number | string)[] = [];
+    let prev: number | null = null;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= page - delta && i <= page + delta)
+      ) {
+        range.push(i);
+      }
+    }
+
+    for (const i of range) {
+      if (typeof i === "number") {
+        if (prev !== null) {
+          if (i - prev === 2) {
+            rangeWithDots.push(prev + 1);
+          } else if (i - prev !== 1) {
+            rangeWithDots.push("...");
+          }
+        }
+        rangeWithDots.push(i);
+        prev = i;
+      }
+    }
+
+    return rangeWithDots;
+  };
+
+  const pages = getPageNumbers();
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 px-5 py-4 dark:border-white/[0.05]">
@@ -58,56 +95,77 @@ const Pagination: React.FC<PaginationProps> = ({
           <label htmlFor="page-size-select" className="text-xs">
             Mỗi trang:
           </label>
-          <select
-            id="page-size-select"
-            value={pageSize}
-            onChange={handlePageSizeSelect}
-            className="h-8 rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-700 outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 dark:border-gray-700 
-            dark:bg-gray-800 dark:text-gray-300 appearance-none" 
-          >
-            {pageSizeOptions.map((size) => (
-              <option key={size} value={size}>
-                {size} / trang
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              id="page-size-select"
+              value={pageSize}
+              onChange={handlePageSizeSelect}
+              className="h-8 rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-700 outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            >
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size} / trang
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Điều hướng chuyển trang */}
       {totalPages > 1 && (
         <div className="flex items-center gap-1">
+          {/* Nút Trước */}
           <button
             type="button"
             disabled={page === 1}
             onClick={() => onPageChange(page - 1)}
+            onMouseEnter={() => page > 1 && onPageHover?.(page - 1)}
             aria-label="Trang trước"
             className="flex size-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.05]"
           >
             ‹
           </button>
 
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-            (pageNumber) => (
+          {/* Danh sách các nút số trang */}
+          {pages.map((item, index) => {
+            if (item === "...") {
+              return (
+                <span
+                  key={`dots-${index}`}
+                  className="flex size-9 items-center justify-center text-sm text-gray-400"
+                >
+                  …
+                </span>
+              );
+            }
+
+            const pageNumber = item as number;
+            const isActive = pageNumber === page;
+
+            return (
               <button
                 key={pageNumber}
                 type="button"
                 onClick={() => onPageChange(pageNumber)}
-                className={`flex size-9 items-center justify-center rounded-lg text-sm transition ${
-                  pageNumber === page
-                    ? "bg-brand-500 text-white"
+                onMouseEnter={() => onPageHover?.(pageNumber)}
+                className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition ${
+                  isActive
+                    ? "bg-brand-500 text-white shadow-sm"
                     : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.05]"
                 }`}
               >
                 {pageNumber}
               </button>
-            )
-          )}
+            );
+          })}
 
+          {/* Nút Sau */}
           <button
             type="button"
             disabled={page === totalPages}
             onClick={() => onPageChange(page + 1)}
+            onMouseEnter={() => page < totalPages && onPageHover?.(page + 1)}
             aria-label="Trang sau"
             className="flex size-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.05]"
           >
