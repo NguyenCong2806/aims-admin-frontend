@@ -2,15 +2,12 @@ import { BrowserRouter as Router, Routes, Route } from "react-router";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
-// import UserProfiles from "./pages/UserProfiles";
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
 import Badges from "./pages/UiElements/Badges";
-import Avatars from "./pages/UiElements/Avatars";
 import Buttons from "./pages/UiElements/Buttons";
 import LineChart from "./pages/Charts/LineChart";
 import BarChart from "./pages/Charts/BarChart";
-// import Calendar from "./pages/Calendar";
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import Blank from "./pages/Blank";
@@ -22,6 +19,7 @@ import { queryClient } from "./library/queryClient";
 import BrandsPage from "./pages/Lookups/brand/BrandsPage";
 import { Toaster } from "sonner";
 import AssetCategorysPage from "./pages/Lookups/assetcategorie/AssetCategorysPage";
+import AssetTypesPage from "./pages/Lookups/assettype/AssetTypesPage";
 
 export default function App() {
   return (
@@ -46,7 +44,7 @@ export default function App() {
             {/* Ui Elements */}
             <Route path="/hang-san-xuat" element={<BrandsPage />} />
             <Route path="/danh-muc-san-pham" element={<AssetCategorysPage />} />
-            <Route path="/avatars" element={<Avatars />} />
+            <Route path="/loai-tai-san" element={<AssetTypesPage />} />
             <Route path="/badge" element={<Badges />} />
             <Route path="/buttons" element={<Buttons />} />
             <Route path="/images" element={<Images />} />

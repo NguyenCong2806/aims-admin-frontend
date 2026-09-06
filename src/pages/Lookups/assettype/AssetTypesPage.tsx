@@ -13,22 +13,20 @@ import {
   TrashBinIcon,
 } from "../../../icons";
 
-import BrandModal from "./BrandModal";
-import type { brand, creatbrand, updatebrand } from "../../../models/Lookup/brand/brand";
+
 import {
-  useBrandParams as usequeryBrandParams,
-  useBrandById as usequeryByIdBrand,
-  useCreateBrand as usecreateBrand,
-  useUpdateBrand as useupdateBrand,
-  useRemoveBrand as useremoveBrand,
   usePrefetchBrandPage,
 } from "../../../query/brand/brandQuery";
 import { toast } from "sonner";
 import { PaginationFilter } from "../../../models/base/PaginationFilter";
 import Pagination from "../../../components/ui/pagination";
 import SearchInput from "../../../components/ui/search/SearchInput";
+import { assettype, creatassettype, updateassettype } from "../../../models/Lookup/assettype/assettype";
+import AssetTypeModal from "./AssetTypeModal";
+import { useAssetTypeById, useAssetTypeParams, useCreateAssetType, useRemoveAssetType, useUpdateAssetType } from "../../../query/assettypes/assettypesQuery";
 
-const BrandsPage: React.FC = () => {
+
+const AssetTypesPage: React.FC = () => {
   // =====================================================
   // STATE
   // =====================================================
@@ -37,7 +35,7 @@ const BrandsPage: React.FC = () => {
   const [pageIndex, setPageIndex] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [keyword, setKeyword] = useState<string>("");
-  const [brandId, setBrandId] = useState<number | null>(null);
+  const [assetTypeId, setAssetTypeId] = useState<number | null>(null);
 
   // =====================================================
   // QUERY
@@ -55,21 +53,21 @@ const BrandsPage: React.FC = () => {
     isFetching,
     isError,
     error,
-  } = usequeryBrandParams(filter);
+  } = useAssetTypeParams(filter);
 
   const {
-    data: brandDetail,
+    data: assetTypeDetail,
     isLoading: isLoadingDetail,
-  } = usequeryByIdBrand(brandId);
+  } = useAssetTypeById(assetTypeId);
 
   // =====================================================
   // MUTATION
   // =====================================================
-  const createBrand = usecreateBrand();
-  const updateBrand = useupdateBrand();
-  const deleteBrand = useremoveBrand();
+  const createAssetType = useCreateAssetType();
+  const updateAssetType = useUpdateAssetType();
+  const deleteAssetType = useRemoveAssetType();
 
-  const isSubmitting = createBrand.isPending || updateBrand.isPending;
+  const isSubmitting = createAssetType.isPending || updateAssetType.isPending;
 
   // =====================================================
   // HANDLERS
@@ -80,37 +78,37 @@ const BrandsPage: React.FC = () => {
   };
 
   const handleAdd = () => {
-    setBrandId(null);
+    setAssetTypeId(null);
     setIsModalOpen(true);
   };
 
   const handleEdit = (id: number) => {
-    setBrandId(id);
+    setAssetTypeId(id);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setBrandId(null);
+    setAssetTypeId(null);
   };
 
   const handleSubmit = async (formData: { name: string; code: string }) => {
     try {
-      if (brandId === null) {
-        const payload: creatbrand = {
+      if (assetTypeId === null) {
+        const payload: creatassettype = {
           name: formData.name,
           code: formData.code,
           id: 0,
         };
-        await createBrand.mutateAsync(payload);
+        await createAssetType.mutateAsync(payload);
       } else {
-        const payload: updatebrand = {
+        const payload: updateassettype = {
           name: formData.name,
           code: formData.code,
-          id: brandId,
+          id: assetTypeId,
         };
-        await updateBrand.mutateAsync({
-          id: brandId,
+        await updateAssetType.mutateAsync({
+          id: assetTypeId,
           params: payload,
         });
       }
@@ -132,14 +130,16 @@ const BrandsPage: React.FC = () => {
     });
   };
   const handleDelete = async (id: number) => {
+  
     try {
-      await deleteBrand.mutateAsync(id);
+      await deleteAssetType.mutateAsync(id);
+      
       // Nếu xóa phần tử duy nhất ở trang hiện tại, lùi về trang trước
       if (items.length === 1 && pageIndex > 1) {
         setPageIndex((prev) => prev - 1);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Không thể xóa hãng sản xuất.";
+      const message = err instanceof Error ? err.message : "Không thể xóa danh mục.";
       toast.error(`Xóa thất bại: ${message}`);
     }
   };
@@ -147,7 +147,7 @@ const BrandsPage: React.FC = () => {
   // =====================================================
   // DATA
   // =====================================================
-  const items = (data?.items ?? []) as Array<brand>;
+  const items = (data?.items ?? []) as Array<assettype>;
 
   // Chỉ loading toàn màn hình ở lần nạp đầu tiên (chưa có cache)
   if (isPending) {
@@ -168,7 +168,7 @@ const BrandsPage: React.FC = () => {
       <div className="flex min-h-[300px] items-center justify-center">
         <div className="rounded-lg bg-red-50 px-5 py-4 text-center dark:bg-red-500/10">
           <p className="text-sm font-medium text-red-500">
-            Không thể tải danh sách hãng sản xuất.
+            Không thể tải danh sách loại tài sản.
           </p>
           <p className="mt-1 text-xs text-red-400">
             {error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định."}
@@ -183,7 +183,7 @@ const BrandsPage: React.FC = () => {
       <SearchInput
         initialValue={keyword}
         onSearch={handleSearch}
-        placeholder="Tìm hãng sản xuất..."
+        placeholder="Tìm loại tài sản..."
         className="mb-4"
       />
 
@@ -193,10 +193,10 @@ const BrandsPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                Hãng sản xuất
+                Loại tài sản
               </h2>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Quản lý danh sách hãng sản xuất
+                Quản lý danh sách loại tài sản
               </p>
             </div>
             {/* Hiển thị ngầm chỉ báo đang cập nhật dữ liệu */}
@@ -224,13 +224,13 @@ const BrandsPage: React.FC = () => {
                   isHeader
                   className="px-5 py-3 text-start font-medium text-gray-500 text-theme-xs dark:text-gray-400"
                 >
-                  Tên hãng sản xuất
+                  Tên loại tài sản
                 </TableCell>
                 <TableCell
                   isHeader
                   className="px-5 py-3 text-start font-medium text-gray-500 text-theme-xs dark:text-gray-400"
                 >
-                  Mã hãng
+                  Mã loại tài sản
                 </TableCell>
                 <TableCell
                   isHeader
@@ -278,7 +278,7 @@ const BrandsPage: React.FC = () => {
                           type="button"
                           size="sm"
                           variant="outline"
-                          disabled={deleteBrand.isPending}
+                          disabled={deleteAssetType.isPending}
                           className="!size-9 !rounded-full !border-red-500 !p-0 !text-red-500 hover:!bg-red-50 hover:!text-red-600 dark:hover:!bg-red-500/10"
                           onClick={() => handleDelete(item.id!)}
                         >
@@ -293,10 +293,12 @@ const BrandsPage: React.FC = () => {
                   <TableCell className="px-5 py-12 text-center justify-center" colSpan={3}>
                     <div className="flex flex-col items-center">
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Chưa có hãng sản xuất
+                        Chưa có loại tài sản nào trong hệ thống.
                       </p>
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Hãy thêm hãng sản xuất đầu tiên.
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        Hãy thêm danh mục đầu tiên.
                       </p>
                     </div>
                   </TableCell>
@@ -318,10 +320,10 @@ const BrandsPage: React.FC = () => {
       />
 
       {/* MODAL */}
-      <BrandModal
+      <AssetTypeModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        brand={brandId !== null ? brandDetail?.data ?? null : null}
+        assetType={assetTypeId !== null ? assetTypeDetail?.data ?? null : null}
         isLoading={isLoadingDetail || isSubmitting}
         onSubmit={handleSubmit}
       />
@@ -329,4 +331,4 @@ const BrandsPage: React.FC = () => {
   );
 };
 
-export default BrandsPage;
+export default AssetTypesPage;
