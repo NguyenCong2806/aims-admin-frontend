@@ -2,15 +2,15 @@ import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import Button from "../../components/ui/button/Button";
-import { Modal } from "../../components/ui/modal";
+import Button from "../../../components/ui/button/Button";
+import { Modal } from "../../../components/ui/modal";
 
 import {
   brandSchema,
   type BrandFormData,
-} from "../../validations/brand.schema";
+} from "../../../validations/brand.schema";
 
-import type { brand } from "../../models/Lookup/brand/brand";
+import type { brand } from "../../../models/Lookup/brand/brand";
 
 interface BrandModalProps {
   isOpen: boolean;

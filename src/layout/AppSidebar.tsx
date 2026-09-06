@@ -73,7 +73,7 @@ const othersItems: NavItem[] = [
     icon: <BoxCubeIcon />,
     name: "Tài sản & Phần cứng",
     subItems: [
-      { name: "Nhóm / Danh mục tài sản", path: "/alerts", pro: false },
+      { name: "Danh mục sản phẩm", path: "/danh-muc-san-pham", pro: false },
       { name: "Hãng sản xuất", path: "/hang-san-xuat", pro: false },
       { name: "Model thiết bị", path: "/avatars", pro: false },
       { name: "Trạng thái", path: "/avatars", pro: false },

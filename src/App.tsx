@@ -19,8 +19,9 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./library/queryClient";
-import BrandsPage from "./pages/Lookups/BrandsPage";
+import BrandsPage from "./pages/Lookups/brand/BrandsPage";
 import { Toaster } from "sonner";
+import AssetCategorysPage from "./pages/Lookups/assetcategorie/AssetCategorysPage";
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
 
             {/* Ui Elements */}
             <Route path="/hang-san-xuat" element={<BrandsPage />} />
+            <Route path="/danh-muc-san-pham" element={<AssetCategorysPage />} />
             <Route path="/avatars" element={<Avatars />} />
             <Route path="/badge" element={<Badges />} />
             <Route path="/buttons" element={<Buttons />} />

@@ -5,16 +5,16 @@ import {
   TableCell,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import Button from "../../components/ui/button/Button";
+} from "../../../components/ui/table";
+import Button from "../../../components/ui/button/Button";
 import {
   PencilIcon,
   PlusIcon,
   TrashBinIcon,
-} from "../../icons";
+} from "../../../icons";
 
 import BrandModal from "./BrandModal";
-import type { brand, creatbrand, updatebrand } from "../../models/Lookup/brand/brand";
+import type { brand, creatbrand, updatebrand } from "../../../models/Lookup/brand/brand";
 import {
   useBrandParams as usequeryBrandParams,
   useBrandById as usequeryByIdBrand,
@@ -22,11 +22,11 @@ import {
   useUpdateBrand as useupdateBrand,
   useRemoveBrand as useremoveBrand,
   usePrefetchBrandPage,
-} from "../../query/brand/brandQuery";
+} from "../../../query/brand/brandQuery";
 import { toast } from "sonner";
-import { PaginationFilter } from "../../models/base/PaginationFilter";
-import Pagination from "../../components/ui/pagination";
-import SearchInput from "../../components/ui/search/SearchInput";
+import { PaginationFilter } from "../../../models/base/PaginationFilter";
+import Pagination from "../../../components/ui/pagination";
+import SearchInput from "../../../components/ui/search/SearchInput";
 
 const BrandsPage: React.FC = () => {
   // =====================================================
@@ -134,12 +134,8 @@ const BrandsPage: React.FC = () => {
     });
   };
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa hãng sản xuất này?")) return;
-
     try {
       await deleteBrand.mutateAsync(id);
-      toast.success("Đã xóa hãng sản xuất.");
-
       // Nếu xóa phần tử duy nhất ở trang hiện tại, lùi về trang trước
       if (items.length === 1 && pageIndex > 1) {
         setPageIndex((prev) => prev - 1);
