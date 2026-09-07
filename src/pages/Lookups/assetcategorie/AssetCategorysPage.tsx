@@ -14,14 +14,11 @@ import {
 } from "../../../icons";
 
 
-import {
-  usePrefetchBrandPage,
-} from "../../../query/brand/brandQuery";
 import { toast } from "sonner";
 import { PaginationFilter } from "../../../models/base/PaginationFilter";
 import Pagination from "../../../components/ui/pagination";
 import SearchInput from "../../../components/ui/search/SearchInput";
-import { useAssetCategoryById, useAssetCategoryParams, useCreateAssetCategory, useRemoveAssetCategory, useUpdateAssetCategory } from "../../../query/assetcategories/assetcategoriesQuery";
+import { useAssetCategoryById, useAssetCategoryParams, useCreateAssetCategory, usePrefetchAssetCategoryPage, useRemoveAssetCategory, useUpdateAssetCategory } from "../../../query/assetcategories/assetcategoriesQuery";
 import { assetcategorie, creatassetcategorie, updateassetcategorie } from "../../../models/Lookup/assetcategorie/assetcategorie";
 import AssetCategoryModal from "./AssetCategoryModal";
 
@@ -121,7 +118,7 @@ const AssetCategorysPage: React.FC = () => {
     }
   };
   // Bên trong component BrandsPage:
-  const prefetchPage = usePrefetchBrandPage();
+  const prefetchPage = usePrefetchAssetCategoryPage();
 
   const handlePageHover = (targetPage: number) => {
     prefetchPage(targetPage, {
@@ -184,7 +181,7 @@ const AssetCategorysPage: React.FC = () => {
       <SearchInput
         initialValue={keyword}
         onSearch={handleSearch}
-        placeholder="Tìm hãng sản xuất..."
+        placeholder="Tìm danh mục sản phẩm..."
         className="mb-4"
       />
 

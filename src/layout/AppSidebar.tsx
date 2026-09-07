@@ -45,7 +45,7 @@ const navItems: NavItem[] = [
     icon: <DocsIcon />,
     subItems: [
       { name: "Hợp đồng & Bảo hành", path: "/blank", pro: false },
-      { name: "Nhà cung cấp", path: "/error-404", pro: false },
+      { name: "Nhà cung cấp", path: "/nha-cung-cap", pro: false },
     ],
   },
   {
@@ -64,9 +64,10 @@ const othersItems: NavItem[] = [
     icon: <GroupIcon />,
     name: "Tổ chức & Vị trí",
     subItems: [
-      { name: "Phòng ban", path: "/alerts", pro: false },
-      { name: "Chi nhánh", path: "/avatars", pro: false },
-      { name: "Khu vực lắp đặt", path: "/avatars", pro: false },
+      { name: "Phòng ban", path: "/phong-ban", pro: false },
+      { name: "Chức vụ", path: "/chuc-vu", pro: false },
+      { name: "Địa điểm", path: "/dia-diem", pro: false },
+      { name: "Trung tâm chi phí", path: "/trung-tam-chi-phi", pro: false },
     ],
   },
   {
@@ -83,16 +84,15 @@ const othersItems: NavItem[] = [
     icon: <PlugInIcon />,
     name: "Phần mềm & Giấy phép",
     subItems: [
-      { name: "Loại bản quyền", path: "/alerts", pro: false },
-      { name: "Nhóm phần mềm", path: "/avatars", pro: false },
+      { name: "Loại giấy phép", path: "/loai-giay-phep", pro: false },
     ],
   },
   {
     icon: <TaskIcon />,
     name: "Vận hành & Bảo trì",
     subItems: [
-      { name: "Hình thức bảo tr", path: "/alerts", pro: false },
-      { name: "Nhà cung cấp", path: "/avatars", pro: false },
+      { name: "Loại bảo trì", path: "/loai-bao-tri", pro: false },
+      { name: "Đơn vị", path: "/don-vi", pro: false },
     ],
   },
   {

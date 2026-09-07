@@ -20,6 +20,14 @@ import { Toaster } from "sonner";
 import AssetCategorysPage from "./pages/Lookups/assetcategorie/AssetCategorysPage";
 import AssetTypesPage from "./pages/Lookups/assettype/AssetTypesPage";
 import AssetStatusPage from "./pages/Lookups/assetstatus/AssetStatusPage";
+import CostCentersPage from "./pages/Lookups/costcenter/CostCentersPage";
+import DepartmentsPage from "./pages/Lookups/department/DepartmentsPage";
+import LicenseTypesPage from "./pages/Lookups/licensetype/LicenseTypesPage";
+import LocationsPage from "./pages/Lookups/location/LocationsPage";
+import MaintenanceTypesPage from "./pages/Lookups/maintenancetype/MaintenanceTypesPage";
+import PositionsPage from "./pages/Lookups/position/PositionsPage";
+import SuppliersPage from "./pages/Lookups/supplier/SuppliersPage";
+import UnitsPage from "./pages/Lookups/unit/UnitsPage";
 
 export default function App() {
   return (
@@ -46,6 +54,14 @@ export default function App() {
             <Route path="/danh-muc-san-pham" element={<AssetCategorysPage />} />
             <Route path="/loai-tai-san" element={<AssetTypesPage />} />
             <Route path="/trang-thai-tai-san" element={<AssetStatusPage />} />
+            <Route path="/trung-tam-chi-phi" element={<CostCentersPage />} />
+            <Route path="/phong-ban" element={<DepartmentsPage />} />
+            <Route path="/loai-giay-phep" element={<LicenseTypesPage />} />
+            <Route path="/dia-diem" element={<LocationsPage />} />
+            <Route path="/loai-bao-tri" element={<MaintenanceTypesPage />} />
+            <Route path="/chuc-vu" element={<PositionsPage />} />
+            <Route path="/nha-cung-cap" element={<SuppliersPage />} />
+            <Route path="/don-vi" element={<UnitsPage />} />
 
             <Route path="/buttons" element={<Buttons />} />
             <Route path="/images" element={<Images />} />

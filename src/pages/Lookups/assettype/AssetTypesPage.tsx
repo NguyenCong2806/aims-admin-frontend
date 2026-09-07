@@ -14,16 +14,13 @@ import {
 } from "../../../icons";
 
 
-import {
-  usePrefetchBrandPage,
-} from "../../../query/brand/brandQuery";
 import { toast } from "sonner";
 import { PaginationFilter } from "../../../models/base/PaginationFilter";
 import Pagination from "../../../components/ui/pagination";
 import SearchInput from "../../../components/ui/search/SearchInput";
 import { assettype, creatassettype, updateassettype } from "../../../models/Lookup/assettype/assettype";
 import AssetTypeModal from "./AssetTypeModal";
-import { useAssetTypeById, useAssetTypeParams, useCreateAssetType, useRemoveAssetType, useUpdateAssetType } from "../../../query/assettypes/assettypesQuery";
+import { useAssetTypeById, useAssetTypeParams, useCreateAssetType, usePrefetchAssetTypePage, useRemoveAssetType, useUpdateAssetType } from "../../../query/assettypes/assettypesQuery";
 
 
 const AssetTypesPage: React.FC = () => {
@@ -120,7 +117,7 @@ const AssetTypesPage: React.FC = () => {
     }
   };
   // Bên trong component BrandsPage:
-  const prefetchPage = usePrefetchBrandPage();
+  const prefetchPage = usePrefetchAssetTypePage();
 
   const handlePageHover = (targetPage: number) => {
     prefetchPage(targetPage, {
@@ -296,9 +293,7 @@ const AssetTypesPage: React.FC = () => {
                         Chưa có loại tài sản nào trong hệ thống.
                       </p>
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      </p>
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Hãy thêm danh mục đầu tiên.
+                        Hãy thêm loại tài sản đầu tiên.
                       </p>
                     </div>
                   </TableCell>
