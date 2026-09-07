@@ -4,7 +4,6 @@ import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
-import Badges from "./pages/UiElements/Badges";
 import Buttons from "./pages/UiElements/Buttons";
 import LineChart from "./pages/Charts/LineChart";
 import BarChart from "./pages/Charts/BarChart";
@@ -20,6 +19,7 @@ import BrandsPage from "./pages/Lookups/brand/BrandsPage";
 import { Toaster } from "sonner";
 import AssetCategorysPage from "./pages/Lookups/assetcategorie/AssetCategorysPage";
 import AssetTypesPage from "./pages/Lookups/assettype/AssetTypesPage";
+import AssetStatusPage from "./pages/Lookups/assetstatus/AssetStatusPage";
 
 export default function App() {
   return (
@@ -45,7 +45,8 @@ export default function App() {
             <Route path="/hang-san-xuat" element={<BrandsPage />} />
             <Route path="/danh-muc-san-pham" element={<AssetCategorysPage />} />
             <Route path="/loai-tai-san" element={<AssetTypesPage />} />
-            <Route path="/badge" element={<Badges />} />
+            <Route path="/trang-thai-tai-san" element={<AssetStatusPage />} />
+
             <Route path="/buttons" element={<Buttons />} />
             <Route path="/images" element={<Images />} />
             <Route path="/videos" element={<Videos />} />

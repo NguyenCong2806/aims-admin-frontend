@@ -76,7 +76,7 @@ const othersItems: NavItem[] = [
       { name: "Danh mục sản phẩm", path: "/danh-muc-san-pham", pro: false },
       { name: "Hãng sản xuất", path: "/hang-san-xuat", pro: false },
       { name: "Loại tài sản", path: "/loai-tai-san", pro: false },
-      { name: "Trạng thái", path: "/avatars", pro: false },
+      { name: "Trạng thái tài sản", path: "/trang-thai-tai-san", pro: false },
     ],
   },
   {
