@@ -37,7 +37,7 @@ const navItems: NavItem[] = [
     [
       { name: "Thiết bị phần cứng", path: "/form-elements", pro: false },
       { name: "Giám sát máy trạm", path: "/form-elements", pro: false },
-      { name: "Tài sản số & Phần mềm", path: "/form-elements", pro: false },
+      { name: "Tài nguyên số", path: "/tai-nguyen-so", pro: false },
     ],
   },
   {

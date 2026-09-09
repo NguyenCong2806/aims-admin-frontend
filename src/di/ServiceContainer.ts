@@ -10,6 +10,11 @@ import { MaintenanceTypeService } from "../services/MaintenanceType/MaintenanceT
 import { PositionService } from "../services/Position/PositionService";
 import { SupplierService } from "../services/Supplier/SupplierService";
 import { UnitService } from "../services/Unit/UnitService";
+import { DigitalAssetService } from "../services/DigitalAsset/DigitalAssetService";
+import { DigitalDomainSSLService } from "../services/DigitalDomainSSL/DigitalDomainSSLService";
+import { DigitalCloudServerService } from "../services/DigitalCloudServer/DigitalCloudServerService";
+import { DigitalSoftwareLicenseService } from "../services/DigitalSoftwareLicense/DigitalSoftwareLicenseService";
+import { DigitalInternetLineService } from "../services/DigitalInternetLine/DigitalInternetLineService";
 export class ServiceContainer {
   public readonly brand: BrandService;
   public readonly assetCategory: AssetCategoryService;
@@ -23,6 +28,11 @@ export class ServiceContainer {
   public readonly position: PositionService;
   public readonly supplier: SupplierService;
   public readonly unit: UnitService;
+  public readonly digitalAsset: DigitalAssetService;
+  public readonly digitalDomainSSL: DigitalDomainSSLService;
+  public readonly digitalCloudServer: DigitalCloudServerService;
+  public readonly digitalSoftwareLicense: DigitalSoftwareLicenseService;
+  public readonly digitalInternetLine: DigitalInternetLineService;
   constructor() {
     this.brand = new BrandService();
     this.assetCategory = new AssetCategoryService();
@@ -36,6 +46,11 @@ export class ServiceContainer {
     this.position = new PositionService();
     this.supplier = new SupplierService();
     this.unit = new UnitService();
+    this.digitalAsset = new DigitalAssetService();
+    this.digitalDomainSSL = new DigitalDomainSSLService();
+    this.digitalCloudServer = new DigitalCloudServerService();
+    this.digitalSoftwareLicense = new DigitalSoftwareLicenseService();
+    this.digitalInternetLine = new DigitalInternetLineService();
   }
 }
 

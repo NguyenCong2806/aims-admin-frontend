@@ -28,6 +28,7 @@ import MaintenanceTypesPage from "./pages/Lookups/maintenancetype/MaintenanceTyp
 import PositionsPage from "./pages/Lookups/position/PositionsPage";
 import SuppliersPage from "./pages/Lookups/supplier/SuppliersPage";
 import UnitsPage from "./pages/Lookups/unit/UnitsPage";
+import DigitalAssetsPage from "./pages/Digital/digitalassets/DigitalAssetsPages";
 
 export default function App() {
   return (
@@ -44,7 +45,7 @@ export default function App() {
             <Route path="/blank" element={<Blank />} />
 
             {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
+            <Route path="/tai-nguyen-so" element={<DigitalAssetsPage />} />
 
             {/* Tables */}
             <Route path="/basic-tables" element={<BasicTables />} />
