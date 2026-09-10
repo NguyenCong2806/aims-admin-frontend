@@ -167,7 +167,7 @@ const DigitalAssetsPage: React.FC = () => {
                       Chi phí/Chu kỳ
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 text-start">
-                      Hạn dùng
+                      Ngày hết hạn
                     </TableCell>
                     <TableCell isHeader className="px-5 py-3 text-start">
                       Hành động
