@@ -4,7 +4,6 @@ import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
-import Buttons from "./pages/UiElements/Buttons";
 import LineChart from "./pages/Charts/LineChart";
 import BarChart from "./pages/Charts/BarChart";
 import BasicTables from "./pages/Tables/BasicTables";
@@ -29,6 +28,7 @@ import PositionsPage from "./pages/Lookups/position/PositionsPage";
 import SuppliersPage from "./pages/Lookups/supplier/SuppliersPage";
 import UnitsPage from "./pages/Lookups/unit/UnitsPage";
 import DigitalAssetsPage from "./pages/Digital/digitalassets/DigitalAssetsPages";
+import CreateDigitalAssetsPage from "./pages/Digital/digitalassets/CreateDigitalAssetsPage";
 
 export default function App() {
   return (
@@ -46,9 +46,11 @@ export default function App() {
 
             {/* Forms */}
             <Route path="/tai-nguyen-so" element={<DigitalAssetsPage />} />
+            <Route path="/tai-nguyen-so/tao-moi" element={<CreateDigitalAssetsPage />} />
+            <Route path="/tai-nguyen-so/:id/chinh-sua" element={<CreateDigitalAssetsPage />} />
 
             {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
+            <Route path="/tao-moi-tai-nguyen-so" element={<BasicTables />} />
 
             {/* Ui Elements */}
             <Route path="/hang-san-xuat" element={<BrandsPage />} />
@@ -64,7 +66,7 @@ export default function App() {
             <Route path="/nha-cung-cap" element={<SuppliersPage />} />
             <Route path="/don-vi" element={<UnitsPage />} />
 
-            <Route path="/buttons" element={<Buttons />} />
+            <Route path="/form-elements" element={<FormElements />} />
             <Route path="/images" element={<Images />} />
             <Route path="/videos" element={<Videos />} />
 

@@ -1,16 +1,18 @@
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface Option {
-  value: string;
+  value: number | string;
   label: string;
+  title?: string;
 }
 
 interface SelectProps {
   options: Option[];
   placeholder?: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   className?: string;
-  defaultValue?: string;
+  defaultValue?: string | number;
+  value?: string | number; // 👈 Nhận value từ Controller
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -19,14 +21,22 @@ const Select: React.FC<SelectProps> = ({
   onChange,
   className = "",
   defaultValue = "",
+  value,
 }) => {
-  // Manage the selected value
-  const [selectedValue, setSelectedValue] = useState<string>(defaultValue);
+  const [selectedValue, setSelectedValue] = useState<string>(
+    String(value ?? defaultValue ?? "")
+  );
+
+  useEffect(() => {
+    if (value !== undefined) {
+      setSelectedValue(String(value));
+    }
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setSelectedValue(value);
-    onChange(value); // Trigger parent handler
+    const val = e.target.value;
+    setSelectedValue(val);
+    onChange?.(val);
   };
 
   return (
@@ -39,7 +49,6 @@ const Select: React.FC<SelectProps> = ({
       value={selectedValue}
       onChange={handleChange}
     >
-      {/* Placeholder option */}
       <option
         value=""
         disabled
@@ -47,11 +56,11 @@ const Select: React.FC<SelectProps> = ({
       >
         {placeholder}
       </option>
-      {/* Map over options */}
       {options.map((option) => (
         <option
           key={option.value}
           value={option.value}
+          title={option.title || option.label}
           className="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
         >
           {option.label}

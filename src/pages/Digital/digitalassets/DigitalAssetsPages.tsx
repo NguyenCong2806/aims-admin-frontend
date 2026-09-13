@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router";
 import {
   Table,
   TableBody,
@@ -33,6 +34,7 @@ import {
 import type { DigitalAsset } from "../../../models/DigitalAsset/digitalasset/digitalasset";
 
 const DigitalAssetsPage: React.FC = () => {
+  const navigate = useNavigate();
   // =====================================================
   // STATE
   // =====================================================
@@ -121,7 +123,7 @@ const DigitalAssetsPage: React.FC = () => {
             >
               Tải mẫu
             </Button>
-            <Button startIcon={<PlusIcon />} onClick={() => toast.info("Thêm mới")}>
+            <Button startIcon={<PlusIcon />} onClick={() => navigate("/tai-nguyen-so/tao-moi")}>
               Thêm mới
             </Button>
           </div>
@@ -209,7 +211,7 @@ const DigitalAssetsPage: React.FC = () => {
                           <button
                             className="rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 transition-colors"
                             title="Chỉnh sửa"
-                            onClick={() => toast.info("Chính sửa chưa được implement")}
+                            onClick={() => item.id && navigate(`/tai-nguyen-so/${item.id}/chinh-sua`)}
                           >
                             <PencilIcon />
                           </button>

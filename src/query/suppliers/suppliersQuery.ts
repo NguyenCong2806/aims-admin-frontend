@@ -9,7 +9,12 @@ export const supplierKeys = {
   list: (params?: PaginationFilter) => [...supplierKeys.lists(), params] as const,
   detail: (id: number | null) => [...supplierKeys.all, "detail", id] as const,
 };
-
+export function useSupplierAll() {
+  return useQuery({
+    queryKey: supplierKeys.all,
+    queryFn: () => services.supplier.getAll(),
+  });
+}
 export function useSupplierParams(params?: PaginationFilter) {
   return useQuery({ queryKey: supplierKeys.list(params), queryFn: () => services.supplier.getByParams(params), placeholderData: keepPreviousData, staleTime: 1000 * 60 * 3 });
 }

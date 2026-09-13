@@ -38,6 +38,8 @@ const navItems: NavItem[] = [
       { name: "Thiết bị phần cứng", path: "/form-elements", pro: false },
       { name: "Giám sát máy trạm", path: "/form-elements", pro: false },
       { name: "Tài nguyên số", path: "/tai-nguyen-so", pro: false },
+      { name: "Tạo mới tài nguyên số", path: "/tai-nguyen-so/tao-moi", pro: false },
+      { name: "Mẫu", path: "/form-elements", pro: false },
     ],
   },
   {
