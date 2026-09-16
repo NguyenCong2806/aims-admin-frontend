@@ -18,6 +18,12 @@ import { useSupplierAll } from "../../../query/suppliers/suppliersQuery";
 import { useAssetStatusAll } from "../../../query/assetstatus/assetstatusQuery";
 import { useDepartmentAll } from "../../../query/departments/departmentsQuery";
 import { useAssetCategoryAll } from "../../../query/assetcategories/assetcategoriesQuery";
+import {
+    useAddDigitalAsset,
+    useCreateDigitalAsset,
+    useUpdateDigitalAsset,
+    useDigitalAssetById,
+} from "../../../query/digitalasset/digitalassetQuery";
 
 import { currencyTypeList } from "../../../common/Currencytypelist";
 import { billingCycleList } from "../../../common/BillingCycleList";
@@ -48,9 +54,18 @@ const defaultValues: Partial<DigitalAssetFormData> = {
     startdate: new Date(),
     expirydate: undefined,
     description: "",
+    domaindetail: {
+        recordtype: "DOMAIN",
+        domainname: "",
+        programtag: "",
+        functionalscope: "",
+        marketingtarget: "",
+        ssltype: "",
+        bounddomainlist: "",
+        autorenew: false,
+    },
 };
 
-// Helper chuẩn hóa dữ liệu ngày từ DatePicker (nhận cả Date, chuỗi DD/MM/YYYY hoặc chuỗi ISO)
 const parseSelectedDate = (dates: any, dateStr: any): Date | undefined => {
     if (Array.isArray(dates) && dates[0] instanceof Date && !isNaN(dates[0].getTime())) {
         return dates[0];
@@ -77,12 +92,18 @@ export const CreateDigitalAssetsPage: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id?: string }>();
     const isEdit = !!id;
+    const numericId = id ? Number(id) : null;
 
-    // React Query Data
+    // React Query Data & Mutations
     const { data: assetCategories } = useAssetCategoryAll();
     const { data: supplierData } = useSupplierAll();
     const { data: assetStatusData } = useAssetStatusAll();
     const { data: departmentData } = useDepartmentAll();
+
+    const addMutation = useAddDigitalAsset();
+    const createMutation = useCreateDigitalAsset();
+    const updateMutation = useUpdateDigitalAsset();
+    const { data: assetDetail, isLoading: isLoadingDetail } = useDigitalAssetById(numericId);
 
     // ================= React Hook Form + Zod =================
     const {
@@ -99,20 +120,37 @@ export const CreateDigitalAssetsPage: React.FC = () => {
         resolver: zodResolver(digitalassetSchema),
         mode: "onChange",
         defaultValues,
+        shouldUnregister: true,
     });
+
+    const isPendingSave = isSubmitting || addMutation.isPending || createMutation.isPending || updateMutation.isPending;
 
     const assetSubType = watch("assetsubtype");
 
-    // Load detail khi Edit
     useEffect(() => {
-        if (id) {
-            toast.info("Tính năng chỉnh sửa sẽ được thêm");
+        if (assetDetail?.data) {
+            const item = assetDetail.data;
+            reset({
+                assetcode: item.assetCode,
+                name: item.name,
+                assetsubtype: item.assetSubType,
+                categoryid: item.categoryId ?? undefined,
+                statusid: item.statusId ?? undefined,
+                contractnumber: item.contractNumber ?? "",
+                supplierid: item.supplierId ?? undefined,
+                departmentid: item.departmentId ?? undefined,
+                costamount: item.costAmount ?? 0,
+                currency: item.currency ?? "VND",
+                billingcycle: item.billingCycle ?? "Hàng năm",
+                startdate: parseSelectedDate(undefined, item.startDate),
+                expirydate: parseSelectedDate(undefined, item.expiryDate),
+                description: item.description ?? "",
+            });
         }
-    }, [id, reset]);
+    }, [assetDetail, reset]);
 
     // Submit Handler
     const onSubmit = async (data: DigitalAssetFormData) => {
-        // Kiểm tra chéo lần cuối trước khi gửi request
         const isDateValid = checkDateValidity(
             data.startdate,
             data.expirydate,
@@ -125,24 +163,45 @@ export const CreateDigitalAssetsPage: React.FC = () => {
         }
 
         try {
-            const payload = {
-                ...data,
-                startdate: data.startdate ? new Date(data.startdate).toISOString() : null,
-                expirydate: data.expirydate ? new Date(data.expirydate).toISOString() : null,
+            const isDomainOrSsl = data.assetsubtype === "DOMAIN" || data.assetsubtype === "SSL";
+
+            const payload: any = {
+                digitalAssetDto: {
+                    assetcode: data.assetcode?.trim(),
+                    name: data.name?.trim(),
+                    assetsubtype: data.assetsubtype,
+                    categoryid: data.categoryid,
+                    supplierid: data.supplierid,
+                    statusid: data.statusid,
+                    departmentid: data.departmentid,
+                    contractnumber: data.contractnumber?.trim(),
+                    costamount: data.costamount,
+                    currency: data.currency,
+                    billingcycle: data.billingcycle,
+                    description: data.description?.trim(),
+                    startdate: data.startdate ? new Date(data.startdate).toISOString() : null,
+                    expirydate: data.expirydate ? new Date(data.expirydate).toISOString() : null,
+                },
+                digitalDomainSslDto: isDomainOrSsl ? {
+                    ...data.domaindetail,
+                    recordtype: data.domaindetail?.recordtype || (data.assetsubtype === "DOMAIN" ? "DOMAIN" : "SSL_CERTIFICATE"),
+                    domainname: data.domaindetail?.domainname?.trim() || data.name?.trim(),
+                } : null,
+                digitalCloudServerDto: data.assetsubtype === "CLOUD_SERVER" ? (data as any).cloudserverdetail || null : null,
+                digitalInternetLineDto: data.assetsubtype === "INTERNET_LINE" ? data.internetlinedetail || null : null,
+                digitalSoftwareLicenseDto: (data.assetsubtype === "SOFTWARE_LICENSE" || data.assetsubtype === "SOFTWARE") ? data.softwarelicensedetail || null : null,
+                digitalSaasAccountDto: data.assetsubtype === "SAAS_SUBSCRIPTION" ? data.saasdetail || null : null,
+                digitalSaasAllocationDto: null,
             };
 
-            const method = isEdit ? "PUT" : "POST";
-            const url = isEdit ? `/api/digital-assets/${id}` : "/api/digital-assets";
-
-            const res = await fetch(url, {
-                method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.message || `${isEdit ? "Cập nhật" : "Thêm mới"} thất bại`);
+            // Gửi API qua React Query Mutation
+            if (isEdit && numericId !== null) {
+                await updateMutation.mutateAsync({
+                    id: numericId,
+                    params: payload,
+                });
+            } else {
+                await addMutation.mutateAsync(payload);
             }
 
             toast.success(isEdit ? "Cập nhật tài sản thành công" : "Thêm mới tài sản thành công");
@@ -179,7 +238,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 {/* Mã tài sản */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Mã tài sản <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
@@ -193,7 +252,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Loại tài sản */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Loại tài sản <span className="text-red-500">*</span>
                                     </Label>
                                     <Controller
@@ -208,6 +267,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                     })) || []
                                                 }
                                                 placeholder="Chọn loại tài sản"
+                                                value={field.value}
                                                 onChange={(val) => field.onChange(val)}
                                                 className="dark:bg-dark-900"
                                             />
@@ -218,10 +278,24 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                     )}
                                 </div>
 
+                                {/* Tên tài sản */}
+                                <div className="col-span-2">
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Tên tài sản <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="VD: aum.edu.vn"
+                                        {...register("name")}
+                                        error={!!errors.name}
+                                        hint={errors.name?.message}
+                                    />
+                                </div>
+
                                 {/* Danh mục tài sản */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Danh mục tài sản <span className="text-red-500">*</span>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Danh mục tài sản
                                     </Label>
                                     <Controller
                                         control={control}
@@ -235,7 +309,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                     })) || []
                                                 }
                                                 placeholder="Danh mục tài sản"
-                                                onChange={(val) => field.onChange(Number(val))}
+                                                value={field.value ?? undefined}
+                                                onChange={(val) => field.onChange(val ? Number(val) : null)}
                                                 className="dark:bg-dark-900"
                                             />
                                         )}
@@ -245,24 +320,10 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                     )}
                                 </div>
 
-                                {/* Tên tài sản */}
-                                <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Tên tài sản <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                        type="text"
-                                        placeholder="VD: aum.edu.vn"
-                                        {...register("name")}
-                                        error={!!errors.name}
-                                        hint={errors.name?.message}
-                                    />
-                                </div>
-
                                 {/* Nhà cung cấp */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Nhà cung cấp <span className="text-red-500">*</span>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Nhà cung cấp
                                     </Label>
                                     <Controller
                                         control={control}
@@ -276,7 +337,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                     })) || []
                                                 }
                                                 placeholder="Chọn nhà cung cấp"
-                                                onChange={(val) => field.onChange(Number(val))}
+                                                value={field.value ?? undefined}
+                                                onChange={(val) => field.onChange(val ? Number(val) : null)}
                                                 className="dark:bg-dark-900"
                                             />
                                         )}
@@ -288,8 +350,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Trạng thái tài sản */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Trạng thái tài sản <span className="text-red-500">*</span>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Trạng thái tài sản
                                     </Label>
                                     <Controller
                                         control={control}
@@ -303,7 +365,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                     })) || []
                                                 }
                                                 placeholder="Chọn trạng thái"
-                                                onChange={(val) => field.onChange(Number(val))}
+                                                value={field.value ?? undefined}
+                                                onChange={(val) => field.onChange(val ? Number(val) : null)}
                                                 className="dark:bg-dark-900"
                                             />
                                         )}
@@ -315,8 +378,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Phòng ban sử dụng */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Phòng ban sử dụng <span className="text-red-500">*</span>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Phòng ban sử dụng
                                     </Label>
                                     <Controller
                                         control={control}
@@ -330,7 +393,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                     })) || []
                                                 }
                                                 placeholder="Chọn phòng ban"
-                                                onChange={(val) => field.onChange(Number(val))}
+                                                value={field.value ?? undefined}
+                                                onChange={(val) => field.onChange(val ? Number(val) : null)}
                                                 className="dark:bg-dark-900"
                                             />
                                         )}
@@ -342,7 +406,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Tiền tệ */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">Tiền tệ</Label>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tiền tệ</Label>
                                     <Controller
                                         control={control}
                                         name="currency"
@@ -350,6 +414,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                             <Select
                                                 options={currencyTypeList}
                                                 placeholder="Chọn loại tiền tệ"
+                                                value={field.value}
                                                 onChange={(val) => field.onChange(val)}
                                                 className="dark:bg-dark-900"
                                             />
@@ -362,7 +427,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Chu kỳ thanh toán */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">Chu kỳ thanh toán</Label>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Chu kỳ thanh toán</Label>
                                     <Controller
                                         control={control}
                                         name="billingcycle"
@@ -370,6 +435,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                             <Select
                                                 options={billingCycleList}
                                                 placeholder="Chọn chu kỳ"
+                                                value={field.value}
                                                 onChange={(val) => field.onChange(val)}
                                                 className="dark:bg-dark-900"
                                             />
@@ -379,9 +445,10 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                         <p className="text-red-500 text-xs mt-1">{errors.billingcycle.message}</p>
                                     )}
                                 </div>
+
                                 {/* Giá mua */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">Giá mua</Label>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Giá mua</Label>
                                     <Controller
                                         control={control}
                                         name="costamount"
@@ -391,8 +458,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                 placeholder="0"
                                                 value={field.value ?? 0}
                                                 onChange={(e) => field.onChange(e.target.value === "" ? 0 : Number(e.target.value))}
-                                                className={`w-full border rounded px-3 py-2 ${errors.costamount ? "border-red-500 bg-red-50" : "border-gray-300"
-                                                    }`}
+                                                className={`w-full border rounded px-3 py-2 ${errors.costamount ? "border-red-500 bg-red-50" : "border-gray-300"}`}
                                             />
                                         )}
                                     />
@@ -403,7 +469,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Ngày mua / bắt đầu */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Ngày mua / bắt đầu <span className="text-red-500">*</span>
                                     </Label>
                                     <Controller
@@ -416,8 +482,6 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                 onChange={(dates: any, dateStr: any) => {
                                                     const selected = parseSelectedDate(dates, dateStr);
                                                     field.onChange(selected);
-
-                                                    // Lấy giá trị ngày hết hạn và đối soát ngay lập tức
                                                     const currentExpiry = getValues("expirydate");
                                                     checkDateValidity(selected, currentExpiry, setError, clearErrors);
                                                 }}
@@ -431,8 +495,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Ngày hết hạn */}
                                 <div>
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Ngày hết hạn <span className="text-red-500">*</span>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Ngày hết hạn
                                     </Label>
                                     <Controller
                                         control={control}
@@ -444,8 +508,6 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                 onChange={(dates: any, dateStr: any) => {
                                                     const selected = parseSelectedDate(dates, dateStr);
                                                     field.onChange(selected);
-
-                                                    // Lấy giá trị ngày bắt đầu và đối soát ngay lập tức
                                                     const currentStart = getValues("startdate");
                                                     checkDateValidity(currentStart, selected, setError, clearErrors);
                                                 }}
@@ -459,7 +521,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Số hợp đồng */}
                                 <div className="col-span-2">
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">Số hợp đồng</Label>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Số hợp đồng</Label>
                                     <Input
                                         type="text"
                                         placeholder="Nhập số hợp đồng"
@@ -471,7 +533,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Mô tả */}
                                 <div className="col-span-2">
-                                    <Label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</Label>
+                                    <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mô tả</Label>
                                     <textarea
                                         rows={3}
                                         placeholder="Nhập mô tả chi tiết..."
@@ -481,42 +543,63 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* CỘT PHẢI: THÔNG SỐ KỸ THUẬT */}
                         {(assetSubType === "DOMAIN" || assetSubType === "SSL") && (
                             <div className="space-y-6">
-                                <h2 className="mb-4 text-lg font-semibold border-b pb-2">⚙️ Thông số kỹ thuật</h2>
+                                <h2 className="mb-4 text-lg font-semibold border-b pb-2">⚙️ Thông số kỹ thuật Domain/SSL</h2>
                                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-md space-y-3 dark:bg-blue-900/10 dark:border-blue-800">
-                                    <DigitalDomainSslPage />
+                                    <DigitalDomainSslPage
+                                        register={register as any}
+                                        control={control as any}
+                                        errors={errors as any}
+                                    />
                                 </div>
                             </div>
                         )}
-                        {(assetSubType === "INTERNET_LINE") && (
+
+                        {/* {assetSubType === "INTERNET_LINE" && (
                             <div className="space-y-6">
-                                <h2 className="mb-4 text-lg font-semibold border-b pb-2">⚙️ Thông số kỹ thuật</h2>
+                                <h2 className="mb-4 text-lg font-semibold border-b pb-2">⚙️ Thông số kỹ thuật Đường truyền</h2>
                                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-md space-y-3 dark:bg-blue-900/10 dark:border-blue-800">
-                                    <DigitalInternetLinePage />
+                                    <DigitalInternetLinePage 
+                                        register={register as any} 
+                                        control={control as any} 
+                                        errors={errors as any} 
+                                    />
                                 </div>
                             </div>
                         )}
+
                         {(assetSubType === "SOFTWARE_LICENSE" || assetSubType === "SOFTWARE") && (
                             <div className="space-y-6">
-                                <h2 className="mb-4 text-lg font-semibold border-b pb-2">⚙️ Thông số kỹ thuật</h2>
+                                <h2 className="mb-4 text-lg font-semibold border-b pb-2">⚙️ Thông số kỹ thuật Bản quyền</h2>
                                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-md space-y-3 dark:bg-blue-900/10 dark:border-blue-800">
-                                    <DigitalSoftwareLicensePage />
+                                    <DigitalSoftwareLicensePage 
+                                        register={register as any} 
+                                        control={control as any} 
+                                        errors={errors as any} 
+                                    />
                                 </div>
                             </div>
                         )}
-                        {(assetSubType === "SAAS_SUBSCRIPTION") && (
+
+                        {assetSubType === "SAAS_SUBSCRIPTION" && (
                             <div className="space-y-6">
-                                <h2 className="mb-4 text-lg font-semibold border-b pb-2">⚙️ Thông số kỹ thuật</h2>
+                                <h2 className="mb-4 text-lg font-semibold border-b pb-2">⚙️ Thông số kỹ thuật Tài khoản SaaS</h2>
                                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-md space-y-3 dark:bg-blue-900/10 dark:border-blue-800">
-                                    <DigitalSaaSAccountPage />
+                                    <DigitalSaaSAccountPage 
+                                        register={register as any} 
+                                        control={control as any} 
+                                        errors={errors as any} 
+                                    />
                                 </div>
                             </div>
-                        )}
+                        )} */}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex justify-end gap-2 pt-6 border-t">
+                    <div className="flex justify-end gap-2 pt-6 border-t dark:border-gray-800">
                         <Button
                             type="button"
                             variant="outline"
@@ -524,7 +607,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                 reset(defaultValues);
                                 clearErrors();
                             }}
-                            disabled={isSubmitting}
+                            disabled={isPendingSave}
                         >
                             Đặt lại
                         </Button>
@@ -532,12 +615,12 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                             type="button"
                             variant="outline"
                             onClick={() => navigate("/tai-nguyen-so")}
-                            disabled={isSubmitting}
+                            disabled={isPendingSave}
                         >
                             Hủy
                         </Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Đang lưu..." : isEdit ? "Cập nhật" : "Lưu tài sản"}
+                        <Button type="submit" disabled={isPendingSave}>
+                            {isPendingSave ? "Đang lưu..." : isEdit ? "Cập nhật" : "Lưu tài sản"}
                         </Button>
                     </div>
                 </form>

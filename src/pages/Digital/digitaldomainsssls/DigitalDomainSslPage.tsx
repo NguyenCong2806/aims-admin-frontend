@@ -1,78 +1,42 @@
-import React, { useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React from "react";
+import { Controller, UseFormRegister, Control, FieldErrors } from "react-hook-form";
 import Checkbox from "../../../components/form/input/Checkbox";
 import Input from "../../../components/form/input/InputField";
-import { DigitalDomainSSL } from "../../../models/DigitalAsset/digitaldomain/digitaldomain";
-import { DigitalDomainSSLFormData, digitaldomainsslSchema } from "../../../validations/digitaldomainssl.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
 import Select from "../../../components/form/Select";
-import { domainsslList, domainSslPurposeList, domainsslTypeList, functionalScopeList, relatedProgramList } from "../../../common/DomainSSLTypeList";
 import Label from "../../../components/form/Label";
+import {
+  domainsslList,
+  domainSslPurposeList,
+  domainsslTypeList,
+  functionalScopeList,
+  relatedProgramList,
+} from "../../../common/DomainSSLTypeList";
 
 interface DigitalDomainSslProps {
-  digitaldomainssl?: DigitalDomainSSL | null;
-  onChange?: (data: Partial<DigitalDomainSSL>, isValid: boolean) => void;
+  register: UseFormRegister<any>;
+  control: Control<any, any>;
+  errors: FieldErrors<any>;
 }
 
 const DigitalDomainSslPage: React.FC<DigitalDomainSslProps> = ({
-  digitaldomainssl,
-  onChange,
+  register,
+  control,
+  errors,
 }) => {
-  const {
-    register,
-    control,
-    reset,
-    watch,
-    formState: { errors, isValid },
-  } = useForm<DigitalDomainSSLFormData>({
-    resolver: zodResolver(digitaldomainsslSchema),
-    mode: "onChange",
-    defaultValues: {
-      recordtype: digitaldomainssl?.recordtype || "",
-      domainname: digitaldomainssl?.domainname || "",
-      programtag: digitaldomainssl?.programtag || "",
-      functionalscope: digitaldomainssl?.functionalscope || "",
-      marketingtarget: digitaldomainssl?.marketingtarget || "",
-      ssltype: digitaldomainssl?.ssltype || "",
-      bounddomainlist: digitaldomainssl?.bounddomainlist || "",
-      autorenew: digitaldomainssl?.autorenew ?? false,
-    },
-  });
-
-  // Đồng bộ lại form khi props từ ngoài truyền vào thay đổi (Edit mode)
-  useEffect(() => {
-    if (digitaldomainssl) {
-      reset({
-        recordtype: digitaldomainssl.recordtype || "",
-        domainname: digitaldomainssl.domainname || "",
-        programtag: digitaldomainssl.programtag || "",
-        functionalscope: digitaldomainssl.functionalscope || "",
-        marketingtarget: digitaldomainssl.marketingtarget || "",
-        ssltype: digitaldomainssl.ssltype || "",
-        bounddomainlist: digitaldomainssl.bounddomainlist || "",
-        autorenew: digitaldomainssl.autorenew ?? false,
-      });
-    }
-  }, [digitaldomainssl, reset]);
-
-  // Lắng nghe thay đổi dữ liệu form và gửi ngược lại trang cha
-  useEffect(() => {
-    const subscription = watch((value) => {
-      onChange?.(value as Partial<DigitalDomainSSL>, isValid);
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, onChange, isValid]);
+  const domainErrors = errors?.domaindetail as any;
 
   return (
     <div className="space-y-4">
-      {/* Loại bản ghi */}
+      {/* 1. Loại bản ghi */}
       <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Loại bản ghi
         </Label>
         <Controller
           control={control}
-          name="recordtype"
+          name="domaindetail.recordtype"
+          defaultValue="DOMAIN"
           render={({ field }) => (
             <Select
               options={domainsslList.map((item) => ({
@@ -80,38 +44,39 @@ const DigitalDomainSslPage: React.FC<DigitalDomainSslProps> = ({
                 label: item.label,
               }))}
               placeholder="Chọn loại bản ghi"
+              value={field.value}
               onChange={(val) => field.onChange(val)}
               className="dark:bg-dark-900"
             />
           )}
         />
-        {errors.recordtype && (
-          <p className="text-red-500 text-xs mt-1">{errors.recordtype.message}</p>
+        {domainErrors?.recordtype && (
+          <p className="text-red-500 text-xs mt-1">{domainErrors.recordtype.message}</p>
         )}
       </div>
 
-      {/* Tên miền kỹ thuật */}
+      {/* 2. Tên miền kỹ thuật */}
       <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
-          Tên miền kỹ thuật <span className="text-red-500">*</span>
+        <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Tên miền kỹ thuật
         </Label>
         <Input
           type="text"
-          placeholder="aum.edu.vn, sambala.net"
-          {...register("domainname")}
-          error={!!errors.domainname}
-          hint={errors.domainname?.message}
+          placeholder="VD: aum.edu.vn, sambala.net"
+          {...register("domaindetail.domainname")}
+          error={!!domainErrors?.domainname}
+          hint={domainErrors?.domainname?.message}
         />
       </div>
 
-      {/* Chương trình / hệ thống liên quan */}
+      {/* 3. Chương trình / hệ thống liên quan */}
       <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Chương trình / hệ thống liên quan
         </Label>
-         <Controller
+        <Controller
           control={control}
-          name="functionalscope"
+          name="domaindetail.programtag"
           render={({ field }) => (
             <Select
               options={relatedProgramList.map((item) => ({
@@ -119,50 +84,52 @@ const DigitalDomainSslPage: React.FC<DigitalDomainSslProps> = ({
                 label: item.label,
                 title: item.title,
               }))}
-              placeholder="Chương trình / hệ thống liên quan"
+              placeholder="Chọn chương trình / hệ thống liên quan"
+              value={field.value}
               onChange={(val) => field.onChange(val)}
               className="dark:bg-dark-900"
             />
           )}
         />
-        {errors.functionalscope && (
-          <p className="text-red-500 text-xs mt-1">{errors.functionalscope.message}</p>
+        {domainErrors?.programtag && (
+          <p className="text-red-500 text-xs mt-1">{domainErrors.programtag.message}</p>
         )}
       </div>
 
-      {/* Phạm vi chức năng */}
+      {/* 4. Phạm vi chức năng */}
       <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Phạm vi chức năng
         </Label>
         <Controller
           control={control}
-          name="functionalscope"
+          name="domaindetail.functionalscope"
           render={({ field }) => (
             <Select
               options={functionalScopeList.map((item) => ({
                 value: item.value,
                 label: item.label,
               }))}
-              placeholder="Phạm vi chức năng"
+              placeholder="Chọn phạm vi chức năng"
+              value={field.value}
               onChange={(val) => field.onChange(val)}
               className="dark:bg-dark-900"
             />
           )}
         />
-        {errors.functionalscope && (
-          <p className="text-red-500 text-xs mt-1">{errors.functionalscope.message}</p>
+        {domainErrors?.functionalscope && (
+          <p className="text-red-500 text-xs mt-1">{domainErrors.functionalscope.message}</p>
         )}
       </div>
 
-      {/* Mục tiêu / chức năng Marketing */}
+      {/* 5. Mục tiêu / chức năng Marketing */}
       <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Mục tiêu / chức năng Marketing
         </Label>
         <Controller
           control={control}
-          name="marketingtarget"
+          name="domaindetail.marketingtarget"
           render={({ field }) => (
             <Select
               options={domainSslPurposeList.map((item) => ({
@@ -170,25 +137,26 @@ const DigitalDomainSslPage: React.FC<DigitalDomainSslProps> = ({
                 label: item.label,
                 title: item.title,
               }))}
-              placeholder="Mục tiêu / chức năng Marketing"
+              placeholder="Chọn mục tiêu / chức năng Marketing"
+              value={field.value}
               onChange={(val) => field.onChange(val)}
               className="dark:bg-dark-900"
             />
           )}
         />
-        {errors.marketingtarget && (
-          <p className="text-red-500 text-xs mt-1">{errors.marketingtarget.message}</p>
+        {domainErrors?.marketingtarget && (
+          <p className="text-red-500 text-xs mt-1">{domainErrors.marketingtarget.message}</p>
         )}
       </div>
 
-      {/* Loại SSL */}
+      {/* 6. Loại SSL */}
       <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Loại SSL
         </Label>
         <Controller
           control={control}
-          name="recordtype"
+          name="domaindetail.ssltype"
           render={({ field }) => (
             <Select
               options={domainsslTypeList.map((item) => ({
@@ -196,36 +164,38 @@ const DigitalDomainSslPage: React.FC<DigitalDomainSslProps> = ({
                 label: item.label,
                 title: item.title,
               }))}
-              placeholder="Chọn loại bản ghi"
+              placeholder="Chọn loại SSL"
+              value={field.value}
               onChange={(val) => field.onChange(val)}
               className="dark:bg-dark-900"
             />
           )}
         />
-        {errors.recordtype && (
-          <p className="text-red-500 text-xs mt-1">{errors.recordtype.message}</p>
+        {domainErrors?.ssltype && (
+          <p className="text-red-500 text-xs mt-1">{domainErrors.ssltype.message}</p>
         )}
       </div>
 
-      {/* Danh sách Domain được SSL trỏ tới / SAN List */}
+      {/* 7. Danh sách Domain được SSL trỏ tới / SAN List */}
       <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Danh sách Domain được SSL trỏ tới / SAN List
         </Label>
         <Input
           type="text"
-          placeholder="Danh sách Domain được SSL trỏ tới / SAN List"
-          {...register("bounddomainlist")}
-          error={!!errors.bounddomainlist}
-          hint={errors.bounddomainlist?.message}
+          placeholder="VD: *.aum.edu.vn, aum.edu.vn"
+          {...register("domaindetail.bounddomainlist")}
+          error={!!domainErrors?.bounddomainlist}
+          hint={domainErrors?.bounddomainlist?.message}
         />
       </div>
 
-      {/* Checkbox Tự động gia hạn */}
-      <div className="flex items-center gap-3">
+      {/* 8. Checkbox Tự động gia hạn */}
+      <div className="flex items-center gap-3 pt-2">
         <Controller
           control={control}
-          name="autorenew"
+          name="domaindetail.autorenew"
+          defaultValue={false}
           render={({ field }) => (
             <Checkbox
               checked={Boolean(field.value)}
@@ -234,7 +204,7 @@ const DigitalDomainSslPage: React.FC<DigitalDomainSslProps> = ({
           )}
         />
         <span className="block text-sm font-medium text-gray-700 dark:text-gray-400">
-          Tự động gia hạn
+          Tự động gia hạn khi đến hạn
         </span>
       </div>
     </div>

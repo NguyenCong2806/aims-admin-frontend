@@ -1,77 +1,47 @@
 import React, { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "../../../components/ui/table";
-import Button from "../../../components/ui/button/Button";
-import {
-  PencilIcon,
-  PlusIcon,
-  TrashBinIcon,
-} from "../../../icons";
-
-
 import { toast } from "sonner";
+import { PencilIcon, TrashBinIcon } from "../../../icons";
 import { PaginationFilter } from "../../../models/base/PaginationFilter";
-import Pagination from "../../../components/ui/pagination";
-import SearchInput from "../../../components/ui/search/SearchInput";
-import { useAssetCategoryById, useAssetCategoryParams, useCreateAssetCategory, usePrefetchAssetCategoryPage, useRemoveAssetCategory, useUpdateAssetCategory } from "../../../query/assetcategories/assetcategoriesQuery";
-import { assetcategorie, creatassetcategorie, updateassetcategorie } from "../../../models/Lookup/assetcategorie/assetcategorie";
+import {
+  useAssetCategoryById,
+  useAssetCategoryParams,
+  useCreateAssetCategory,
+  useRemoveAssetCategory,
+  useUpdateAssetCategory,
+} from "../../../query/assetcategories/assetcategoriesQuery";
+import {
+  assetcategorie,
+  creatassetcategorie,
+  updateassetcategorie,
+} from "../../../models/Lookup/assetcategorie/assetcategorie";
 import AssetCategoryModal from "./AssetCategoryModal";
+import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
 
 const AssetCategorysPage: React.FC = () => {
-  // =====================================================
-  // STATE
-  // =====================================================
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [maxPageSize] = useState<number>(100);
   const [pageIndex, setPageIndex] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [keyword, setKeyword] = useState<string>("");
   const [assetCategoryId, setAssetCategoryId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  // =====================================================
-  // QUERY
-  // =====================================================
   const filter: PaginationFilter = {
-    MaxPageSize: maxPageSize,
+    MaxPageSize: 100,
     PageIndex: pageIndex,
     PageSize: pageSize,
     Keyword: keyword,
   };
 
-  const {
-    data,
-    isPending,
-    isFetching,
-    isError,
-    error,
-  } = useAssetCategoryParams(filter);
+  const { data, isPending, isFetching, isError, error } = useAssetCategoryParams(filter);
+  const { data: assetCategoryDetail, isLoading: isLoadingDetail } = useAssetCategoryById(assetCategoryId);
 
-  const {
-    data: assetCategoryDetail,
-    isLoading: isLoadingDetail,
-  } = useAssetCategoryById(assetCategoryId);
+  const createMutation = useCreateAssetCategory();
+  const updateMutation = useUpdateAssetCategory();
+  const deleteMutation = useRemoveAssetCategory();
 
-  // =====================================================
-  // MUTATION
-  // =====================================================
-  const createAssetCategorysPage = useCreateAssetCategory();
-  const updateAssetCategory = useUpdateAssetCategory();
-  const deleteAssetCategory = useRemoveAssetCategory();
-
-  const isSubmitting = createAssetCategorysPage.isPending || updateAssetCategory.isPending;
-
-  // =====================================================
-  // HANDLERS
-  // =====================================================
-  const handleSearch = (val: string) => {
-    setKeyword(val);
-    setPageIndex(1); // Luôn đưa về trang 1 khi người dùng gõ từ khóa mới
-  };
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const items = (data?.items ?? []) as Array<assetcategorie>;
 
   const handleAdd = () => {
     setAssetCategoryId(null);
@@ -96,19 +66,19 @@ const AssetCategorysPage: React.FC = () => {
           code: formData.code,
           id: 0,
         };
-        await createAssetCategorysPage.mutateAsync(payload);
-        toast.success("Thêm mới danh mục thành công!");
+        await createMutation.mutateAsync(payload);
+        toast.success("Thêm mới nhóm danh mục thành công!");
       } else {
         const payload: updateassetcategorie = {
           name: formData.name,
           code: formData.code,
           id: assetCategoryId,
         };
-        await updateAssetCategory.mutateAsync({
+        await updateMutation.mutateAsync({
           id: assetCategoryId,
           params: payload,
         });
-        toast.success("Cập nhật thông tin danh mục thành công!");
+        toast.success("Cập nhật nhóm danh mục thành công!");
       }
 
       handleCloseModal();
@@ -117,205 +87,292 @@ const AssetCategorysPage: React.FC = () => {
       toast.error(`Lưu thông tin thất bại: ${message}`);
     }
   };
-  // Bên trong component BrandsPage:
-  const prefetchPage = usePrefetchAssetCategoryPage();
 
-  const handlePageHover = (targetPage: number) => {
-    prefetchPage(targetPage, {
-      MaxPageSize: maxPageSize,
-      PageSize: pageSize,
-      Keyword: keyword,
-    });
-  };
   const handleDelete = async (id: number) => {
-  
+    if (!window.confirm("Bạn có chắc chắn muốn xóa nhóm danh mục này không?")) return;
     try {
-      await deleteAssetCategory.mutateAsync(id);
-      
-      // Nếu xóa phần tử duy nhất ở trang hiện tại, lùi về trang trước
+      await deleteMutation.mutateAsync(id);
+      toast.success("Xóa nhóm danh mục thành công!");
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       if (items.length === 1 && pageIndex > 1) {
         setPageIndex((prev) => prev - 1);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Không thể xóa danh mục.";
+      const message = err instanceof Error ? err.message : "Không thể xóa nhóm danh mục.";
       toast.error(`Xóa thất bại: ${message}`);
     }
   };
 
-  // =====================================================
-  // DATA
-  // =====================================================
-  const items = (data?.items ?? []) as Array<assetcategorie>;
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} nhóm danh mục đã chọn?`))
+      return;
 
-  // Chỉ loading toàn màn hình ở lần nạp đầu tiên (chưa có cache)
-  if (isPending) {
-    return (
-      <div className="flex min-h-[350px] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="size-8 animate-spin rounded-full border-4 border-gray-200 border-t-brand-500" />
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Đang tải dữ liệu...
-          </span>
-        </div>
-      </div>
-    );
-  }
+    try {
+      for (const id of selectedIds) {
+        await deleteMutation.mutateAsync(id);
+      }
+      toast.success(`Đã xóa ${selectedIds.size} nhóm danh mục thành công!`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Xảy ra lỗi trong quá trình xóa hàng loạt.");
+    }
+  };
 
-  if (isError) {
-    return (
-      <div className="flex min-h-[300px] items-center justify-center">
-        <div className="rounded-lg bg-red-50 px-5 py-4 text-center dark:bg-red-500/10">
-          <p className="text-sm font-medium text-red-500">
-            Không thể tải danh sách danh mục.
-          </p>
-          <p className="mt-1 text-xs text-red-400">
-            {error instanceof Error ? error.message : "Đã xảy ra lỗi không xác định."}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const toggleSelectAll = () => {
+    if (selectedIds.size === items.length && items.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map((it) => it.id!).filter(Boolean)));
+    }
+  };
+
+  const toggleSelectRow = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const isAllSelected = items.length > 0 && items.every((it) => selectedIds.has(it.id!));
 
   return (
     <>
-      <SearchInput
-        initialValue={keyword}
-        onSearch={handleSearch}
-        placeholder="Tìm danh mục sản phẩm..."
-        className="mb-4"
-      />
-
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-white/[0.05]">
-          <div className="flex items-center gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                Danh mục sản phẩm
-              </h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Quản lý danh sách danh mục sản phẩm
-              </p>
-            </div>
-            {/* Hiển thị ngầm chỉ báo đang cập nhật dữ liệu */}
-            {isFetching && (
-              <span className="size-2 animate-ping rounded-full bg-brand-500" title="Đang đồng bộ..." />
-            )}
-          </div>
-
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={handleAdd}
-          >
-            <PlusIcon fontSize={18} />
-            Thêm mới
-          </Button>
-        </div>
-
-        {/* TABLE */}
-        <div className="max-w-full overflow-x-auto">
-          <Table>
-            <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
-              <TableRow>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 text-start font-medium text-gray-500 text-theme-xs dark:text-gray-400"
-                >
-                  Tên danh mục
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 text-start font-medium text-gray-500 text-theme-xs dark:text-gray-400"
-                >
-                  Mã danh mục
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 text-center font-medium text-gray-500 text-theme-xs dark:text-gray-400"
-                >
-                  Chức năng
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {items.length > 0 ? (
-                items.map((item) => (
-                  <TableRow key={item.id}>
-                    {/* NAME */}
-                    <TableCell className="px-5 py-4 text-start">
-                      <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                        {item.name}
-                      </span>
-                    </TableCell>
-
-                    {/* CODE */}
-                    <TableCell className="px-5 py-4 text-start">
-                      <span className="text-gray-500 text-theme-sm dark:text-gray-400">
-                        {item.code}
-                      </span>
-                    </TableCell>
-
-                    {/* ACTION */}
-                    <TableCell className="px-5 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        {/* EDIT */}
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="primary"
-                          className="!size-9 !rounded-full !p-0"
-                          onClick={() => handleEdit(item.id!)}
-                        >
-                          <PencilIcon fontSize={18} />
-                        </Button>
-
-                        {/* DELETE */}
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={deleteAssetCategory.isPending}
-                          className="!size-9 !rounded-full !border-red-500 !p-0 !text-red-500 hover:!bg-red-50 hover:!text-red-600 dark:hover:!bg-red-500/10"
-                          onClick={() => handleDelete(item.id!)}
-                        >
-                          <TrashBinIcon fontSize={18} />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow className="bg-gray-50 dark:bg-white/5">
-                  <TableCell className="px-5 py-12 text-center justify-center" colSpan={3}>
-                    <div className="flex flex-col items-center">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Chưa có danh mục
-                      </p>
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Hãy thêm danh mục đầu tiên.
-                      </p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      <Pagination
-        page={pageIndex}
+      <AimsBasePageLayout
+        moduleName="Danh mục tài sản"
+        moduleIcon={
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+        }
+        moduleTabs={[
+          { name: "Hãng sản xuất", path: "/hang-san-xuat" },
+          { name: "Loại tài sản", path: "/loai-tai-san" },
+          { name: "Nhóm danh mục", path: "/danh-muc-san-pham", badge: items.length },
+          { name: "Đơn vị tính", path: "/don-vi" },
+          { name: "Trạng thái", path: "/trang-thai-tai-san" },
+          { name: "Nhà cung cấp", path: "/nha-cung-cap" },
+        ]}
+        title="Nhóm danh mục tài sản"
+        subtitle="Quản lý cấu trúc danh mục và phân nhóm sản phẩm tài sản"
+        totalRecords={data?.pagination?.totalRecords ?? 0}
+        pageIndex={pageIndex}
         pageSize={pageSize}
-        totalCount={data?.pagination?.totalRecords ?? 0}
-        totalPages={data?.pagination?.totalPages ?? 0}
         onPageChange={setPageIndex}
-        onPageSizeChange={setPageSize}
-        onPageHover={handlePageHover}
-      />
+        searchTerm={keyword}
+        onSearchChange={(val) => {
+          setKeyword(val);
+          setPageIndex(1);
+        }}
+        onAddNew={handleAdd}
+        addNewLabel="Thêm mới"
+        onExportExcel={() => toast.success("Đang xuất dữ liệu danh mục ra file Excel...")}
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onBatchDelete={handleBatchDelete}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        isFetching={isFetching}
+        isLoading={isPending}
+        loadingMessage="Đang tải danh sách nhóm danh mục..."
+        error={isError ? (error instanceof Error ? error.message : "Không thể tải danh sách nhóm danh mục.") : null}
+      >
+        {(currentViewMode) =>
+          currentViewMode === "list" ? (
+            /* LIST VIEW */
+            <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 bg-gray-50/90 dark:bg-gray-800/90 backdrop-blur-xs z-10 border-b border-gray-200 dark:border-gray-800">
+                  <tr className="text-xs font-semibold text-gray-600 dark:text-gray-300 select-none">
+                    <th className="w-12 px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 cursor-pointer"
+                        title="Chọn tất cả"
+                      />
+                    </th>
+                    <th className="px-4 py-3">Tên nhóm danh mục</th>
+                    <th className="px-4 py-3">Mã nhóm</th>
+                    <th className="px-4 py-3 text-right">Thao tác</th>
+                  </tr>
+                </thead>
 
-      {/* MODAL */}
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs sm:text-sm">
+                  {items.length ? (
+                    items.map((item) => {
+                      const isSelected = selectedIds.has(item.id!);
+                      return (
+                        <tr
+                          key={item.id}
+                          className={`transition-colors group cursor-pointer ${
+                            isSelected
+                              ? "bg-cyan-50/80 dark:bg-cyan-950/40 font-medium text-cyan-950 dark:text-cyan-100"
+                              : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300"
+                          }`}
+                          onClick={() => toggleSelectRow(item.id!)}
+                        >
+                          <td
+                            className="px-4 py-3.5 text-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelectRow(item.id!)}
+                              className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 cursor-pointer"
+                            />
+                          </td>
+
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400 shrink-0">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                </svg>
+                              </div>
+                              <span className="font-semibold text-gray-900 dark:text-white">
+                                {item.name}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-3.5">
+                            <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                              {item.code || "-"}
+                            </span>
+                          </td>
+
+                          <td
+                            className="px-4 py-3.5 text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleEdit(item.id!)}
+                                className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/50 rounded-lg transition-colors cursor-pointer"
+                                title="Chỉnh sửa"
+                              >
+                                <PencilIcon fontSize={16} />
+                              </button>
+                              <button
+                                disabled={deleteMutation.isPending}
+                                onClick={() => handleDelete(item.id!)}
+                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors cursor-pointer"
+                                title="Xóa"
+                              >
+                                <TrashBinIcon fontSize={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-16 text-center text-sm text-gray-500">
+                        <div className="flex flex-col items-center gap-2">
+                          <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                          </svg>
+                          <span>Không tìm thấy nhóm danh mục nào.</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* KANBAN VIEW */
+            <div className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-950/50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {items.length ? (
+                  items.map((item) => {
+                    const isSelected = selectedIds.has(item.id!);
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => toggleSelectRow(item.id!)}
+                        className={`relative p-4 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between ${
+                          isSelected
+                            ? "bg-cyan-50/90 dark:bg-cyan-950/50 border-cyan-300 dark:border-cyan-700 shadow-sm"
+                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:shadow-md hover:border-brand-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectRow(item.id!)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 cursor-pointer"
+                          />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/40">
+                            <span>Danh mục</span>
+                          </span>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-md bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                              </svg>
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                              {item.name}
+                            </h3>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="font-mono font-semibold px-1.5 py-0.2 rounded bg-gray-100 dark:bg-gray-800">
+                              {item.code}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div
+                          className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => handleEdit(item.id!)}
+                            className="px-2.5 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <PencilIcon fontSize={14} />
+                            <span>Sửa</span>
+                          </button>
+                          <button
+                            disabled={deleteMutation.isPending}
+                            onClick={() => handleDelete(item.id!)}
+                            className="px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <TrashBinIcon fontSize={14} />
+                            <span>Xóa</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-full py-16 text-center text-sm text-gray-500">
+                    Không tìm thấy nhóm danh mục nào phù hợp.
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        }
+      </AimsBasePageLayout>
+
       <AssetCategoryModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}

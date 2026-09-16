@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { digitaldomainsslSchema } from "./digitaldomainssl.schema";
+import { digitalinternetlineSchema } from "./digitalinternetline.schema";
+import { digitalsoftwarelicenseSchema } from "./digitalsoftwarelicense.schema";
+import { digitalsaasaccountSchema } from "./digitalsaasaccount.schema";
 
 export const digitalassetSchema = z
   .object({
@@ -42,6 +46,12 @@ export const digitalassetSchema = z
     // Dùng z.date() thay cho z.coerce.date()
     startdate: z.date({ message: "Vui lòng chọn ngày mua / bắt đầu." }),
     expirydate: z.date({ message: "Vui lòng chọn ngày hết hạn." }),
+
+    // 2. Nhóm chi tiết con - Luôn để .optional().nullable()
+    domaindetail: digitaldomainsslSchema.optional().nullable(),
+    internetlinedetail: digitalinternetlineSchema.optional().nullable(),
+    softwarelicensedetail: digitalsoftwarelicenseSchema.optional().nullable(),
+    saasdetail: digitalsaasaccountSchema.optional().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.startdate && data.expirydate) {

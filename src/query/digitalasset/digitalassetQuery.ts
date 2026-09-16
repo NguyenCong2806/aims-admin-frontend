@@ -19,7 +19,16 @@ export const digitalAssetKeys = {
   details: () => [...digitalAssetKeys.all, "detail"] as const,
   detail: (id: number | null) => [...digitalAssetKeys.details(), id] as const,
 };
+export function useAddDigitalAsset() {
+  const queryClient = useQueryClient();
 
+  return useMutation({
+    mutationFn: (params: CreateDigitalAsset) => services.digitalAsset.adddigitalasset(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: digitalAssetKeys.all });
+    },
+  });
+}
 export function useDigitalAssetAll() {
   return useQuery({
     queryKey: digitalAssetKeys.all,
