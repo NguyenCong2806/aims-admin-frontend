@@ -239,7 +239,7 @@ const PositionsPage: React.FC = () => {
                           </td>
 
                           <td className="px-4 py-3.5 text-gray-600 dark:text-gray-400">
-                            {item.department?.name ?? departmentName(item.departmentId)}
+                            {(item as any).department?.name ?? departmentName(item.departmentId)}
                           </td>
 
                           <td
@@ -333,7 +333,7 @@ const PositionsPage: React.FC = () => {
                             </span>
                             <span>•</span>
                             <span className="truncate">
-                              {item.department?.name ?? departmentName(item.departmentId)}
+                              {(item as any).department?.name ?? departmentName(item.departmentId)}
                             </span>
                           </div>
                         </div>

@@ -12,8 +12,8 @@ interface ModuleQuickLink {
 
 const quickModules: ModuleQuickLink[] = [
   { name: "Tài nguyên số", path: "/tai-nguyen-so", category: "Tài sản IT" },
-  { name: "Tạo mới tài nguyên", path: "/tai-nguyen-so/tao-moi", category: "Tài sản IT" },
-  { name: "Thiết bị phần cứng", path: "/form-elements", category: "Tài sản IT" },
+  { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", category: "Tài sản IT" },
+  { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", category: "Tài sản IT" },
   { name: "Phòng ban", path: "/phong-ban", category: "Tổ chức" },
   { name: "Chức vụ", path: "/chuc-vu", category: "Tổ chức" },
   { name: "Địa điểm", path: "/dia-diem", category: "Tổ chức" },

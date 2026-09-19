@@ -140,7 +140,7 @@ export default function AppLauncherHome() {
     {
       id: "hardware",
       name: "Thiết bị phần cứng",
-      path: "/form-elements",
+      path: "/thiet-bi-phan-cung",
       category: "asset",
       description: "Máy chủ, laptop, máy trạm và linh kiện IT",
       renderIcon: () => (
@@ -184,7 +184,7 @@ export default function AppLauncherHome() {
     {
       id: "workstation-monitoring",
       name: "Giám sát máy trạm",
-      path: "/form-elements",
+      path: "/giam-sat-may-tram",
       category: "asset",
       description: "Theo dõi tình trạng hoạt động các máy trạm",
       renderIcon: () => (
@@ -824,7 +824,7 @@ export default function AppLauncherHome() {
     {
       id: "reports",
       name: "Báo cáo & Thống kê",
-      path: "/line-chart",
+      path: "/bao-cao-thong-ke",
       category: "operation",
       badge: "Xu hướng",
       badgeColor: "bg-purple-600",

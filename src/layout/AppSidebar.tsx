@@ -35,8 +35,8 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     subItems: 
     [
-      { name: "Thiết bị phần cứng", path: "/form-elements", pro: false },
-      { name: "Giám sát máy trạm", path: "/form-elements", pro: false },
+      { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", pro: false },
+      { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", pro: false },
       { name: "Tài nguyên số", path: "/tai-nguyen-so", pro: false },
       { name: "Tạo mới tài nguyên số", path: "/tai-nguyen-so/tao-moi", pro: false },
       { name: "Mẫu", path: "/form-elements", pro: false },
@@ -55,7 +55,7 @@ const navItems: NavItem[] = [
     icon: <PieChartIcon />,
     subItems: 
     [
-      { name: "Báo cáo", path: "/basic-tables", pro: false },
+      { name: "Báo cáo & Phân tích", path: "/bao-cao-thong-ke", pro: false },
       { name: "Nhật ký hệ thống", path: "/basic-tables", pro: false }
     ],
   },

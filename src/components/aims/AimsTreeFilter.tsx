@@ -4,7 +4,7 @@ import { useLocation } from "react-router";
 export interface TreeFilterItem {
   id: string | number;
   label: string;
-  count?: number;
+  count?: number | string;
   icon?: React.ReactNode;
   children?: TreeFilterItem[];
 }

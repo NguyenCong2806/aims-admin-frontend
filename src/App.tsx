@@ -29,6 +29,9 @@ import SuppliersPage from "./pages/Lookups/supplier/SuppliersPage";
 import UnitsPage from "./pages/Lookups/unit/UnitsPage";
 import DigitalAssetsPage from "./pages/Digital/digitalassets/DigitalAssetsPages";
 import CreateDigitalAssetsPage from "./pages/Digital/digitalassets/CreateDigitalAssetsPage";
+import WorkstationMonitoringPage from "./pages/Monitoring/WorkstationMonitoringPage";
+import HardwareAssetsPage from "./pages/Hardware/HardwareAssetsPage";
+import AnalyticsReportsPage from "./pages/Reports/AnalyticsReportsPage";
 
 export default function App() {
   return (
@@ -43,6 +46,10 @@ export default function App() {
 
             {/* Others Page */}
             <Route path="/blank" element={<Blank />} />
+
+            {/* IT Asset Management */}
+            <Route path="/thiet-bi-phan-cung" element={<HardwareAssetsPage />} />
+            <Route path="/giam-sat-may-tram" element={<WorkstationMonitoringPage />} />
 
             {/* Forms */}
             <Route path="/tai-nguyen-so" element={<DigitalAssetsPage />} />
@@ -70,8 +77,9 @@ export default function App() {
             <Route path="/images" element={<Images />} />
             <Route path="/videos" element={<Videos />} />
 
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
+            {/* Reports & Charts */}
+            <Route path="/bao-cao-thong-ke" element={<AnalyticsReportsPage />} />
+            <Route path="/line-chart" element={<AnalyticsReportsPage />} />
             <Route path="/bar-chart" element={<BarChart />} />
           </Route>
 

@@ -147,11 +147,11 @@ const DepartmentsPage: React.FC = () => {
       const children = departments.filter((c) => c.parentId === root.id);
       return {
         id: `dept_${root.id}`,
-        label: root.name,
+        label: root.name || "Chưa đặt tên",
         count: children.length + 1,
         children: children.map((ch) => ({
           id: `dept_${ch.id}`,
-          label: ch.name,
+          label: ch.name || "Chưa đặt tên",
           count: 1,
         })),
       };

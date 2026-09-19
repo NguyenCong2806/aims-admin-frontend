@@ -144,11 +144,11 @@ const LocationsPage: React.FC = () => {
       const children = locations.filter((c) => c.parentId === root.id);
       return {
         id: `loc_${root.id}`,
-        label: root.name,
+        label: root.name || "Chưa đặt tên",
         count: children.length + 1,
         children: children.map((ch) => ({
           id: `loc_${ch.id}`,
-          label: ch.name,
+          label: ch.name || "Chưa đặt tên",
           count: 1,
         })),
       };
