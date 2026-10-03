@@ -1,0 +1,400 @@
+import React, { useState } from "react";
+import { toast } from "sonner";
+import { PencilIcon, TrashBinIcon } from "../../../icons";
+import { PaginationFilter } from "../../../models/base/PaginationFilter";
+import { createsupplier, supplier, updatesupplier } from "../../../models/Lookup/supplier/supplier";
+import { SupplierFormData } from "../../../validations/supplier.schema";
+import SupplierModal from "./SupplierModal";
+import {
+  useCreateSupplier,
+  useRemoveSupplier,
+  useSupplierById,
+  useSupplierParams,
+  useUpdateSupplier,
+} from "../../../query/suppliers/suppliersQuery";
+import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+
+const SuppliersPage: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [pageSize] = useState(10);
+  const [keyword, setKeyword] = useState("");
+  const [supplierId, setSupplierId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const filter: PaginationFilter = {
+    MaxPageSize: 100,
+    PageIndex: pageIndex,
+    PageSize: pageSize,
+    Keyword: keyword,
+  };
+
+  const { data, isPending, isFetching, isError, error } = useSupplierParams(filter);
+  const { data: detail, isLoading: isLoadingDetail } = useSupplierById(supplierId);
+
+  const createMutation = useCreateSupplier();
+  const updateMutation = useUpdateSupplier();
+  const deleteMutation = useRemoveSupplier();
+
+  const items = (data?.items ?? []) as supplier[];
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSupplierId(null);
+  };
+
+  const submit = async (formData: SupplierFormData) => {
+    try {
+      if (supplierId === null) {
+        await createMutation.mutateAsync({ id: 0, ...formData } as createsupplier);
+        toast.success("Thêm mới nhà cung cấp thành công!");
+      } else {
+        await updateMutation.mutateAsync({
+          id: supplierId,
+          params: { id: supplierId, ...formData } as updatesupplier,
+        });
+        toast.success("Cập nhật nhà cung cấp thành công!");
+      }
+      closeModal();
+    } catch (err) {
+      toast.error(
+        `Lưu thông tin thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra."}`
+      );
+    }
+  };
+
+  const remove = async (id: number) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast.success("Xóa nhà cung cấp thành công!");
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      if (items.length === 1 && pageIndex > 1) {
+        setPageIndex((current) => current - 1);
+      }
+    } catch (err) {
+      toast.error(
+        `Xóa thất bại: ${err instanceof Error ? err.message : "Không thể xóa nhà cung cấp."}`
+      );
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    try {
+      for (const id of selectedIds) {
+        await deleteMutation.mutateAsync(id);
+      }
+      toast.success(`Đã xóa ${selectedIds.size} nhà cung cấp thành công!`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Xảy ra lỗi trong quá trình xóa hàng loạt.");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === items.length && items.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map((it) => it.id!).filter(Boolean)));
+    }
+  };
+
+  const toggleSelectRow = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const isAllSelected = items.length > 0 && items.every((it) => selectedIds.has(it.id!));
+
+  return (
+    <>
+      <AimsBasePageLayout
+        moduleName="Danh mục tài sản"
+        moduleIcon={
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+        }
+        moduleTabs={[
+          { name: "Hãng sản xuất", path: "/hang-san-xuat" },
+          { name: "Loại tài sản", path: "/loai-tai-san" },
+          { name: "Nhóm danh mục", path: "/danh-muc-san-pham" },
+          { name: "Đơn vị tính", path: "/don-vi" },
+          { name: "Trạng thái", path: "/trang-thai-tai-san" },
+          { name: "Nhà cung cấp", path: "/nha-cung-cap", badge: items.length },
+        ]}
+        title="Nhà cung cấp"
+        subtitle="Quản lý đối tác cung ứng, liên hệ & thông tin thuế"
+        totalRecords={data?.pagination?.totalRecords ?? 0}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        onPageChange={setPageIndex}
+        searchTerm={keyword}
+        onSearchChange={(val) => {
+          setKeyword(val);
+          setPageIndex(1);
+        }}
+        onAddNew={() => {
+          setSupplierId(null);
+          setIsModalOpen(true);
+        }}
+        addNewLabel="Thêm mới"
+        onExportExcel={() => toast.success("Đang xuất dữ liệu nhà cung cấp ra file Excel...")}
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onBatchDelete={handleBatchDelete}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        isFetching={isFetching}
+        isLoading={isPending}
+        loadingMessage="Đang tải danh sách nhà cung cấp..."
+        error={isError ? (error instanceof Error ? error.message : "Không thể tải danh sách nhà cung cấp.") : null}
+      >
+        {(currentViewMode) =>
+          currentViewMode === "list" ? (
+            /* LIST VIEW */
+            <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 bg-gray-50/90 dark:bg-gray-800/90 backdrop-blur-xs z-10 border-b border-gray-200 dark:border-gray-800">
+                  <tr className="text-xs font-semibold text-gray-600 dark:text-gray-300 select-none">
+                    <th className="w-12 px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 cursor-pointer"
+                        title="Chọn tất cả"
+                      />
+                    </th>
+                    <th className="px-4 py-3">Nhà cung cấp</th>
+                    <th className="px-4 py-3">Mã</th>
+                    <th className="px-4 py-3">Mã số thuế</th>
+                    <th className="px-4 py-3">Người liên hệ</th>
+                    <th className="px-4 py-3">Điện thoại</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs sm:text-sm">
+                  {items.length ? (
+                    items.map((item) => {
+                      const isSelected = selectedIds.has(item.id!);
+                      return (
+                        <tr
+                          key={item.id}
+                          className={`transition-colors group cursor-pointer ${
+                            isSelected
+                              ? "bg-cyan-50/80 dark:bg-cyan-950/40 font-medium text-cyan-950 dark:text-cyan-100"
+                              : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300"
+                          }`}
+                          onClick={() => toggleSelectRow(item.id!)}
+                        >
+                          <td
+                            className="px-4 py-3.5 text-center"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelectRow(item.id!)}
+                              className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 cursor-pointer"
+                            />
+                          </td>
+
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 shrink-0">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                              </div>
+                              <span className="font-semibold text-gray-900 dark:text-white">
+                                {item.name}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-3.5">
+                            <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                              {item.code || "-"}
+                            </span>
+                          </td>
+
+                          <td className="px-4 py-3.5 text-gray-600 dark:text-gray-400">
+                            {item.taxCode || "-"}
+                          </td>
+
+                          <td className="px-4 py-3.5 text-gray-700 dark:text-gray-300">
+                            {item.contactPerson || "-"}
+                          </td>
+
+                          <td className="px-4 py-3.5 text-gray-600 dark:text-gray-400">
+                            {item.phone || "-"}
+                          </td>
+
+                          <td className="px-4 py-3.5 text-gray-600 dark:text-gray-400">
+                            {item.email || "-"}
+                          </td>
+
+                          <td
+                            className="px-4 py-3.5 text-right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSupplierId(item.id!);
+                                  setIsModalOpen(true);
+                                }}
+                                className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/50 rounded-lg transition-colors cursor-pointer"
+                                title="Chỉnh sửa"
+                              >
+                                <PencilIcon fontSize={16} />
+                              </button>
+                              <button
+                                disabled={deleteMutation.isPending}
+                                onClick={() => remove(item.id!)}
+                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors cursor-pointer"
+                                title="Xóa"
+                              >
+                                <TrashBinIcon fontSize={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-16 text-center text-sm text-gray-500">
+                        <div className="flex flex-col items-center gap-2">
+                          <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span>Không tìm thấy nhà cung cấp nào.</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* KANBAN VIEW */
+            <div className="flex-1 overflow-auto p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-950/50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {items.length ? (
+                  items.map((item) => {
+                    const isSelected = selectedIds.has(item.id!);
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => toggleSelectRow(item.id!)}
+                        className={`relative p-4 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between ${
+                          isSelected
+                            ? "bg-cyan-50/90 dark:bg-cyan-950/50 border-cyan-300 dark:border-cyan-700 shadow-sm"
+                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:shadow-md hover:border-brand-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectRow(item.id!)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 cursor-pointer"
+                          />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
+                            <span>NCC</span>
+                          </span>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                              {item.name}
+                            </h3>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="font-mono font-semibold px-1.5 py-0.2 rounded bg-gray-100 dark:bg-gray-800">
+                              {item.code}
+                            </span>
+                            {item.taxCode && (
+                              <span>MST: {item.taxCode}</span>
+                            )}
+                          </div>
+
+                          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5 pt-1">
+                            {item.contactPerson && <p>LH: {item.contactPerson}</p>}
+                            {item.phone && <p>ĐT: {item.phone}</p>}
+                            {item.email && <p className="truncate">Email: {item.email}</p>}
+                          </div>
+                        </div>
+
+                        <div
+                          className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => {
+                              setSupplierId(item.id!);
+                              setIsModalOpen(true);
+                            }}
+                            className="px-2.5 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <PencilIcon fontSize={14} />
+                            <span>Sửa</span>
+                          </button>
+                          <button
+                            disabled={deleteMutation.isPending}
+                            onClick={() => remove(item.id!)}
+                            className="px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <TrashBinIcon fontSize={14} />
+                            <span>Xóa</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-full py-16 text-center text-sm text-gray-500">
+                    Không tìm thấy nhà cung cấp nào.
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        }
+      </AimsBasePageLayout>
+
+      <SupplierModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        supplier={supplierId !== null ? detail?.data ?? null : null}
+        isLoading={isLoadingDetail || isSubmitting}
+        onSubmit={submit}
+      />
+    </>
+  );
+};
+
+export default SuppliersPage;

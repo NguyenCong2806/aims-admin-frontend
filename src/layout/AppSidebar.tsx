@@ -35,9 +35,13 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     subItems: 
     [
-      { name: "Thiết bị phần cứng", path: "/form-elements", pro: false },
-      { name: "Giám sát máy trạm", path: "/form-elements", pro: false },
-      { name: "Tài sản số & Phần mềm", path: "/form-elements", pro: false },
+      { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", pro: false },
+      { name: "Thêm mới thiết bị", path: "/thiet-bi-phan-cung/tao-moi", pro: false },
+      { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", pro: false },
+      { name: "Phần mềm theo máy", path: "/giam-sat-may-tram/phan-mem", pro: false },
+      { name: "Tài nguyên số", path: "/tai-nguyen-so", pro: false },
+      { name: "Tạo mới tài nguyên số", path: "/tai-nguyen-so/tao-moi", pro: false },
+      { name: "Mẫu", path: "/form-elements", pro: false },
     ],
   },
   {
@@ -45,7 +49,7 @@ const navItems: NavItem[] = [
     icon: <DocsIcon />,
     subItems: [
       { name: "Hợp đồng & Bảo hành", path: "/blank", pro: false },
-      { name: "Nhà cung cấp", path: "/error-404", pro: false },
+      { name: "Nhà cung cấp", path: "/nha-cung-cap", pro: false },
     ],
   },
   {
@@ -53,8 +57,8 @@ const navItems: NavItem[] = [
     icon: <PieChartIcon />,
     subItems: 
     [
-      { name: "Báo cáo", path: "/basic-tables", pro: false },
-      { name: "Nhật ký hệ thống", path: "/basic-tables", pro: false }
+      { name: "Báo cáo & Phân tích", path: "/bao-cao-thong-ke", pro: false },
+      { name: "Nhật ký hệ thống", path: "/nhat-ky-he-thong", pro: false }
     ],
   },
 ];
@@ -64,43 +68,45 @@ const othersItems: NavItem[] = [
     icon: <GroupIcon />,
     name: "Tổ chức & Vị trí",
     subItems: [
-      { name: "Phòng ban", path: "/alerts", pro: false },
-      { name: "Chi nhánh", path: "/avatars", pro: false },
-      { name: "Khu vực lắp đặt", path: "/avatars", pro: false },
+      { name: "Phòng ban", path: "/phong-ban", pro: false },
+      { name: "Chức vụ", path: "/chuc-vu", pro: false },
+      { name: "Địa điểm", path: "/dia-diem", pro: false },
+      { name: "Trung tâm chi phí", path: "/trung-tam-chi-phi", pro: false },
     ],
   },
   {
     icon: <BoxCubeIcon />,
     name: "Tài sản & Phần cứng",
     subItems: [
-      { name: "Nhóm / Danh mục tài sản", path: "/alerts", pro: false },
-      { name: "Hãng sản xuất", path: "/brands", pro: false },
-      { name: "Model thiết bị", path: "/avatars", pro: false },
-      { name: "Trạng thái", path: "/avatars", pro: false },
+      { name: "Danh mục sản phẩm", path: "/danh-muc-san-pham", pro: false },
+      { name: "Hãng sản xuất", path: "/hang-san-xuat", pro: false },
+      { name: "Loại tài sản", path: "/loai-tai-san", pro: false },
+      { name: "Trạng thái tài sản", path: "/trang-thai-tai-san", pro: false },
     ],
   },
   {
     icon: <PlugInIcon />,
     name: "Phần mềm & Giấy phép",
     subItems: [
-      { name: "Loại bản quyền", path: "/alerts", pro: false },
-      { name: "Nhóm phần mềm", path: "/avatars", pro: false },
+      { name: "Loại giấy phép", path: "/loai-giay-phep", pro: false },
     ],
   },
   {
     icon: <TaskIcon />,
     name: "Vận hành & Bảo trì",
     subItems: [
-      { name: "Hình thức bảo tr", path: "/alerts", pro: false },
-      { name: "Nhà cung cấp", path: "/avatars", pro: false },
+      { name: "Lịch bảo trì", path: "/lich-bao-tri", pro: false },
+      { name: "Loại bảo trì", path: "/loai-bao-tri", pro: false },
+      { name: "Đơn vị", path: "/don-vi", pro: false },
     ],
   },
   {
     icon: <UserIcon />,
     name: "Người dùng",
     subItems: [
-      { name: "Tài khoản", path: "/alerts", pro: false },
-      { name: "Phân quyền", path: "/avatars", pro: false },
+      { name: "Tài khoản", path: "/tai-khoan", pro: false },
+      { name: "Phân quyền", path: "/phan-quyen", pro: false },
+      { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", pro: false },
     ],
   },
   {
