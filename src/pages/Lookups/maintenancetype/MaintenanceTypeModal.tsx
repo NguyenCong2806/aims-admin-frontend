@@ -1,10 +1,15 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Button from "../../../components/ui/button/Button";
 import { Modal } from "../../../components/ui/modal";
 import { maintenancetype } from "../../../models/Lookup/maintenancetype/maintenancetype";
 import { MaintenanceTypeFormData, maintenancetypeSchema } from "../../../validations/maintenancetype.schema";
+import {
+  FIELD_LABEL_CLASS,
+  getInputClass,
+  LookupModalLoading,
+  LookupModalFooter,
+} from "../lookupModalHelper";
 
 interface MaintenanceTypeModalProps {
   isOpen: boolean;
@@ -14,29 +19,124 @@ interface MaintenanceTypeModalProps {
   onSubmit?: (data: MaintenanceTypeFormData) => void | Promise<void>;
 }
 
-const MaintenanceTypeModal: React.FC<MaintenanceTypeModalProps> = ({ isOpen, onClose, maintenanceType, isLoading = false, onSubmit }) => {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<MaintenanceTypeFormData>({
+const MaintenanceTypeModal: React.FC<MaintenanceTypeModalProps> = ({
+  isOpen,
+  onClose,
+  maintenanceType,
+  isLoading = false,
+  onSubmit,
+}) => {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<MaintenanceTypeFormData>({
     resolver: zodResolver(maintenancetypeSchema),
-    defaultValues: { name: "", code: "", isPreventive: false },
+    defaultValues: {
+      name: "",
+      code: "",
+      isPreventive: false,
+    },
   });
-  const fieldClass = "w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white";
 
   useEffect(() => {
     if (!isOpen) return;
-    reset(maintenanceType ? { name: maintenanceType.name ?? "", code: maintenanceType.code ?? "", isPreventive: maintenanceType.isPreventive ?? false } : { name: "", code: "", isPreventive: false });
+    reset(
+      maintenanceType
+        ? {
+            name: maintenanceType.name ?? "",
+            code: maintenanceType.code ?? "",
+            isPreventive: maintenanceType.isPreventive ?? false,
+          }
+        : {
+            name: "",
+            code: "",
+            isPreventive: false,
+          }
+    );
   }, [isOpen, maintenanceType, reset]);
 
   const isEdit = !!maintenanceType;
-  return <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? "Chỉnh sửa loại bảo trì" : "Thêm loại bảo trì"} className="max-w-lg">
-    <form onSubmit={handleSubmit(async (data) => onSubmit?.(data))}>
-      {isLoading && isEdit ? <div className="flex min-h-[180px] items-center justify-center text-sm text-gray-500">Đang tải thông tin...</div> : <div className="space-y-5">
-        <div><label htmlFor="maintenance-type-name" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Tên loại bảo trì *</label><input id="maintenance-type-name" {...register("name")} className={fieldClass} placeholder="Nhập tên loại bảo trì" />{errors.name && <p className="mt-1.5 text-sm text-red-500">{errors.name.message}</p>}</div>
-        <div><label htmlFor="maintenance-type-code" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Mã loại bảo trì *</label><input id="maintenance-type-code" {...register("code")} className={fieldClass} placeholder="Nhập mã loại bảo trì" />{errors.code && <p className="mt-1.5 text-sm text-red-500">{errors.code.message}</p>}</div>
-        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300"><input type="checkbox" {...register("isPreventive")} className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500" />Bảo trì dự phòng/định kỳ</label>
-        <div className="flex justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800"><Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Hủy</Button><Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Đang lưu..." : isEdit ? "Cập nhật" : "Thêm mới"}</Button></div>
-      </div>}
-    </form>
-  </Modal>;
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEdit ? "Chỉnh sửa loại bảo trì" : "Thêm mới loại bảo trì"}
+      className="max-w-lg"
+    >
+      <form onSubmit={handleSubmit(async (data) => onSubmit?.(data))}>
+        {isLoading && isEdit ? (
+          <LookupModalLoading />
+        ) : (
+          <div className="space-y-4">
+            {/* Tên loại bảo trì */}
+            <div>
+              <label htmlFor="maintenance-type-name" className={FIELD_LABEL_CLASS}>
+                Tên loại bảo trì <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                id="maintenance-type-name"
+                type="text"
+                placeholder="VD: Bảo dưỡng định kỳ, Sửa chữa sự cố, Thay thế linh kiện..."
+                {...register("name")}
+                className={getInputClass(!!errors.name)}
+              />
+              {errors.name && (
+                <p className="mt-1 text-[11px] text-red-500 font-medium">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            {/* Mã loại bảo trì */}
+            <div>
+              <label htmlFor="maintenance-type-code" className={FIELD_LABEL_CLASS}>
+                Mã loại bảo trì <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                id="maintenance-type-code"
+                type="text"
+                placeholder="VD: MAINT_PREVENTIVE, MAINT_CORRECTIVE, MAINT_UPGRADE..."
+                {...register("code")}
+                className={getInputClass(!!errors.code, true)}
+              />
+              {errors.code && (
+                <p className="mt-1 text-[11px] text-red-500 font-medium">
+                  {errors.code.message}
+                </p>
+              )}
+            </div>
+
+            {/* Bảo trì dự phòng/định kỳ */}
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
+              <div>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Bảo trì dự phòng định kỳ (Preventive Maintenance)
+                </span>
+                <p className="text-[10px] text-gray-400">
+                  Phân loại công việc theo lịch định kỳ thay vì sự cố đột xuất
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                {...register("isPreventive")}
+                className="w-4 h-4 text-indigo-600 rounded"
+              />
+            </div>
+
+            {/* Modal Actions */}
+            <LookupModalFooter
+              onClose={onClose}
+              isSubmitting={isSubmitting}
+              isEdit={isEdit}
+            />
+          </div>
+        )}
+      </form>
+    </Modal>
+  );
 };
 
 export default MaintenanceTypeModal;

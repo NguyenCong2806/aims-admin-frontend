@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import axios from "axios";
 import { toast } from "sonner";
 import PageMeta from "../../components/common/PageMeta";
-import { login } from "../../api/auth.api";
+import { useAuth } from "../../context/AuthContext";
 import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
 
 interface ApiErrorResponse {
@@ -12,6 +12,8 @@ interface ApiErrorResponse {
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { login } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -39,10 +41,15 @@ export default function SignIn() {
       await login({
         username: trimmedUsername,
         password,
+        rememberMe,
       });
 
       toast.success("Đăng nhập thành công! Đang chuyển hướng...");
-      navigate("/", { replace: true });
+
+      // Điều hướng về trang trước đó nếu có tham số redirect
+      const rawRedirect = searchParams.get("redirect");
+      const targetUrl = rawRedirect ? decodeURIComponent(rawRedirect) : "/";
+      navigate(targetUrl, { replace: true });
     } catch (error: unknown) {
       if (axios.isAxiosError<ApiErrorResponse>(error)) {
         const message =
@@ -51,12 +58,12 @@ export default function SignIn() {
         setErrorMessage(message);
         toast.error(message);
       } else {
-        const fallback = "Không thể kết nối đến máy chủ xác thực. Đang mở trang chính...";
-        setErrorMessage(fallback);
-        // Fallback trải nghiệm mượt mà cho người dùng nếu backend chưa bật
-        setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 1200);
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Đăng nhập không thành công. Vui lòng thử lại.";
+        setErrorMessage(message);
+        toast.error(message);
       }
     } finally {
       setIsLoading(false);
@@ -205,26 +212,41 @@ export default function SignIn() {
                 </p>
               </div>
 
+              {/* Security Shield Banner */}
+              <div className="mb-4 p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/40 flex items-center gap-2.5 text-[11px] text-emerald-800 dark:text-emerald-300">
+                <span className="text-base">🛡️</span>
+                <span>
+                  Bảo mật cấp cao: <strong>Access Token In-Memory</strong> & <strong>Refresh Token trong HttpOnly Cookie</strong> (Chống XSS/CSRF).
+                </span>
+              </div>
+
               {/* Quick Demo Chips */}
               <div className="mb-6 p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
                 <div className="text-[11px] font-semibold text-indigo-900 dark:text-indigo-200 mb-2 flex items-center gap-1.5">
                   <span>⚡</span>
-                  <span>Tài khoản mẫu dùng thử nhanh:</span>
+                  <span>Tài khoản mẫu thử nghiệm quyền hạn:</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => handleQuickFill("admin@aims.vn", "Admin@123")}
+                    onClick={() => handleQuickFill("admin", "Admin@123")}
                     className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-700/80 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
                   >
-                    👑 Quản trị viên (Admin)
+                    👑 Super Admin
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleQuickFill("it.manager@aims.vn", "Manager@123")}
+                    onClick={() => handleQuickFill("hoang.it", "HoangIT@123")}
                     className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-700/80 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
                   >
-                    🛠️ IT Helpdesk
+                    🛠️ IT Admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFill("lan.hr", "LanHR@123")}
+                    className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-700/80 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
+                  >
+                    🏢 Trưởng phòng HR
                   </button>
                 </div>
               </div>

@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-query";
 import type { PaginationFilter } from "../../models/base/PaginationFilter";
 import type {
-  DigitalInternetLine,
   CreateDigitalInternetLine,
   UpdateDigitalInternetLine,
 } from "../../models/DigitalAsset/digitalinternetline/digitalinternetline";

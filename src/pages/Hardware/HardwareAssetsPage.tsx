@@ -1,204 +1,17 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../components/aims";
 import PageMeta from "../../components/common/PageMeta";
 import { HardwareAsset } from "../../models/Hardware/hardwareAsset";
-
-// Mock dữ liệu ban đầu thiết bị phần cứng thực tế
-const INITIAL_HARDWARE_ASSETS: HardwareAsset[] = [
-  {
-    id: "h1-0001-4444-9999-111111111111",
-    assetCode: "HW-PC-0021",
-    name: "Máy trạm thiết kế đồ họa & phát triển",
-    model: "TUF Gaming Station B660M",
-    serialNumber: "220501838400192",
-    barcode: "893850100210",
-    categoryId: 1,
-    categoryName: "Máy trạm để bàn (Workstation)",
-    statusId: 1,
-    statusName: "Đang sử dụng",
-    brandId: 1,
-    brandName: "ASUS",
-    supplierId: 1,
-    supplierName: "Công ty Cổ phần Tin học Phong Vũ",
-    locationId: 1,
-    locationName: "Tòa nhà A - Tầng 4 (Phòng Dev)",
-    departmentId: 1,
-    departmentName: "Phòng Công nghệ & IT",
-    purchasePrice: 28500000,
-    purchaseDate: "2023-08-15T00:00:00Z",
-    effectiveDate: "2023-08-18T00:00:00Z",
-    warrantyMonths: 36,
-    description: "Cấu hình Intel Core i7-12700, 32GB RAM, 1TB NVMe, RTX 3060 12GB phục vụ dự án AIMS.",
-    createdAt: "2023-08-15T08:30:00Z",
-    updatedAt: "2024-01-10T14:20:00Z",
-  },
-  {
-    id: "h1-0002-4444-9999-222222222222",
-    assetCode: "HW-PC-0088",
-    name: "Máy vi tính văn phòng nhân sự",
-    model: "OptiPlex 7000 Micro Form",
-    serialNumber: "9FC4KL3",
-    barcode: "893850100880",
-    categoryId: 1,
-    categoryName: "Máy trạm để bàn (Workstation)",
-    statusId: 1,
-    statusName: "Đang sử dụng",
-    brandId: 2,
-    brandName: "Dell Inc.",
-    supplierId: 2,
-    supplierName: "Công ty TNHH Thiết bị Sao Mai",
-    locationId: 1,
-    locationName: "Tòa nhà A - Tầng 2 (Phòng HCNS)",
-    departmentId: 2,
-    departmentName: "Phòng Hành chính - Nhân sự",
-    purchasePrice: 16800000,
-    purchaseDate: "2023-11-20T00:00:00Z",
-    effectiveDate: "2023-11-22T00:00:00Z",
-    warrantyMonths: 36,
-    description: "Máy tính micro gọn nhẹ trang bị Core i5-12500, 16GB RAM cho bộ phận tuyển dụng và nhân sự.",
-    createdAt: "2023-11-20T09:00:00Z",
-    updatedAt: "2024-02-15T11:00:00Z",
-  },
-  {
-    id: "h1-0003-4444-9999-333333333333",
-    assetCode: "HW-LAP-0015",
-    name: "Laptop doanh nhân ThinkPad T14",
-    model: "ThinkPad T14 Gen 3 (21CF)",
-    serialNumber: "PF3G9K12",
-    barcode: "893850100155",
-    categoryId: 2,
-    categoryName: "Máy tính xách tay (Laptop)",
-    statusId: 1,
-    statusName: "Đang sử dụng",
-    brandId: 3,
-    brandName: "Lenovo",
-    supplierId: 1,
-    supplierName: "Công ty Cổ phần Tin học Phong Vũ",
-    locationId: 1,
-    locationName: "Tòa nhà A - Tầng 4",
-    departmentId: 1,
-    departmentName: "Phòng Công nghệ & IT",
-    purchasePrice: 32000000,
-    purchaseDate: "2023-05-10T00:00:00Z",
-    effectiveDate: "2023-05-12T00:00:00Z",
-    warrantyMonths: 36,
-    description: "Cấp phát cho Trưởng nhóm phát triển phần mềm di động, AMD Ryzen 7 PRO 6850U, 32GB RAM.",
-    createdAt: "2023-05-10T10:15:00Z",
-    updatedAt: "2024-03-01T16:45:00Z",
-  },
-  {
-    id: "h1-0004-4444-9999-444444444444",
-    assetCode: "HW-MON-0042",
-    name: "Màn hình đồ họa UltraSharp 27 inch 4K",
-    model: "Dell UltraSharp U2723QE",
-    serialNumber: "CN-0F142D-74445",
-    barcode: "893850100421",
-    categoryId: 3,
-    categoryName: "Màn hình hiển thị (Monitor)",
-    statusId: 2,
-    statusName: "Sẵn sàng cấp phát",
-    brandId: 2,
-    brandName: "Dell Inc.",
-    supplierId: 3,
-    supplierName: "Hanoicomputer (HACOM)",
-    locationId: 2,
-    locationName: "Kho Tổng IT - Tầng hầm B1",
-    departmentId: null,
-    departmentName: "Chưa phân bổ",
-    purchasePrice: 12500000,
-    purchaseDate: "2024-01-05T00:00:00Z",
-    effectiveDate: "2024-01-08T00:00:00Z",
-    warrantyMonths: 36,
-    description: "Màn hình IPS Black 4K USB-C Hub dự phòng cho khối thiết kế UI/UX.",
-    createdAt: "2024-01-05T14:00:00Z",
-    updatedAt: "2024-01-08T09:30:00Z",
-  },
-  {
-    id: "h1-0005-4444-9999-555555555555",
-    assetCode: "HW-SRV-0002",
-    name: "Máy chủ lưu trữ & ảo hóa ProLiant",
-    model: "HPE ProLiant DL380 Gen10 Plus",
-    serialNumber: "SGH219V47K",
-    barcode: "893850100029",
-    categoryId: 4,
-    categoryName: "Máy chủ & Hạ tầng mạng (Server)",
-    statusId: 1,
-    statusName: "Đang sử dụng",
-    brandId: 4,
-    brandName: "HP Inc. (HPE)",
-    supplierId: 4,
-    supplierName: "Tập đoàn Công nghệ CMC",
-    locationId: 3,
-    locationName: "Phòng Data Center (DC-RACK-03)",
-    departmentId: 1,
-    departmentName: "Phòng Công nghệ & IT",
-    purchasePrice: 145000000,
-    purchaseDate: "2022-10-12T00:00:00Z",
-    effectiveDate: "2022-10-20T00:00:00Z",
-    warrantyMonths: 60,
-    description: "Dual Intel Xeon Silver 4314, 128GB ECC RAM, 8x 1.92TB SSD SAS RAID-10 chạy cụm ảo hóa Proxmox.",
-    createdAt: "2022-10-12T08:00:00Z",
-    updatedAt: "2023-12-20T17:00:00Z",
-  },
-  {
-    id: "h1-0006-4444-9999-666666666666",
-    assetCode: "HW-PRN-0005",
-    name: "Máy in Laser đa năng đen trắng",
-    model: "HP LaserJet Pro MFP M428fdw",
-    serialNumber: "VNB3K19248",
-    barcode: "893850100055",
-    categoryId: 5,
-    categoryName: "Máy in & Thiết bị số hóa (Printer)",
-    statusId: 3,
-    statusName: "Đang bảo trì / Sửa chữa",
-    brandId: 4,
-    brandName: "HP Inc.",
-    supplierId: 2,
-    supplierName: "Công ty TNHH Thiết bị Sao Mai",
-    locationId: 1,
-    locationName: "Tòa nhà A - Tầng 3 (Kế toán)",
-    departmentId: 3,
-    departmentName: "Phòng Kế toán - Tài chính",
-    purchasePrice: 9800000,
-    purchaseDate: "2021-04-10T00:00:00Z",
-    effectiveDate: "2021-04-12T00:00:00Z",
-    warrantyMonths: 24,
-    description: "Máy in đa chức năng (In, Scan, Copy, Fax qua WiFi). Đang gửi hãng thay cụm sấy (Fuser).",
-    createdAt: "2021-04-10T09:00:00Z",
-    updatedAt: "2024-03-12T10:15:00Z",
-  },
-  {
-    id: "h1-0007-4444-9999-777777777777",
-    assetCode: "HW-CAM-0012",
-    name: "Camera an ninh AI giám sát hành lang",
-    model: "Hikvision DS-2CD2143G2-I",
-    serialNumber: "D92847192",
-    barcode: "893850100128",
-    categoryId: 6,
-    categoryName: "Thiết bị an ninh & Giám sát (Security)",
-    statusId: 1,
-    statusName: "Đang sử dụng",
-    brandId: 5,
-    brandName: "Hikvision",
-    supplierId: 3,
-    supplierName: "Hanoicomputer (HACOM)",
-    locationId: 1,
-    locationName: "Hành lang Tầng 2 & 3",
-    departmentId: 2,
-    departmentName: "Phòng Hành chính - Nhân sự",
-    purchasePrice: 2450000,
-    purchaseDate: "2023-02-18T00:00:00Z",
-    effectiveDate: "2023-02-20T00:00:00Z",
-    warrantyMonths: 24,
-    description: "Camera IP hồng ngoại 4MP AcuSense nhận diện người & phương tiện kết nối NVR tập trung.",
-    createdAt: "2023-02-18T15:30:00Z",
-    updatedAt: "2023-06-05T09:00:00Z",
-  },
-];
+import {
+  getStoredHardwareAssets,
+  deleteHardwareAssetById,
+} from "./hardwareAssetStore";
 
 export const HardwareAssetsPage: React.FC = () => {
-  const [items, setItems] = useState<HardwareAsset[]>(INITIAL_HARDWARE_ASSETS);
+  const navigate = useNavigate();
+  const [items, setItems] = useState<HardwareAsset[]>(() => getStoredHardwareAssets());
   const [keyword, setKeyword] = useState<string>("");
   const [pageIndex, setPageIndex] = useState<number>(1);
   const [pageSize] = useState<number>(10);
@@ -206,10 +19,17 @@ export const HardwareAssetsPage: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<string | number | null>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Modal states
+  // Modal xem chi tiết thiết bị
   const [selectedItemForDetail, setSelectedItemForDetail] = useState<HardwareAsset | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [editingItem, setEditingItem] = useState<Partial<HardwareAsset>>({});
+
+  // Lắng nghe cập nhật khi thiết bị được tạo mới hoặc chỉnh sửa từ trang chuyên biệt
+  useEffect(() => {
+    const handleUpdate = () => {
+      setItems(getStoredHardwareAssets());
+    };
+    window.addEventListener("aims_hardware_assets_updated", handleUpdate);
+    return () => window.removeEventListener("aims_hardware_assets_updated", handleUpdate);
+  }, []);
 
   // Helper định dạng tiền tệ VNĐ
   const formatCurrency = (amount?: number | null) => {
@@ -352,58 +172,17 @@ export const HardwareAssetsPage: React.FC = () => {
     return filteredItems.slice(start, start + pageSize);
   }, [filteredItems, pageIndex, pageSize]);
 
-  // Thao tác CRUD
+  // Thao tác điều hướng và CRUD
   const handleAddNew = () => {
-    setEditingItem({
-      id: `hw-${Date.now()}`,
-      assetCode: `HW-PC-${Math.floor(100 + Math.random() * 900)}`,
-      name: "",
-      model: "",
-      serialNumber: "",
-      barcode: "",
-      categoryName: "Máy trạm để bàn (Workstation)",
-      statusName: "Sẵn sàng cấp phát",
-      brandName: "Dell Inc.",
-      locationName: "Kho Tổng IT",
-      departmentName: "Chưa phân bổ",
-      purchasePrice: 15000000,
-      purchaseDate: new Date().toISOString().split("T")[0],
-      effectiveDate: new Date().toISOString().split("T")[0],
-      warrantyMonths: 36,
-      description: "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    setIsEditModalOpen(true);
+    navigate("/thiet-bi-phan-cung/tao-moi");
   };
 
   const handleEdit = (item: HardwareAsset) => {
-    setEditingItem({ ...item });
-    setIsEditModalOpen(true);
-  };
-
-  const handleSaveItem = () => {
-    if (!editingItem.assetCode || !editingItem.name) {
-      toast.error("Vui lòng nhập đầy đủ Mã tài sản và Tên thiết bị!");
-      return;
-    }
-
-    setItems((prev) => {
-      const exists = prev.some((x) => x.id === editingItem.id);
-      if (exists) {
-        return prev.map((x) => (x.id === editingItem.id ? ({ ...x, ...editingItem, updatedAt: new Date().toISOString() } as HardwareAsset) : x));
-      } else {
-        return [{ ...editingItem, updatedAt: new Date().toISOString() } as HardwareAsset, ...prev];
-      }
-    });
-
-    toast.success(`Đã lưu thông tin thiết bị [${editingItem.assetCode}] thành công!`);
-    setIsEditModalOpen(false);
+    navigate(`/thiet-bi-phan-cung/${item.id}/chinh-sua`);
   };
 
   const handleDelete = (id: string, code: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa thiết bị phần cứng [${code}]?`)) return;
-    setItems((prev) => prev.filter((x) => x.id !== id));
+    deleteHardwareAssetById(id);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       next.delete(id);
@@ -414,8 +193,7 @@ export const HardwareAssetsPage: React.FC = () => {
 
   const handleBatchDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} thiết bị phần cứng đã chọn?`)) return;
-    setItems((prev) => prev.filter((x) => !selectedIds.has(x.id)));
+    selectedIds.forEach((id) => deleteHardwareAssetById(id));
     setSelectedIds(new Set());
     toast.success("Đã xóa các thiết bị đã chọn thành công!");
   };
@@ -436,6 +214,7 @@ export const HardwareAssetsPage: React.FC = () => {
         }
         moduleTabs={[
           { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", badge: items.length },
+          { name: "Thêm mới thiết bị", path: "/thiet-bi-phan-cung/tao-moi" },
           { name: "Giám sát máy trạm", path: "/giam-sat-may-tram" },
           { name: "Tài nguyên số", path: "/tai-nguyen-so" },
         ]}
@@ -796,6 +575,39 @@ export const HardwareAssetsPage: React.FC = () => {
                   <p className="text-gray-700 dark:text-gray-300 mt-0.5">{selectedItemForDetail.description}</p>
                 </div>
               )}
+
+              {/* Thông số kỹ thuật chuyên sâu */}
+              {selectedItemForDetail.specs && Object.keys(selectedItemForDetail.specs).length > 0 && (
+                <div className="col-span-2 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 p-3 rounded-xl space-y-1.5">
+                  <span className="font-semibold text-indigo-700 dark:text-indigo-300 block">Thông số kỹ thuật phần cứng:</span>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-700 dark:text-gray-300">
+                    {selectedItemForDetail.specs.cpu && <div><span className="text-gray-400">CPU:</span> {selectedItemForDetail.specs.cpu}</div>}
+                    {selectedItemForDetail.specs.ram && <div><span className="text-gray-400">RAM:</span> {selectedItemForDetail.specs.ram}</div>}
+                    {selectedItemForDetail.specs.storage && <div><span className="text-gray-400">Ổ cứng:</span> {selectedItemForDetail.specs.storage}</div>}
+                    {selectedItemForDetail.specs.gpu && <div><span className="text-gray-400">Card đồ họa:</span> {selectedItemForDetail.specs.gpu}</div>}
+                    {selectedItemForDetail.specs.os && <div><span className="text-gray-400">HĐH:</span> {selectedItemForDetail.specs.os}</div>}
+                    {selectedItemForDetail.specs.screenSize && <div><span className="text-gray-400">Màn hình:</span> {selectedItemForDetail.specs.screenSize}</div>}
+                    {selectedItemForDetail.specs.resolution && <div><span className="text-gray-400">Độ phân giải:</span> {selectedItemForDetail.specs.resolution}</div>}
+                    {selectedItemForDetail.specs.printTechnology && <div><span className="text-gray-400">Công nghệ in:</span> {selectedItemForDetail.specs.printTechnology}</div>}
+                    {selectedItemForDetail.specs.portCount && <div><span className="text-gray-400">Số cổng:</span> {selectedItemForDetail.specs.portCount}</div>}
+                    {selectedItemForDetail.specs.networkSpeed && <div><span className="text-gray-400">Tốc độ mạng:</span> {selectedItemForDetail.specs.networkSpeed}</div>}
+                    {selectedItemForDetail.specs.rackLocation && <div><span className="text-gray-400">Vị trí Rack:</span> {selectedItemForDetail.specs.rackLocation}</div>}
+                    {selectedItemForDetail.specs.powerSupply && <div><span className="text-gray-400">Nguồn điện:</span> {selectedItemForDetail.specs.powerSupply}</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* Thuộc tính mở rộng đặc thù */}
+              {selectedItemForDetail.customAttributes && selectedItemForDetail.customAttributes.length > 0 && (
+                <div className="col-span-2 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 p-3 rounded-xl space-y-1.5">
+                  <span className="font-semibold text-amber-700 dark:text-amber-300 block">Thuộc tính tùy biến bổ sung:</span>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-700 dark:text-gray-300">
+                    {selectedItemForDetail.customAttributes.map((attr, idx) => (
+                      <div key={idx}><span className="text-gray-400">{attr.name}:</span> <span className="font-semibold">{attr.value}</span></div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t dark:border-gray-800">
@@ -814,210 +626,6 @@ export const HardwareAssetsPage: React.FC = () => {
                 className="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
               >
                 Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== 4. MODAL THÊM / SỬA THIẾT BỊ PHẦN CỨNG ==================== */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <span>🖥️</span>
-              <span>{editingItem.id ? "Cập nhật thiết bị phần cứng" : "Thêm mới thiết bị phần cứng"}</span>
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Mã tài sản quản lý nội bộ *
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.assetCode || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, assetCode: e.target.value })}
-                  placeholder="VD: HW-PC-012"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Tên thiết bị *
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.name || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
-                  placeholder="VD: Máy trạm thiết kế đồ họa"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Mã Model
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.model || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, model: e.target.value })}
-                  placeholder="VD: OptiPlex 7000 Micro"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Số Serial / Service Tag
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.serialNumber || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, serialNumber: e.target.value })}
-                  placeholder="VD: 9FC4KL3"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Mã vạch / QR Code quản lý kho
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.barcode || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, barcode: e.target.value })}
-                  placeholder="VD: 893850100880"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Danh mục tài sản
-                </label>
-                <select
-                  value={editingItem.categoryName || "Máy trạm để bàn (Workstation)"}
-                  onChange={(e) => setEditingItem({ ...editingItem, categoryName: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-                >
-                  <option>Máy trạm để bàn (Workstation)</option>
-                  <option>Máy tính xách tay (Laptop)</option>
-                  <option>Màn hình hiển thị (Monitor)</option>
-                  <option>Máy chủ & Hạ tầng mạng (Server)</option>
-                  <option>Máy in & Thiết bị số hóa (Printer)</option>
-                  <option>Thiết bị an ninh & Giám sát (Security)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Trạng thái vận hành
-                </label>
-                <select
-                  value={editingItem.statusName || "Đang sử dụng"}
-                  onChange={(e) => setEditingItem({ ...editingItem, statusName: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-                >
-                  <option>Đang sử dụng</option>
-                  <option>Sẵn sàng cấp phát</option>
-                  <option>Đang bảo trì / Sửa chữa</option>
-                  <option>Đã thanh lý</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Hãng sản xuất (Brand)
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.brandName || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, brandName: e.target.value })}
-                  placeholder="VD: Dell Inc., HP, ASUS"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Giá vốn (VND)
-                </label>
-                <input
-                  type="number"
-                  value={editingItem.purchasePrice || 0}
-                  onChange={(e) => setEditingItem({ ...editingItem, purchasePrice: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Thời gian bảo hành (tháng)
-                </label>
-                <input
-                  type="number"
-                  value={editingItem.warrantyMonths || 36}
-                  onChange={(e) => setEditingItem({ ...editingItem, warrantyMonths: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Phòng ban sử dụng
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.departmentName || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, departmentName: e.target.value })}
-                  placeholder="VD: Phòng Công nghệ & IT"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Vị trí / Chi nhánh
-                </label>
-                <input
-                  type="text"
-                  value={editingItem.locationName || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, locationName: e.target.value })}
-                  placeholder="VD: Tòa nhà A - Tầng 4"
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="font-semibold text-gray-700 dark:text-gray-300 block mb-1">
-                  Mô tả / Ghi chú cấu hình
-                </label>
-                <textarea
-                  rows={2}
-                  value={editingItem.description || ""}
-                  onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-                  placeholder="Chi tiết cấu hình, thông số hoặc lưu ý kiểm kê..."
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2 border-t dark:border-gray-800">
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSaveItem}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer"
-              >
-                Lưu thông tin
               </button>
             </div>
           </div>

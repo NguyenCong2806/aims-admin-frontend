@@ -36,7 +36,9 @@ const navItems: NavItem[] = [
     subItems: 
     [
       { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", pro: false },
+      { name: "Thêm mới thiết bị", path: "/thiet-bi-phan-cung/tao-moi", pro: false },
       { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", pro: false },
+      { name: "Phần mềm theo máy", path: "/giam-sat-may-tram/phan-mem", pro: false },
       { name: "Tài nguyên số", path: "/tai-nguyen-so", pro: false },
       { name: "Tạo mới tài nguyên số", path: "/tai-nguyen-so/tao-moi", pro: false },
       { name: "Mẫu", path: "/form-elements", pro: false },
@@ -56,7 +58,7 @@ const navItems: NavItem[] = [
     subItems: 
     [
       { name: "Báo cáo & Phân tích", path: "/bao-cao-thong-ke", pro: false },
-      { name: "Nhật ký hệ thống", path: "/basic-tables", pro: false }
+      { name: "Nhật ký hệ thống", path: "/nhat-ky-he-thong", pro: false }
     ],
   },
 ];
@@ -93,6 +95,7 @@ const othersItems: NavItem[] = [
     icon: <TaskIcon />,
     name: "Vận hành & Bảo trì",
     subItems: [
+      { name: "Lịch bảo trì", path: "/lich-bao-tri", pro: false },
       { name: "Loại bảo trì", path: "/loai-bao-tri", pro: false },
       { name: "Đơn vị", path: "/don-vi", pro: false },
     ],
@@ -101,8 +104,9 @@ const othersItems: NavItem[] = [
     icon: <UserIcon />,
     name: "Người dùng",
     subItems: [
-      { name: "Tài khoản", path: "/alerts", pro: false },
-      { name: "Phân quyền", path: "/avatars", pro: false },
+      { name: "Tài khoản", path: "/tai-khoan", pro: false },
+      { name: "Phân quyền", path: "/phan-quyen", pro: false },
+      { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", pro: false },
     ],
   },
   {

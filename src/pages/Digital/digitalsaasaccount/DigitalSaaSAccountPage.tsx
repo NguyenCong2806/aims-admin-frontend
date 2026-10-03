@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, UseFormRegister, Control, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Input from "../../../components/form/input/InputField";
 import Label from "../../../components/form/Label";
@@ -16,19 +17,19 @@ import {
 interface DigitalSaaSAccountProps {
   digitalsaasaccount?: DigitalSaaSAccountFormData | null;
   onChange?: (data: Partial<DigitalSaaSAccountFormData>, isValid: boolean) => void;
+  register?: UseFormRegister<any>;
+  control?: Control<any, any>;
+  errors?: FieldErrors<any>;
 }
 
 const DigitalSaaSAccountPage: React.FC<DigitalSaaSAccountProps> = ({
   digitalsaasaccount,
   onChange,
+  register: parentRegister,
+  control: parentControl,
+  errors: parentErrors,
 }) => {
-  const {
-    register,
-    control,
-    reset,
-    watch,
-    formState: { errors, isValid },
-  } = useForm<DigitalSaaSAccountFormData>({
+  const localForm = useForm<DigitalSaaSAccountFormData>({
     resolver: zodResolver(digitalsaasaccountSchema),
     mode: "onChange",
     defaultValues: {
@@ -41,10 +42,16 @@ const DigitalSaaSAccountPage: React.FC<DigitalSaaSAccountProps> = ({
     },
   });
 
+  const isControlledByParent = !!(parentRegister && parentControl);
+  const control = (isControlledByParent ? parentControl : localForm.control) as Control<any>;
+  const register = (isControlledByParent ? parentRegister : localForm.register) as UseFormRegister<any>;
+  const errors = isControlledByParent ? ((parentErrors?.saasdetail as any) || {}) : localForm.formState.errors;
+  const fieldPrefix = isControlledByParent ? "saasdetail." : "";
+
   // Đồng bộ form khi props truyền vào thay đổi (Edit/Reset mode)
   useEffect(() => {
-    if (digitalsaasaccount) {
-      reset({
+    if (!isControlledByParent && digitalsaasaccount) {
+      localForm.reset({
         saasaccountname: digitalsaasaccount.saasaccountname || "",
         servicebrand: digitalsaasaccount.servicebrand || "",
         plantier: digitalsaasaccount.plantier || "Standard",
@@ -53,41 +60,43 @@ const DigitalSaaSAccountPage: React.FC<DigitalSaaSAccountProps> = ({
         storagequota: digitalsaasaccount.storagequota || "",
       });
     }
-  }, [digitalsaasaccount, reset]);
+  }, [digitalsaasaccount, localForm, isControlledByParent]);
 
   // Lắng nghe thay đổi form và gửi ra trang cha
   useEffect(() => {
-    const subscription = watch((value) => {
-      onChange?.(value as Partial<DigitalSaaSAccountFormData>, isValid);
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, onChange, isValid]);
+    if (!isControlledByParent && onChange) {
+      const subscription = localForm.watch((value) => {
+        onChange(value as Partial<DigitalSaaSAccountFormData>, localForm.formState.isValid);
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [localForm, onChange, isControlledByParent]);
 
   return (
     <div className="space-y-4">
-      {/* Tên tài khoản / Không gian SaaS */}
-      <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
-          Tên tài khoản / Workspace SaaS <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          type="text"
-          placeholder="VD: AUM Organization Workspace, TechTeam Slack..."
-          {...register("saasaccountname")}
-          error={!!errors.saasaccountname}
-          hint={errors.saasaccountname?.message}
-        />
-      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Tên tài khoản / Không gian SaaS */}
+        <div className="col-span-1 md:col-span-2">
+          <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+            Tên tài khoản / Workspace SaaS <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            type="text"
+            placeholder="VD: AUM Organization Workspace, TechTeam Slack..."
+            {...register(`${fieldPrefix}saasaccountname`)}
+            error={!!errors.saasaccountname}
+            hint={errors.saasaccountname?.message}
+          />
+        </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Dịch vụ / Thương hiệu SaaS */}
         <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-1">
-            Dịch vụ / Thương hiệu SaaS <span className="text-red-500">*</span>
+          <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+            Dịch vụ / Nền tảng SaaS <span className="text-red-500">*</span>
           </Label>
           <Controller
             control={control}
-            name="servicebrand"
+            name={`${fieldPrefix}servicebrand`}
             render={({ field }) => (
               <Select
                 options={serviceBrandList.map((item) => ({
@@ -95,10 +104,10 @@ const DigitalSaaSAccountPage: React.FC<DigitalSaaSAccountProps> = ({
                   label: item.label,
                   title: item.title,
                 }))}
-                placeholder="Chọn thương hiệu SaaS (VD: GITHUB, ZOOM...)"
+                placeholder="Chọn thương hiệu SaaS (VD: GITHUB, ZOOM, M365...)"
                 value={field.value}
                 onChange={(val) => field.onChange(val)}
-                className="dark:bg-dark-900"
+                className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
               />
             )}
           />
@@ -111,12 +120,12 @@ const DigitalSaaSAccountPage: React.FC<DigitalSaaSAccountProps> = ({
 
         {/* Gói dịch vụ (Plan Tier) */}
         <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-1">
+          <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
             Gói dịch vụ (Plan Tier)
           </Label>
           <Controller
             control={control}
-            name="plantier"
+            name={`${fieldPrefix}plantier`}
             render={({ field }) => (
               <Select
                 options={defaultPlanTierList.map((item) => ({
@@ -127,7 +136,7 @@ const DigitalSaaSAccountPage: React.FC<DigitalSaaSAccountProps> = ({
                 placeholder="Chọn gói dịch vụ"
                 value={field.value}
                 onChange={(val) => field.onChange(val)}
-                className="dark:bg-dark-900"
+                className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
               />
             )}
           />
@@ -135,32 +144,29 @@ const DigitalSaaSAccountPage: React.FC<DigitalSaaSAccountProps> = ({
             <p className="text-red-500 text-xs mt-1">{errors.plantier.message}</p>
           )}
         </div>
-      </div>
 
-      {/* Email tài khoản quản trị (Admin Email) */}
-      <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-1">
-          Email tài khoản quản trị (Admin Account){" "}
-          <span className="text-red-500">*</span>
-        </Label>
-        <Input
-          type="email"
-          placeholder="VD: admin@aum.edu.vn, root-saas@domain.com"
-          {...register("adminaccountemail")}
-          error={!!errors.adminaccountemail}
-          hint={errors.adminaccountemail?.message}
-        />
-      </div>
+        {/* Email tài khoản quản trị (Admin Email) */}
+        <div className="col-span-1 md:col-span-2">
+          <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+            Email tài khoản quản trị (Admin Account) <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            type="email"
+            placeholder="VD: it-admin@aum.edu.vn, superadmin@domain.com"
+            {...register(`${fieldPrefix}adminaccountemail`)}
+            error={!!errors.adminaccountemail}
+            hint={errors.adminaccountemail?.message}
+          />
+        </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Tổng số license/user đã mua */}
         <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-1">
+          <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
             Số lượng license đã mua (Seats) <span className="text-red-500">*</span>
           </Label>
           <Controller
             control={control}
-            name="totallicensesbought"
+            name={`${fieldPrefix}totallicensesbought`}
             render={({ field }) => (
               <Input
                 type="number"
@@ -179,13 +185,13 @@ const DigitalSaaSAccountPage: React.FC<DigitalSaaSAccountProps> = ({
 
         {/* Dung lượng lưu trữ cấp kèm */}
         <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-1">
+          <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
             Dung lượng lưu trữ (Storage Quota)
           </Label>
           <Input
             type="text"
             placeholder="VD: 30 GB/User, 2 TB Pooled Cloud Storage..."
-            {...register("storagequota")}
+            {...register(`${fieldPrefix}storagequota`)}
             error={!!errors.storagequota}
             hint={errors.storagequota?.message}
           />

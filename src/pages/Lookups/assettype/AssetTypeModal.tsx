@@ -1,21 +1,21 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import Button from "../../../components/ui/button/Button";
 import { Modal } from "../../../components/ui/modal";
-
 import { assettype } from "../../../models/Lookup/assettype/assettype";
 import { AssetTypeFormData, assettypeSchema } from "../../../validations/assettype.schema";
-
+import {
+  FIELD_LABEL_CLASS,
+  getInputClass,
+  LookupModalLoading,
+  LookupModalFooter,
+} from "../lookupModalHelper";
 
 interface AssetTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
   assetType?: assettype | null;
-
   isLoading?: boolean;
-
   onSubmit?: (data: AssetTypeFormData) => void | Promise<void>;
 }
 
@@ -30,52 +30,29 @@ const AssetTypeModal: React.FC<AssetTypeModalProps> = ({
     register,
     handleSubmit,
     reset,
-    formState: {
-      errors,
-      isSubmitting,
-    },
+    formState: { errors, isSubmitting },
   } = useForm<AssetTypeFormData>({
     resolver: zodResolver(assettypeSchema),
-
     defaultValues: {
       name: "",
       code: "",
     },
   });
 
-  // =====================================================
-  // LOAD DATA / RESET FORM
-  // =====================================================
-
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    // EDIT
-    if (assetType) {
-      reset({
-        name: assetType.name ?? "",
-        code: assetType.code ?? "",
-      });
-
-      return;
-    }
-
-    // ADD
-    reset({
-      name: "",
-      code: "",
-    });
+    if (!isOpen) return;
+    reset(
+      assetType
+        ? {
+            name: assetType.name ?? "",
+            code: assetType.code ?? "",
+          }
+        : {
+            name: "",
+            code: "",
+          }
+    );
   }, [assetType, isOpen, reset]);
-
-  // =====================================================
-  // SUBMIT
-  // =====================================================
-
-  const submitForm = async (data: AssetTypeFormData) => {
-    await onSubmit?.(data);
-  };
 
   const isEdit = !!assetType;
 
@@ -83,125 +60,60 @@ const AssetTypeModal: React.FC<AssetTypeModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        isEdit
-          ? "Chỉnh sửa loại tài sản"
-          : "Thêm loại tài sản"
-      }
+      title={isEdit ? "Chỉnh sửa loại tài sản" : "Thêm mới loại tài sản"}
       className="max-w-lg"
     >
-      <form onSubmit={handleSubmit(submitForm)}>
-        <div className="space-y-5">
-
-          {/* LOADING DETAIL */}
-          {isLoading && isEdit ? (
-            <div className="flex min-h-[180px] items-center justify-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="size-7 animate-spin rounded-full border-4 border-gray-200 border-t-brand-500" />
-
-                <span className="text-sm text-gray-500">
-                  Đang tải thông tin...
-                </span>
-              </div>
+      <form onSubmit={handleSubmit(async (data) => onSubmit?.(data))}>
+        {isLoading && isEdit ? (
+          <LookupModalLoading />
+        ) : (
+          <div className="space-y-4">
+            {/* Tên loại tài sản */}
+            <div>
+              <label htmlFor="asset-type-name" className={FIELD_LABEL_CLASS}>
+                Tên loại tài sản <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                id="asset-type-name"
+                type="text"
+                placeholder="VD: Máy tính xách tay (Laptop), Máy trạm (Workstation)..."
+                {...register("name")}
+                className={getInputClass(!!errors.name)}
+              />
+              {errors.name && (
+                <p className="mt-1 text-[11px] text-red-500 font-medium">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
-          ) : (
-            <>
-              {/* NAME */}
-              <div>
-                <label
-                  htmlFor="brand-name"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Tên loại tài sản
-                  <span className="ml-1 text-red-500">
-                    *
-                  </span>
-                </label>
 
-                <input
-                  id="brand-name"
-                  type="text"
-                  placeholder="Nhập tên danh mục"
-                  {...register("name")}
-                  className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition
-                    dark:bg-gray-800 dark:text-white
-                    ${
-                      errors.name
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-300 focus:border-brand-500 dark:border-gray-700"
-                    }
-                  `}
-                />
+            {/* Mã loại tài sản */}
+            <div>
+              <label htmlFor="asset-type-code" className={FIELD_LABEL_CLASS}>
+                Mã loại tài sản <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                id="asset-type-code"
+                type="text"
+                placeholder="VD: TYPE_LAPTOP, TYPE_PC, TYPE_SERVER..."
+                {...register("code")}
+                className={getInputClass(!!errors.code, true)}
+              />
+              {errors.code && (
+                <p className="mt-1 text-[11px] text-red-500 font-medium">
+                  {errors.code.message}
+                </p>
+              )}
+            </div>
 
-                {errors.name && (
-                  <p className="mt-1.5 text-sm text-red-500">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
-
-              {/* CODE */}
-              <div>
-                <label
-                  htmlFor="brand-code"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Mã loại tài sản
-                  <span className="ml-1 text-red-500">
-                    *
-                  </span>
-                </label>
-
-                <input
-                  id="brand-code"
-                  type="text"
-                  placeholder="Nhập mã loại tài sản"
-                  {...register("code")}
-                  className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition
-                    dark:bg-gray-800 dark:text-white
-                    ${
-                      errors.code
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-300 focus:border-brand-500 dark:border-gray-700"
-                    }
-                  `}
-                />
-
-                {errors.code && (
-                  <p className="mt-1.5 text-sm text-red-500">
-                    {errors.code.message}
-                  </p>
-                )}
-              </div>
-
-              {/* BUTTON */}
-              <div className="flex justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                >
-                  Hủy
-                </Button>
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting
-                    ? "Đang lưu..."
-                    : isEdit
-                      ? "Cập nhật"
-                      : "Thêm mới"}
-                </Button>
-
-              </div>
-            </>
-          )}
-
-        </div>
+            {/* Modal Actions */}
+            <LookupModalFooter
+              onClose={onClose}
+              isSubmitting={isSubmitting}
+              isEdit={isEdit}
+            />
+          </div>
+        )}
       </form>
     </Modal>
   );

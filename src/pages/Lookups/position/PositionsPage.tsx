@@ -19,7 +19,7 @@ import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
 const PositionsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
   const [positionId, setPositionId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -72,7 +72,6 @@ const PositionsPage: React.FC = () => {
   };
 
   const remove = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa chức vụ này không?")) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Xóa chức vụ thành công!");
@@ -93,7 +92,6 @@ const PositionsPage: React.FC = () => {
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} chức vụ đã chọn?`)) return;
 
     try {
       for (const id of selectedIds) {
@@ -239,7 +237,7 @@ const PositionsPage: React.FC = () => {
                           </td>
 
                           <td className="px-4 py-3.5 text-gray-600 dark:text-gray-400">
-                            {(item as any).department?.name ?? departmentName(item.departmentId)}
+                            {(item as position & { department?: { name?: string } }).department?.name ?? departmentName(item.departmentId)}
                           </td>
 
                           <td
@@ -333,7 +331,7 @@ const PositionsPage: React.FC = () => {
                             </span>
                             <span>•</span>
                             <span className="truncate">
-                              {(item as any).department?.name ?? departmentName(item.departmentId)}
+                              {(item as position & { department?: { name?: string } }).department?.name ?? departmentName(item.departmentId)}
                             </span>
                           </div>
                         </div>

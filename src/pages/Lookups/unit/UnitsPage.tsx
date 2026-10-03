@@ -17,7 +17,7 @@ import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
 const UnitsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
   const [unitId, setUnitId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -66,7 +66,6 @@ const UnitsPage: React.FC = () => {
   };
 
   const remove = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa đơn vị tính này không?")) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Xóa đơn vị tính thành công!");
@@ -87,7 +86,6 @@ const UnitsPage: React.FC = () => {
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} đơn vị tính đã chọn?`)) return;
 
     try {
       for (const id of selectedIds) {

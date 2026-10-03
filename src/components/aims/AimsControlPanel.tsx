@@ -6,9 +6,9 @@ export interface AimsControlPanelProps {
   title: string;
   subtitle?: string;
   totalRecords: number;
-  pageIndex: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
+  pageIndex?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onAddNew?: () => void;
@@ -26,9 +26,9 @@ export const AimsControlPanel: React.FC<AimsControlPanelProps> = ({
   title,
   subtitle,
   totalRecords,
-  pageIndex,
-  pageSize,
-  onPageChange,
+  pageIndex = 1,
+  pageSize = 20,
+  onPageChange = () => {},
   searchTerm,
   onSearchChange,
   onAddNew,

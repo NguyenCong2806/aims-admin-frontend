@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../components/aims";
 import PageMeta from "../../components/common/PageMeta";
@@ -164,6 +165,7 @@ const INITIAL_WORKSTATIONS: WorkstationMonitoring[] = [
 ];
 
 export const WorkstationMonitoringPage: React.FC = () => {
+  const navigate = useNavigate();
   const [records, setRecords] = useState<WorkstationMonitoring[]>(INITIAL_WORKSTATIONS);
   const [keyword, setKeyword] = useState<string>("");
   const [pageIndex, setPageIndex] = useState<number>(1);
@@ -303,7 +305,6 @@ export const WorkstationMonitoringPage: React.FC = () => {
 
   // Xóa telemetry
   const handleDelete = (id: string, hostName: string) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa bản ghi telemetry của máy [${hostName}]?`)) return;
     setRecords((prev) => prev.filter((r) => r.id !== id));
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -315,7 +316,6 @@ export const WorkstationMonitoringPage: React.FC = () => {
 
   const handleBatchDelete = () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} bản ghi telemetry đã chọn?`)) return;
     setRecords((prev) => prev.filter((r) => !selectedIds.has(r.id)));
     setSelectedIds(new Set());
     toast.success("Đã xóa các bản ghi telemetry đã chọn!");
@@ -336,8 +336,9 @@ export const WorkstationMonitoringPage: React.FC = () => {
           </svg>
         }
         moduleTabs={[
-          { name: "Thiết bị phần cứng", path: "/tai-nguyen-so" },
+          { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung" },
           { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", badge: records.length },
+          { name: "Phần mềm theo máy", path: "/giam-sat-may-tram/phan-mem" },
           { name: "Tài nguyên số", path: "/tai-nguyen-so" },
         ]}
         title="Giám sát máy trạm"
@@ -571,6 +572,14 @@ export const WorkstationMonitoringPage: React.FC = () => {
                           <td className="px-4 py-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button
+                                onClick={() => navigate(`/giam-sat-may-tram/${item.id}/phan-mem`)}
+                                className="px-2.5 py-1 text-xs font-medium rounded-lg bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/40 dark:hover:bg-brand-900/60 text-brand-600 dark:text-brand-400 transition-colors cursor-pointer flex items-center gap-1"
+                                title="Xem danh sách phần mềm cài đặt trên máy trạm này"
+                              >
+                                <span>📦</span>
+                                <span>Phần mềm</span>
+                              </button>
+                              <button
                                 onClick={() => setSelectedItemForDetail(item)}
                                 className="px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
                                 title="Xem đầy đủ thông số"
@@ -693,15 +702,28 @@ export const WorkstationMonitoringPage: React.FC = () => {
                       {/* Card Footer */}
                       <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between text-[11px] text-gray-400">
                         <span>Thu thập: {formatTimeAgo(item.collectedAt)}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedItemForDetail(item);
-                          }}
-                          className="text-brand-600 hover:text-brand-700 font-semibold cursor-pointer"
-                        >
-                          Chi tiết &rarr;
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/giam-sat-may-tram/${item.id}/phan-mem`);
+                            }}
+                            className="text-brand-600 hover:text-brand-700 font-semibold cursor-pointer flex items-center gap-1"
+                            title="Xem phần mềm cài đặt"
+                          >
+                            <span>📦</span>
+                            <span>Phần mềm</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedItemForDetail(item);
+                            }}
+                            className="text-gray-600 dark:text-gray-300 hover:text-brand-600 font-semibold cursor-pointer"
+                          >
+                            Chi tiết &rarr;
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -869,12 +891,25 @@ export const WorkstationMonitoringPage: React.FC = () => {
                 </span>
               )}
 
-              <button
-                onClick={() => setSelectedItemForDetail(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 cursor-pointer"
-              >
-                Đóng
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const wid = selectedItemForDetail.id;
+                    setSelectedItemForDetail(null);
+                    navigate(`/giam-sat-may-tram/${wid}/phan-mem`);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/40 dark:hover:bg-brand-900/60 text-brand-600 dark:text-brand-400 transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>📦</span>
+                  <span>Xem danh sách phần mềm</span>
+                </button>
+                <button
+                  onClick={() => setSelectedItemForDetail(null)}
+                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         </div>

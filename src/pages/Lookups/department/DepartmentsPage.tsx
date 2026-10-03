@@ -22,7 +22,7 @@ import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../componen
 const DepartmentsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
   const [departmentId, setDepartmentId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -77,7 +77,6 @@ const DepartmentsPage: React.FC = () => {
   };
 
   const remove = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa phòng ban này không?")) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Xóa phòng ban thành công!");
@@ -99,12 +98,6 @@ const DepartmentsPage: React.FC = () => {
   // Batch delete
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa ${selectedIds.size} phòng ban đã chọn?`
-      )
-    )
-      return;
 
     try {
       for (const id of selectedIds) {

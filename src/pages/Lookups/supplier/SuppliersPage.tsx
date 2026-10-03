@@ -17,7 +17,7 @@ import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
 const SuppliersPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
   const [supplierId, setSupplierId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -66,7 +66,6 @@ const SuppliersPage: React.FC = () => {
   };
 
   const remove = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa nhà cung cấp này không?")) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Xóa nhà cung cấp thành công!");
@@ -87,8 +86,6 @@ const SuppliersPage: React.FC = () => {
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} nhà cung cấp đã chọn?`))
-      return;
 
     try {
       for (const id of selectedIds) {

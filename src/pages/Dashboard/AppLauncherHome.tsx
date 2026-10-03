@@ -873,7 +873,7 @@ export default function AppLauncherHome() {
     {
       id: "system-logs",
       name: "Nhật ký hệ thống",
-      path: "/basic-tables",
+      path: "/nhat-ky-he-thong",
       category: "system",
       description: "Lịch sử thao tác, kiểm toán bảo mật & audit trail",
       renderIcon: () => (
@@ -908,7 +908,7 @@ export default function AppLauncherHome() {
     {
       id: "calendar",
       name: "Lịch bảo trì",
-      path: "/blank",
+      path: "/lich-bao-tri",
       category: "operation",
       description: "Kế hoạch bảo hành, kiểm tra tài sản hàng tháng",
       renderIcon: () => (
@@ -947,7 +947,7 @@ export default function AppLauncherHome() {
     {
       id: "users",
       name: "Tài khoản người dùng",
-      path: "/blank",
+      path: "/tai-khoan",
       category: "system",
       description: "Danh sách người dùng, cán bộ quản lý tài sản",
       renderIcon: () => (
@@ -983,7 +983,7 @@ export default function AppLauncherHome() {
     {
       id: "permissions",
       name: "Phân quyền",
-      path: "/blank",
+      path: "/phan-quyen",
       category: "system",
       description: "Phân quyền theo vai trò & quyền hạn truy cập",
       renderIcon: () => (
@@ -1030,7 +1030,7 @@ export default function AppLauncherHome() {
     {
       id: "settings",
       name: "Cấu hình hệ thống",
-      path: "/blank",
+      path: "/cau-hinh-he-thong",
       category: "system",
       description: "Thiết lập tham số chung, mẫu in ấn & thông báo",
       renderIcon: () => (

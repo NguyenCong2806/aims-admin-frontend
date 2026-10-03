@@ -14,7 +14,7 @@ import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../componen
 const DigitalAssetsPage: React.FC = () => {
   const navigate = useNavigate();
   const [pageIndex, setPageIndex] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageSize] = useState<number>(10);
   const [keyword, setKeyword] = useState<string>("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -35,7 +35,6 @@ const DigitalAssetsPage: React.FC = () => {
   const totalCount = data?.pagination?.totalRecords ?? 0;
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa tài nguyên số này không?")) return;
     try {
       await deleteAsset.mutateAsync(id);
       toast.success("Xóa tài nguyên số thành công!");
@@ -55,8 +54,6 @@ const DigitalAssetsPage: React.FC = () => {
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} tài nguyên số đã chọn?`))
-      return;
 
     try {
       for (const id of selectedIds) {

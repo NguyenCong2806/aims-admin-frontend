@@ -1,21 +1,21 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import Button from "../../../components/ui/button/Button";
 import { Modal } from "../../../components/ui/modal";
-
-
 import { assetcategorie } from "../../../models/Lookup/assetcategorie/assetcategorie";
 import { AssetCategoryFormData, assetcategorySchema } from "../../../validations/assetcategory.schema";
+import {
+  FIELD_LABEL_CLASS,
+  getInputClass,
+  LookupModalLoading,
+  LookupModalFooter,
+} from "../lookupModalHelper";
 
 interface AssetCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   assetCategory?: assetcategorie | null;
-
   isLoading?: boolean;
-
   onSubmit?: (data: AssetCategoryFormData) => void | Promise<void>;
 }
 
@@ -30,52 +30,29 @@ const AssetCategoryModal: React.FC<AssetCategoryModalProps> = ({
     register,
     handleSubmit,
     reset,
-    formState: {
-      errors,
-      isSubmitting,
-    },
+    formState: { errors, isSubmitting },
   } = useForm<AssetCategoryFormData>({
     resolver: zodResolver(assetcategorySchema),
-
     defaultValues: {
       name: "",
       code: "",
     },
   });
 
-  // =====================================================
-  // LOAD DATA / RESET FORM
-  // =====================================================
-
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    // EDIT
-    if (assetCategory) {
-      reset({
-        name: assetCategory.name ?? "",
-        code: assetCategory.code ?? "",
-      });
-
-      return;
-    }
-
-    // ADD
-    reset({
-      name: "",
-      code: "",
-    });
+    if (!isOpen) return;
+    reset(
+      assetCategory
+        ? {
+            name: assetCategory.name ?? "",
+            code: assetCategory.code ?? "",
+          }
+        : {
+            name: "",
+            code: "",
+          }
+    );
   }, [assetCategory, isOpen, reset]);
-
-  // =====================================================
-  // SUBMIT
-  // =====================================================
-
-  const submitForm = async (data: AssetCategoryFormData) => {
-    await onSubmit?.(data);
-  };
 
   const isEdit = !!assetCategory;
 
@@ -83,125 +60,60 @@ const AssetCategoryModal: React.FC<AssetCategoryModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        isEdit
-          ? "Chỉnh sửa danh mục"
-          : "Thêm danh mục"
-      }
+      title={isEdit ? "Chỉnh sửa danh mục tài sản" : "Thêm mới danh mục tài sản"}
       className="max-w-lg"
     >
-      <form onSubmit={handleSubmit(submitForm)}>
-        <div className="space-y-5">
-
-          {/* LOADING DETAIL */}
-          {isLoading && isEdit ? (
-            <div className="flex min-h-[180px] items-center justify-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="size-7 animate-spin rounded-full border-4 border-gray-200 border-t-brand-500" />
-
-                <span className="text-sm text-gray-500">
-                  Đang tải thông tin...
-                </span>
-              </div>
+      <form onSubmit={handleSubmit(async (data) => onSubmit?.(data))}>
+        {isLoading && isEdit ? (
+          <LookupModalLoading />
+        ) : (
+          <div className="space-y-4">
+            {/* Tên danh mục */}
+            <div>
+              <label htmlFor="category-name" className={FIELD_LABEL_CLASS}>
+                Tên danh mục <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                id="category-name"
+                type="text"
+                placeholder="VD: Máy tính & Thiết bị văn phòng, Máy chủ..."
+                {...register("name")}
+                className={getInputClass(!!errors.name)}
+              />
+              {errors.name && (
+                <p className="mt-1 text-[11px] text-red-500 font-medium">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
-          ) : (
-            <>
-              {/* NAME */}
-              <div>
-                <label
-                  htmlFor="brand-name"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Tên danh mục
-                  <span className="ml-1 text-red-500">
-                    *
-                  </span>
-                </label>
 
-                <input
-                  id="brand-name"
-                  type="text"
-                  placeholder="Nhập tên danh mục"
-                  {...register("name")}
-                  className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition
-                    dark:bg-gray-800 dark:text-white
-                    ${
-                      errors.name
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-300 focus:border-brand-500 dark:border-gray-700"
-                    }
-                  `}
-                />
+            {/* Mã danh mục */}
+            <div>
+              <label htmlFor="category-code" className={FIELD_LABEL_CLASS}>
+                Mã danh mục <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                id="category-code"
+                type="text"
+                placeholder="VD: CAT_PC, CAT_SERVER, CAT_NETWORK..."
+                {...register("code")}
+                className={getInputClass(!!errors.code, true)}
+              />
+              {errors.code && (
+                <p className="mt-1 text-[11px] text-red-500 font-medium">
+                  {errors.code.message}
+                </p>
+              )}
+            </div>
 
-                {errors.name && (
-                  <p className="mt-1.5 text-sm text-red-500">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
-
-              {/* CODE */}
-              <div>
-                <label
-                  htmlFor="brand-code"
-                  className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Mã danh mục
-                  <span className="ml-1 text-red-500">
-                    *
-                  </span>
-                </label>
-
-                <input
-                  id="brand-code"
-                  type="text"
-                  placeholder="Nhập mã danh mục"
-                  {...register("code")}
-                  className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition
-                    dark:bg-gray-800 dark:text-white
-                    ${
-                      errors.code
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-300 focus:border-brand-500 dark:border-gray-700"
-                    }
-                  `}
-                />
-
-                {errors.code && (
-                  <p className="mt-1.5 text-sm text-red-500">
-                    {errors.code.message}
-                  </p>
-                )}
-              </div>
-
-              {/* BUTTON */}
-              <div className="flex justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                >
-                  Hủy
-                </Button>
-
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting
-                    ? "Đang lưu..."
-                    : isEdit
-                      ? "Cập nhật"
-                      : "Thêm mới"}
-                </Button>
-
-              </div>
-            </>
-          )}
-
-        </div>
+            {/* Modal Actions */}
+            <LookupModalFooter
+              onClose={onClose}
+              isSubmitting={isSubmitting}
+              isEdit={isEdit}
+            />
+          </div>
+        )}
       </form>
     </Modal>
   );

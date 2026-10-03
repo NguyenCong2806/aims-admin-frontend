@@ -16,7 +16,7 @@ import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
 const BrandsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageSize] = useState<number>(10);
   const [keyword, setKeyword] = useState<string>("");
   const [brandId, setBrandId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -85,7 +85,6 @@ const BrandsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa hãng sản xuất này không?")) return;
     try {
       await deleteBrand.mutateAsync(id);
       toast.success("Xóa hãng sản xuất thành công!");
@@ -106,12 +105,6 @@ const BrandsPage: React.FC = () => {
   // Batch delete
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa ${selectedIds.size} hãng sản xuất đã chọn?`
-      )
-    )
-      return;
 
     try {
       for (const id of selectedIds) {

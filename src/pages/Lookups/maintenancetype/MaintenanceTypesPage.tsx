@@ -21,7 +21,7 @@ import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
 const MaintenanceTypesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
   const [maintenanceTypeId, setMaintenanceTypeId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -70,7 +70,6 @@ const MaintenanceTypesPage: React.FC = () => {
   };
 
   const remove = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa loại bảo trì này không?")) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Xóa loại bảo trì thành công!");
@@ -91,8 +90,6 @@ const MaintenanceTypesPage: React.FC = () => {
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} loại bảo trì đã chọn?`))
-      return;
 
     try {
       for (const id of selectedIds) {

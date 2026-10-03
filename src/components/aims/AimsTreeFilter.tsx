@@ -10,7 +10,7 @@ export interface TreeFilterItem {
 }
 
 export interface TreeFilterGroup {
-  id: string;
+  id?: string;
   title: string;
   items: TreeFilterItem[];
 }
@@ -152,8 +152,8 @@ export const AimsTreeFilter: React.FC<AimsTreeFilterProps> = ({
 
       {/* Filter Groups */}
       <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-220px)] pr-1 scrollbar-thin">
-        {groups.map((group) => (
-          <div key={group.id} className="space-y-1">
+        {groups.map((group, idx) => (
+          <div key={group.id || group.title || idx} className="space-y-1">
             <div className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-2">
               {group.title}
             </div>

@@ -1,5 +1,29 @@
 // Interface phản chiếu thực thể C# HardwareAsset (Thiết bị phần cứng)
 
+export interface HardwareTechnicalSpecs {
+  cpu?: string;
+  ram?: string;
+  storage?: string;
+  gpu?: string;
+  os?: string;
+  screenSize?: string;
+  resolution?: string;
+  refreshRate?: string;
+  printTechnology?: string;
+  paperSizes?: string;
+  duplex?: boolean;
+  portCount?: string;
+  networkSpeed?: string;
+  rackLocation?: string;
+  powerSupply?: string;
+}
+
+export interface CustomAttributeItem {
+  id: string;
+  name: string;
+  value: string;
+}
+
 export interface HardwareAsset {
   id: string; // Guid
   assetCode: string; // Mã tài sản quản lý nội bộ (VD: HW-CAM-001, HW-PC-012)
@@ -37,4 +61,10 @@ export interface HardwareAsset {
   description?: string | null;
   createdAt: string;
   updatedAt: string;
+
+  // Extensible Specs & Custom Attributes
+  assignedToUser?: string | null;
+  specs?: HardwareTechnicalSpecs | null;
+  customAttributes?: CustomAttributeItem[] | null;
 }
+

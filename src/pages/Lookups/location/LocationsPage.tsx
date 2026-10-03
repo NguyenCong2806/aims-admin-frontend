@@ -18,7 +18,7 @@ import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../componen
 const LocationsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
   const [locationId, setLocationId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -73,7 +73,6 @@ const LocationsPage: React.FC = () => {
   };
 
   const remove = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa địa điểm này không?")) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Xóa địa điểm thành công!");
@@ -95,12 +94,6 @@ const LocationsPage: React.FC = () => {
   // Batch delete selected items
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (
-      !window.confirm(
-        `Bạn có chắc chắn muốn xóa ${selectedIds.size} địa điểm đã chọn?`
-      )
-    )
-      return;
 
     try {
       for (const id of selectedIds) {
@@ -108,7 +101,7 @@ const LocationsPage: React.FC = () => {
       }
       toast.success(`Đã xóa ${selectedIds.size} địa điểm thành công!`);
       setSelectedIds(new Set());
-    } catch (err) {
+    } catch {
       toast.error("Xảy ra lỗi trong quá trình xóa hàng loạt.");
     }
   };

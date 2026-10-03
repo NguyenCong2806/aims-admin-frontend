@@ -21,7 +21,7 @@ import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
 const CostCentersPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
   const [costCenterId, setCostCenterId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -73,7 +73,6 @@ const CostCentersPage: React.FC = () => {
   };
 
   const remove = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa trung tâm chi phí này không?")) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Xóa trung tâm chi phí thành công!");
@@ -94,8 +93,6 @@ const CostCentersPage: React.FC = () => {
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} trung tâm chi phí đã chọn?`))
-      return;
 
     try {
       for (const id of selectedIds) {

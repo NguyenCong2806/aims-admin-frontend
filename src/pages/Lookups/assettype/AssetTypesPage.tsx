@@ -16,7 +16,7 @@ import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
 const AssetTypesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageSize] = useState<number>(10);
   const [keyword, setKeyword] = useState<string>("");
   const [assetTypeId, setAssetTypeId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -85,7 +85,6 @@ const AssetTypesPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa loại tài sản này không?")) return;
     try {
       await deleteAssetType.mutateAsync(id);
       toast.success("Xóa loại tài sản thành công!");
@@ -105,8 +104,6 @@ const AssetTypesPage: React.FC = () => {
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} loại tài sản đã chọn?`))
-      return;
 
     try {
       for (const id of selectedIds) {
