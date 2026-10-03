@@ -57,9 +57,10 @@ export const INITIAL_SYSTEM_CONFIG: SystemConfigFull = {
     smtpSenderName: "Hệ thống Quản trị Tài sản AIMS",
     smtpPasswordMasked: "••••••••••••",
 
-    telegramBotToken: "6789012345:AAH7xYz_aimsBotSecurityToken",
+    // Đã thay chuỗi bot token & webhook bằng placeholder dummy
+    telegramBotToken: "0000000000:DUMMY_TOKEN_PLACEHOLDER",
     telegramChatId: "-1001988223344",
-    slackWebhookUrl: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
+    slackWebhookUrl: "https://example.com/mock-slack-webhook",
   },
 
   security: {
