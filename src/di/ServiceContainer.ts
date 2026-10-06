@@ -15,6 +15,7 @@ import { DigitalDomainSSLService } from "../services/DigitalDomainSSL/DigitalDom
 import { DigitalCloudServerService } from "../services/DigitalCloudServer/DigitalCloudServerService";
 import { DigitalSoftwareLicenseService } from "../services/DigitalSoftwareLicense/DigitalSoftwareLicenseService";
 import { DigitalInternetLineService } from "../services/DigitalInternetLine/DigitalInternetLineService";
+import { ComputerAuditService } from "../services/ComputerAudit/ComputerAuditSerice";
 export class ServiceContainer {
   public readonly brand: BrandService;
   public readonly assetCategory: AssetCategoryService;
@@ -33,6 +34,7 @@ export class ServiceContainer {
   public readonly digitalCloudServer: DigitalCloudServerService;
   public readonly digitalSoftwareLicense: DigitalSoftwareLicenseService;
   public readonly digitalInternetLine: DigitalInternetLineService;
+  public readonly computerAudit: ComputerAuditService;
   constructor() {
     this.brand = new BrandService();
     this.assetCategory = new AssetCategoryService();
@@ -51,6 +53,7 @@ export class ServiceContainer {
     this.digitalCloudServer = new DigitalCloudServerService();
     this.digitalSoftwareLicense = new DigitalSoftwareLicenseService();
     this.digitalInternetLine = new DigitalInternetLineService();
+    this.computerAudit = new ComputerAuditService();
   }
 }
 

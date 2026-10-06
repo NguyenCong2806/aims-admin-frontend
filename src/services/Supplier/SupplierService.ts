@@ -1,3 +1,4 @@
+import { API_ENDPOINTS } from "../../common/apiEndpoints";
 import { createsupplier, supplier, updatesupplier } from "../../models/Lookup/supplier/supplier";
 import { Service } from "../Service";
 import { ISupplierService } from "./ISupplierService";
@@ -6,7 +7,7 @@ export class SupplierService
   extends Service<supplier, createsupplier, updatesupplier, number>
   implements ISupplierService<supplier, createsupplier, updatesupplier, number>
 {
-  constructor(endpoint = "/suppliers") {
+  constructor(endpoint = API_ENDPOINTS.LOOKUPS.SUPPLIERS) {
     super(endpoint);
   }
 }

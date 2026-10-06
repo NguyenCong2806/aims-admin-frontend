@@ -16,21 +16,5 @@ export const ENV = {
     import.meta.env.VITE_API_URL,
     "VITE_API_URL"
   ),
-
-  AUTH: {
-    LOGIN: requiredEnv(
-      import.meta.env.VITE_AUTH_LOGIN_PATH,
-      "VITE_AUTH_LOGIN_PATH"
-    ),
-
-    REFRESH: requiredEnv(
-      import.meta.env.VITE_AUTH_REFRESH_PATH,
-      "VITE_AUTH_REFRESH_PATH"
-    ),
-
-    LOGOUT: requiredEnv(
-      import.meta.env.VITE_AUTH_LOGOUT_PATH,
-      "VITE_AUTH_LOGOUT_PATH"
-    ),
-  },
+  BACKEND_TARGET: import.meta.env.VITE_BACKEND_TARGET || "https://localhost:8687",
 } as const;

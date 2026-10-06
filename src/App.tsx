@@ -60,57 +60,58 @@ export default function App() {
             >
               <Route index path="/" element={<Home />} />
 
-            {/* Others Page */}
-            <Route path="/blank" element={<Blank />} />
+              {/* Others Page */}
+              <Route path="/blank" element={<Blank />} />
 
-            {/* IT Asset Management */}
-            <Route path="/thiet-bi-phan-cung" element={<HardwareAssetsPage />} />
-            <Route path="/thiet-bi-phan-cung/tao-moi" element={<CreateHardwareAssetPage />} />
-            <Route path="/thiet-bi-phan-cung/:id/chinh-sua" element={<CreateHardwareAssetPage />} />
-            <Route path="/giam-sat-may-tram" element={<WorkstationMonitoringPage />} />
-            <Route path="/giam-sat-may-tram/phan-mem" element={<WorkstationInstalledSoftwarePage />} />
-            <Route path="/giam-sat-may-tram/:id/phan-mem" element={<WorkstationInstalledSoftwarePage />} />
+              {/* IT Asset Management */}
+              <Route path="/thiet-bi-phan-cung" element={<HardwareAssetsPage />} />
+              <Route path="/thiet-bi-phan-cung/tao-moi" element={<CreateHardwareAssetPage />} />
+              <Route path="/thiet-bi-phan-cung/:id/chinh-sua" element={<CreateHardwareAssetPage />} />
+              <Route path="/giam-sat-may-tram" element={<WorkstationMonitoringPage />} />
+              <Route path="/giam-sat-may-tram/phan-mem" element={<WorkstationInstalledSoftwarePage />} />
+              <Route path="/giam-sat-may-tram/phan-mem/:id" element={<WorkstationInstalledSoftwarePage />} />
+              <Route path="/giam-sat-may-tram/:id/phan-mem" element={<WorkstationInstalledSoftwarePage />} />
 
-            {/* Forms */}
-            <Route path="/tai-nguyen-so" element={<DigitalAssetsPage />} />
-            <Route path="/tai-nguyen-so/tao-moi" element={<CreateDigitalAssetsPage />} />
-            <Route path="/tai-nguyen-so/:id/chinh-sua" element={<CreateDigitalAssetsPage />} />
+              {/* Forms */}
+              <Route path="/tai-nguyen-so" element={<DigitalAssetsPage />} />
+              <Route path="/tai-nguyen-so/tao-moi" element={<CreateDigitalAssetsPage />} />
+              <Route path="/tai-nguyen-so/:id/chinh-sua" element={<CreateDigitalAssetsPage />} />
 
-            {/* Tables */}
-            <Route path="/tao-moi-tai-nguyen-so" element={<BasicTables />} />
+              {/* Tables */}
+              <Route path="/tao-moi-tai-nguyen-so" element={<BasicTables />} />
 
-            {/* Ui Elements */}
-            <Route path="/hang-san-xuat" element={<BrandsPage />} />
-            <Route path="/danh-muc-san-pham" element={<AssetCategorysPage />} />
-            <Route path="/loai-tai-san" element={<AssetTypesPage />} />
-            <Route path="/trang-thai-tai-san" element={<AssetStatusPage />} />
-            <Route path="/trung-tam-chi-phi" element={<CostCentersPage />} />
-            <Route path="/phong-ban" element={<DepartmentsPage />} />
-            <Route path="/loai-giay-phep" element={<LicenseTypesPage />} />
-            <Route path="/dia-diem" element={<LocationsPage />} />
-            <Route path="/loai-bao-tri" element={<MaintenanceTypesPage />} />
-            <Route path="/lich-bao-tri" element={<MaintenanceSchedulePage />} />
-            <Route path="/chuc-vu" element={<PositionsPage />} />
-            <Route path="/nha-cung-cap" element={<SuppliersPage />} />
-            <Route path="/don-vi" element={<UnitsPage />} />
+              {/* Ui Elements */}
+              <Route path="/hang-san-xuat" element={<BrandsPage />} />
+              <Route path="/danh-muc-san-pham" element={<AssetCategorysPage />} />
+              <Route path="/loai-tai-san" element={<AssetTypesPage />} />
+              <Route path="/trang-thai-tai-san" element={<AssetStatusPage />} />
+              <Route path="/trung-tam-chi-phi" element={<CostCentersPage />} />
+              <Route path="/phong-ban" element={<DepartmentsPage />} />
+              <Route path="/loai-giay-phep" element={<LicenseTypesPage />} />
+              <Route path="/dia-diem" element={<LocationsPage />} />
+              <Route path="/loai-bao-tri" element={<MaintenanceTypesPage />} />
+              <Route path="/lich-bao-tri" element={<MaintenanceSchedulePage />} />
+              <Route path="/chuc-vu" element={<PositionsPage />} />
+              <Route path="/nha-cung-cap" element={<SuppliersPage />} />
+              <Route path="/don-vi" element={<UnitsPage />} />
 
-            <Route path="/form-elements" element={<FormElements />} />
-            <Route path="/tai-khoan" element={<UserAccountsPage />} />
-            <Route path="/alerts" element={<UserAccountsPage />} />
-            <Route path="/phan-quyen" element={<PermissionsPage />} />
-            <Route path="/badges" element={<PermissionsPage />} />
-            <Route path="/cau-hinh-he-thong" element={<SystemSettingsPage />} />
-            <Route path="/settings" element={<SystemSettingsPage />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
+              <Route path="/form-elements" element={<FormElements />} />
+              <Route path="/tai-khoan" element={<UserAccountsPage />} />
+              <Route path="/alerts" element={<UserAccountsPage />} />
+              <Route path="/phan-quyen" element={<PermissionsPage />} />
+              <Route path="/badges" element={<PermissionsPage />} />
+              <Route path="/cau-hinh-he-thong" element={<SystemSettingsPage />} />
+              <Route path="/settings" element={<SystemSettingsPage />} />
+              <Route path="/images" element={<Images />} />
+              <Route path="/videos" element={<Videos />} />
 
-            {/* Reports & Charts & System Logs */}
-            <Route path="/bao-cao-thong-ke" element={<AnalyticsReportsPage />} />
-            <Route path="/nhat-ky-he-thong" element={<SystemLogsPage />} />
-            <Route path="/basic-tables" element={<SystemLogsPage />} />
-            <Route path="/line-chart" element={<AnalyticsReportsPage />} />
-            <Route path="/bar-chart" element={<BarChart />} />
-          </Route>
+              {/* Reports & Charts & System Logs */}
+              <Route path="/bao-cao-thong-ke" element={<AnalyticsReportsPage />} />
+              <Route path="/nhat-ky-he-thong" element={<SystemLogsPage />} />
+              <Route path="/basic-tables" element={<SystemLogsPage />} />
+              <Route path="/line-chart" element={<AnalyticsReportsPage />} />
+              <Route path="/bar-chart" element={<BarChart />} />
+            </Route>
 
             {/* Auth Layout - PUBLIC ONLY (chuyển hướng nếu đã đăng nhập) */}
             <Route

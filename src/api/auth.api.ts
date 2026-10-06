@@ -1,3 +1,4 @@
+import { API_ENDPOINTS } from "../common/apiEndpoints";
 import { ENV } from "../config/env";
 import { api, setAccessToken } from "../library/axios";
 import { AuthResponse, AuthUser, LoginCredentials } from "../types/auth";
@@ -46,6 +47,17 @@ const DEMO_ACCOUNTS: Record<string, AuthUser> = {
   },
 };
 
+// Helper giải mã cấu trúc trả về từ backend (hỗ trợ cả Result<AuthResponse> và AuthResponse trực tiếp)
+function extractAuthResponse(raw: unknown): AuthResponse {
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    if (obj.data && typeof obj.data === "object" && "accessToken" in (obj.data as Record<string, unknown>)) {
+      return obj.data as AuthResponse;
+    }
+  }
+  return raw as AuthResponse;
+}
+
 /**
  * Đăng nhập hệ thống (POST /auth/login)
  * Máy chủ sẽ:
@@ -55,10 +67,12 @@ const DEMO_ACCOUNTS: Record<string, AuthUser> = {
  */
 export async function login(payload: LoginCredentials): Promise<AuthResponse> {
   try {
-    const { data } = await api.post<AuthResponse>(ENV.AUTH.LOGIN, {
+    const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
       username: payload.username,
       password: payload.password,
     });
+
+    const data = extractAuthResponse(response.data);
 
     if (data?.accessToken) {
       setAccessToken(data.accessToken);
@@ -96,6 +110,7 @@ export async function login(payload: LoginCredentials): Promise<AuthResponse> {
     // Lưu phiên demo tạm thời vào sessionStorage để F5 không bị mất khi test offline
     if (typeof window !== "undefined") {
       sessionStorage.setItem("aims_demo_session", JSON.stringify(mockResponse.user));
+      localStorage.setItem("aims_has_session", "true");
     }
 
     return mockResponse;
@@ -108,8 +123,29 @@ export async function login(payload: LoginCredentials): Promise<AuthResponse> {
  * Nếu hợp lệ, Backend trả về Access Token mới và thông tin người dùng.
  */
 export async function refreshSession(): Promise<AuthResponse> {
+  // 1. Nếu đang có phiên Demo, khôi phục tức thì mà không gửi request lên Backend (tránh sinh lỗi 401 giả)
+  if (typeof window !== "undefined") {
+    const demoUserStr = sessionStorage.getItem("aims_demo_session");
+    if (demoUserStr) {
+      try {
+        const demoUser: AuthUser = JSON.parse(demoUserStr);
+        const mockResponse: AuthResponse = {
+          accessToken: `mock_refreshed_token_${Date.now()}`,
+          accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          user: demoUser,
+        };
+        setAccessToken(mockResponse.accessToken);
+        return mockResponse;
+      } catch {
+        sessionStorage.removeItem("aims_demo_session");
+      }
+    }
+  }
+
+  // 2. Phiên thật: Gửi yêu cầu Silent Refresh tới Backend để đọc HttpOnly Cookie
   try {
-    const { data } = await api.post<AuthResponse>(ENV.AUTH.REFRESH);
+    const response = await api.post(API_ENDPOINTS.AUTH.REFRESH);
+    const data = extractAuthResponse(response.data);
 
     if (data?.accessToken) {
       setAccessToken(data.accessToken);
@@ -117,25 +153,6 @@ export async function refreshSession(): Promise<AuthResponse> {
 
     return data;
   } catch (error) {
-    // Nếu Backend không phản hồi, kiểm tra demo session
-    if (typeof window !== "undefined") {
-      const demoUserStr = sessionStorage.getItem("aims_demo_session");
-      if (demoUserStr) {
-        try {
-          const demoUser: AuthUser = JSON.parse(demoUserStr);
-          const mockResponse: AuthResponse = {
-            accessToken: `mock_refreshed_token_${Date.now()}`,
-            accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-            user: demoUser,
-          };
-          setAccessToken(mockResponse.accessToken);
-          return mockResponse;
-        } catch {
-          sessionStorage.removeItem("aims_demo_session");
-        }
-      }
-    }
-
     setAccessToken(null);
     throw error;
   }
@@ -152,13 +169,14 @@ export async function refreshSession(): Promise<AuthResponse> {
  */
 export async function logout(): Promise<void> {
   try {
-    await api.post(ENV.AUTH.LOGOUT);
+    await api.post(API_ENDPOINTS.AUTH.LOGOUT);
   } catch (err) {
     console.warn("[Auth]: Backend logout request failed, clearing local memory session.", err);
   } finally {
     setAccessToken(null);
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("aims_demo_session");
+      localStorage.removeItem("aims_has_session");
     }
   }
 }
@@ -167,6 +185,6 @@ export async function logout(): Promise<void> {
  * Lấy thông tin tài khoản hiện tại (GET /auth/me)
  */
 export async function getCurrentUser(): Promise<AuthUser> {
-  const { data } = await api.get<AuthUser>("/auth/me");
+  const { data } = await api.get<AuthUser>(API_ENDPOINTS.AUTH.ME);
   return data;
 }

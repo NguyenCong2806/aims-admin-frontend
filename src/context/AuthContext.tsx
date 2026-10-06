@@ -15,6 +15,8 @@ import { UserRole } from "../models/User/userAccount";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const SESSION_HINT_KEY = "aims_has_session";
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -24,6 +26,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isInitializing: true, // Đang chạy Silent Refresh khi tải app
     error: null,
   });
+
+  // Guard tránh gọi kép initializeAuth trong React 18+ StrictMode
+  const hasInitializedRef = useRef(false);
 
   // Timer tự động gia hạn token trước khi hết hạn (Proactive Refresh)
   const proactiveRefreshTimerRef = useRef<number | null>(null);
@@ -76,6 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleSessionExpired = useCallback(() => {
     clearProactiveTimer();
     setAccessToken(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(SESSION_HINT_KEY);
+    }
     setState((prev) => {
       if (prev.isAuthenticated) {
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.");
@@ -111,13 +119,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Khởi tạo: Silent Refresh khi người dùng mở trang hoặc F5
   useEffect(() => {
-    let isMounted = true;
+    // Tránh gọi lặp lại 2 lần trong React StrictMode
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
 
     const initializeAuth = async () => {
+      // 1. Kiểm tra Session Hint: nếu chưa từng đăng nhập hoặc đã logout thì bỏ qua gọi API refresh
+      const hasSessionHint =
+        typeof window !== "undefined" &&
+        localStorage.getItem(SESSION_HINT_KEY) === "true";
+      const hasDemoSession =
+        typeof window !== "undefined" &&
+        Boolean(sessionStorage.getItem("aims_demo_session"));
+
+      if (!hasSessionHint && !hasDemoSession) {
+        setState((prev) => ({
+          ...prev,
+          isInitializing: false,
+          isAuthenticated: false,
+          user: null,
+          accessToken: null,
+        }));
+        return;
+      }
+
       try {
-        // Gọi /auth/refresh với withCredentials = true để kiểm tra HttpOnly Cookie
-        const res = await apiRefresh();
-        if (isMounted && res?.accessToken) {
+        // Có cờ phiên: Gọi /auth/refresh với timeout an toàn 6 giây để không bao giờ bị treo loading
+        const refreshPromise = apiRefresh();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout khôi phục phiên")), 6000)
+        );
+
+        const res = await Promise.race([refreshPromise, timeoutPromise]);
+
+        if (res?.accessToken) {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(SESSION_HINT_KEY, "true");
+          }
           setState({
             user: res.user,
             accessToken: res.accessToken,
@@ -127,26 +165,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             error: null,
           });
           scheduleProactiveRefresh(res.accessTokenExpiresAt);
+        } else {
+          throw new Error("Không nhận được token hợp lệ");
         }
-      } catch {
-        // Không có cookie hoặc cookie hết hạn: ở trạng thái unauthenticated bình thường
-        if (isMounted) {
-          setState((prev) => ({
-            ...prev,
-            isInitializing: false,
-            isAuthenticated: false,
-            user: null,
-            accessToken: null,
-          }));
+      } catch (err) {
+        console.warn("[Auth]: Không thể khôi phục phiên khi tải trang:", err);
+        // Cookie không tồn tại hoặc đã hết hạn -> Xóa cờ và đặt về unauthenticated
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(SESSION_HINT_KEY);
+          sessionStorage.removeItem("aims_demo_session");
         }
+        setState((prev) => ({
+          ...prev,
+          isInitializing: false,
+          isAuthenticated: false,
+          user: null,
+          accessToken: null,
+        }));
       }
     };
 
     initializeAuth();
-
-    return () => {
-      isMounted = false;
-    };
   }, [scheduleProactiveRefresh]);
 
   // Hàm Đăng nhập
@@ -155,6 +194,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
       try {
         const res = await apiLogin(credentials);
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem(SESSION_HINT_KEY, "true");
+        }
 
         setState({
           user: res.user,
@@ -187,6 +230,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async (): Promise<void> => {
     setState((prev) => ({ ...prev, isLoading: true }));
     clearProactiveTimer();
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(SESSION_HINT_KEY);
+    }
 
     try {
       await apiLogout();

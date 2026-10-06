@@ -3,6 +3,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { ENV } from "../config/env";
+import { API_ENDPOINTS } from "../common/apiEndpoints";
 
 /**
  * =========================================================================
@@ -106,9 +107,9 @@ api.interceptors.response.use(
 
     // Không retry nếu chính endpoint Refresh, Login hoặc Logout bị 401 để tránh vòng lặp vô tận
     const isAuthEndpoint =
-      originalRequest.url?.includes(ENV.AUTH.REFRESH) ||
-      originalRequest.url?.includes(ENV.AUTH.LOGIN) ||
-      originalRequest.url?.includes(ENV.AUTH.LOGOUT);
+      originalRequest.url?.includes(API_ENDPOINTS.AUTH.REFRESH) ||
+      originalRequest.url?.includes(API_ENDPOINTS.AUTH.LOGIN) ||
+      originalRequest.url?.includes(API_ENDPOINTS.AUTH.LOGOUT);
 
     if (isAuthEndpoint) {
       setAccessToken(null);
@@ -145,7 +146,7 @@ api.interceptors.response.use(
        * sẽ tự động đính kèm HttpOnly Cookie `refresh_token` qua `withCredentials: true`.
        */
       const { data } = await api.post<{ accessToken: string; accessTokenExpiresAt?: string }>(
-        ENV.AUTH.REFRESH
+        API_ENDPOINTS.AUTH.REFRESH
       );
 
       const newAccessToken = data.accessToken;
