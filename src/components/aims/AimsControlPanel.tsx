@@ -14,6 +14,8 @@ export interface AimsControlPanelProps {
   onAddNew?: () => void;
   addNewLabel?: string;
   onExportExcel?: () => void;
+  onImportExcel?: () => void;
+  importExcelLabel?: string;
   selectedCount?: number;
   onClearSelection?: () => void;
   onBatchDelete?: () => void;
@@ -34,6 +36,8 @@ export const AimsControlPanel: React.FC<AimsControlPanelProps> = ({
   onAddNew,
   addNewLabel = "Thêm mới",
   onExportExcel,
+  onImportExcel,
+  importExcelLabel,
   selectedCount = 0,
   onClearSelection,
   onBatchDelete,
@@ -94,6 +98,20 @@ export const AimsControlPanel: React.FC<AimsControlPanelProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <span>Xuất Excel</span>
+            </button>
+          )}
+
+          {/* Import Excel */}
+          {onImportExcel && (
+            <button
+              onClick={onImportExcel}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-300/80 dark:border-emerald-800 rounded-lg transition-colors cursor-pointer"
+              title="Nhập dữ liệu từ file Excel / CSV"
+            >
+              <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span>{importExcelLabel || "Nhập Excel"}</span>
             </button>
           )}
 

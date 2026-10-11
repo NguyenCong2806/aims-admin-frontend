@@ -152,7 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const res = await Promise.race([refreshPromise, timeoutPromise]);
 
-        if (res?.accessToken) {
+        if (
+          res?.accessToken &&
+          res.accessToken.trim() !== "" &&
+          res.isSuccess !== false &&
+          !res.isError
+        ) {
           if (typeof window !== "undefined") {
             localStorage.setItem(SESSION_HINT_KEY, "true");
           }
@@ -194,6 +199,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
       try {
         const res = await apiLogin(credentials);
+        console.log("[Auth Login Response]:", res);
+
+        // Kiểm tra chặt chẽ điều kiện thành công:
+        // isSuccess phải khác false, isError không được true, và phải có accessToken hợp lệ
+        if (
+          !res ||
+          res.isSuccess === false ||
+          res.isError === true ||
+          !res.accessToken ||
+          res.accessToken.trim() === ""
+        ) {
+          const errMsg =
+            res?.errorMessage ||
+            (res?.errorCode === 401
+              ? "The username or password does not exist."
+              : "Đăng nhập thất bại. Tên đăng nhập hoặc mật khẩu không chính xác.");
+          throw new Error(errMsg);
+        }
+
+        // Kiểm tra thông tin người dùng: không được là người dùng rỗng (id: 0 và username: "")
+        if (
+          !res.user ||
+          (res.user.id === 0 && (!res.user.username || res.user.username.trim() === ""))
+        ) {
+          const errMsg =
+            res.errorMessage ||
+            "Không nhận được thông tin người dùng hợp lệ từ máy chủ.";
+          throw new Error(errMsg);
+        }
 
         if (typeof window !== "undefined") {
           localStorage.setItem(SESSION_HINT_KEY, "true");
@@ -215,8 +249,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           err instanceof Error
             ? err.message
             : "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản và mật khẩu.";
+
+        // Xóa token và cờ phiên khi đăng nhập thất bại
+        setAccessToken(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(SESSION_HINT_KEY);
+          sessionStorage.removeItem("aims_demo_session");
+        }
+
         setState((prev) => ({
           ...prev,
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
           isLoading: false,
           error: errorMsg,
         }));

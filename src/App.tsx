@@ -38,6 +38,7 @@ import WorkstationInstalledSoftwarePage from "./pages/Monitoring/WorkstationInst
 import HardwareAssetsPage from "./pages/Hardware/HardwareAssetsPage";
 import CreateHardwareAssetPage from "./pages/Hardware/CreateHardwareAssetPage";
 import AnalyticsReportsPage from "./pages/Reports/AnalyticsReportsPage";
+import ContractsPage from "./pages/Contracts/ContractsPage";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicOnlyRoute from "./components/auth/PublicOnlyRoute";
@@ -93,6 +94,9 @@ export default function App() {
               <Route path="/lich-bao-tri" element={<MaintenanceSchedulePage />} />
               <Route path="/chuc-vu" element={<PositionsPage />} />
               <Route path="/nha-cung-cap" element={<SuppliersPage />} />
+              <Route path="/hop-dong-bao-hanh" element={<ContractsPage />} />
+              <Route path="/hop-dong" element={<ContractsPage />} />
+              <Route path="/contracts" element={<ContractsPage />} />
               <Route path="/don-vi" element={<UnitsPage />} />
 
               <Route path="/form-elements" element={<FormElements />} />

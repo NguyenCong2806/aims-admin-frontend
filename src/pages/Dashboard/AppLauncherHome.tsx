@@ -781,7 +781,7 @@ export default function AppLauncherHome() {
     {
       id: "contracts",
       name: "Hợp đồng & Bảo hành",
-      path: "/blank",
+      path: "/hop-dong-bao-hanh",
       category: "operation",
       description: "Quản lý hồ sơ hợp đồng mua sắm & cam kết SLA",
       renderIcon: () => (

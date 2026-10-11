@@ -20,8 +20,12 @@ export interface LoginCredentials {
 
 export interface AuthResponse {
   accessToken: string;
-  accessTokenExpiresAt: string; // ISO 8601 string hoặc Unix timestamp
+  accessTokenExpiresAt?: string; // ISO 8601 string hoặc Unix timestamp
   user: AuthUser;
+  isSuccess?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  errorCode?: number;
 }
 
 export interface AuthState {

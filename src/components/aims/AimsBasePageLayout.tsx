@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
+import { toast } from "sonner";
 import AimsModuleNav, { NavTabItem } from "./AimsModuleNav";
 import AimsControlPanel, { ViewMode } from "./AimsControlPanel";
 import AimsTreeFilter, { TreeFilterGroup, TreeFilterItem } from "./AimsTreeFilter";
+import ExcelImportModal, { ExcelImportColumn } from "../common/ExcelImportModal";
 
-export type { ViewMode, NavTabItem, TreeFilterGroup, TreeFilterItem };
+export type { ViewMode, NavTabItem, TreeFilterGroup, TreeFilterItem, ExcelImportColumn };
 
 export interface AimsBasePageLayoutProps {
   /** Optional top module sub-navigation */
@@ -24,6 +26,14 @@ export interface AimsBasePageLayoutProps {
   onAddNew?: () => void;
   addNewLabel?: string;
   onExportExcel?: () => void;
+  onImportExcel?: () => void;
+  importExcelLabel?: string;
+  enableDefaultImport?: boolean;
+  templateFileName?: string;
+  templateUrl?: string;
+  templateCsvContent?: string;
+  importTemplateColumns?: any[];
+  onImportData?: (rows: any[], file?: File) => Promise<void> | void;
   selectedCount?: number;
   onClearSelection?: () => void;
   onBatchDelete?: () => void;
@@ -71,6 +81,14 @@ export const AimsBasePageLayout: React.FC<AimsBasePageLayoutProps> = ({
   onAddNew,
   addNewLabel = "Thêm mới",
   onExportExcel,
+  onImportExcel,
+  importExcelLabel,
+  enableDefaultImport = true,
+  templateFileName,
+  templateUrl,
+  templateCsvContent,
+  importTemplateColumns,
+  onImportData,
   selectedCount = 0,
   onClearSelection,
   onBatchDelete,
@@ -92,6 +110,24 @@ export const AimsBasePageLayout: React.FC<AimsBasePageLayoutProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Internal state cho Import Excel modal
+  const [isDefaultImportOpen, setIsDefaultImportOpen] = useState(false);
+
+  // Xác định hiển thị nút Nhập Excel
+  const showImportButton = Boolean(
+    onImportExcel !== undefined
+      ? Boolean(onImportExcel)
+      : Boolean(onImportData || (enableDefaultImport && onExportExcel))
+  );
+
+  const handleImportClick = () => {
+    if (onImportExcel) {
+      onImportExcel();
+    } else {
+      setIsDefaultImportOpen(true);
+    }
+  };
 
   // Internal state if viewMode is not controlled externally
   const [internalViewMode, setInternalViewMode] = useState<ViewMode>("list");
@@ -229,6 +265,8 @@ export const AimsBasePageLayout: React.FC<AimsBasePageLayoutProps> = ({
         onAddNew={onAddNew}
         addNewLabel={addNewLabel}
         onExportExcel={onExportExcel}
+        onImportExcel={showImportButton ? handleImportClick : undefined}
+        importExcelLabel={importExcelLabel}
         selectedCount={selectedCount}
         onClearSelection={onClearSelection}
         onBatchDelete={onBatchDelete}
@@ -254,6 +292,27 @@ export const AimsBasePageLayout: React.FC<AimsBasePageLayoutProps> = ({
           {typeof children === "function" ? children(viewMode) : children}
         </main>
       </div>
+
+      {/* 5. MODAL NHẬP DỮ LIỆU EXCEL TÍCH HỢP */}
+      {showImportButton && !onImportExcel && (
+        <ExcelImportModal
+          isOpen={isDefaultImportOpen}
+          onClose={() => setIsDefaultImportOpen(false)}
+          title={`Nhập dữ liệu ${title} từ file Excel`}
+          subtitle="Hỗ trợ các định dạng tệp .xlsx, .xls, .csv"
+          templateFileName={templateFileName || `Mau_Nhap_${title.replace(/\s+/g, "_")}.xlsx`}
+          templateUrl={templateUrl}
+          templateCsvContent={templateCsvContent}
+          columns={importTemplateColumns}
+          onImport={async (rows, file) => {
+            if (onImportData) {
+              await onImportData(rows, file);
+            } else {
+              toast.success(`Đã nhận ${rows.length} dòng dữ liệu từ file Excel!`);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -11,8 +11,17 @@ import {
   useUnitById,
   useUnitParams,
   useUpdateUnit,
+  useBatchImportUnits,
 } from "../../../query/units/unitsQuery";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const UNIT_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "Code", label: "Mã đơn vị", required: true, description: "Mã ký hiệu đơn vị tính (duy nhất)" },
+  { key: "Name", label: "Tên đơn vị tính", required: true, description: "Tên quy chuẩn của đơn vị" },
+  { key: "Description", label: "Mô tả", description: "Mô tả mục đích sử dụng" },
+  { key: "DisplayOrder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+  { key: "IsActive", label: "Trạng thái", description: "TRUE (hoạt động) / FALSE (ngừng)" },
+];
 
 const UnitsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,9 +45,10 @@ const UnitsPage: React.FC = () => {
   const createMutation = useCreateUnit();
   const updateMutation = useUpdateUnit();
   const deleteMutation = useRemoveUnit();
+  const batchImportMutation = useBatchImportUnits();
 
   const items = (data?.items ?? []) as unit[];
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting = createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -151,6 +161,24 @@ const UnitsPage: React.FC = () => {
         }}
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu đơn vị tính ra file Excel...")}
+        templateFileName="Mau_Nhap_Don_Vi_Tinh.csv"
+        templateUrl="/templates/Mau_Nhap_Don_Vi_Tinh.csv"
+        importTemplateColumns={UNIT_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu đơn vị tính từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

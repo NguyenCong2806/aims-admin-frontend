@@ -16,6 +16,8 @@ import { DigitalCloudServerService } from "../services/DigitalCloudServer/Digita
 import { DigitalSoftwareLicenseService } from "../services/DigitalSoftwareLicense/DigitalSoftwareLicenseService";
 import { DigitalInternetLineService } from "../services/DigitalInternetLine/DigitalInternetLineService";
 import { ComputerAuditService } from "../services/ComputerAudit/ComputerAuditSerice";
+import { ContractService } from "../services/Contract/ContractService";
+
 export class ServiceContainer {
   public readonly brand: BrandService;
   public readonly assetCategory: AssetCategoryService;
@@ -35,6 +37,8 @@ export class ServiceContainer {
   public readonly digitalSoftwareLicense: DigitalSoftwareLicenseService;
   public readonly digitalInternetLine: DigitalInternetLineService;
   public readonly computerAudit: ComputerAuditService;
+  public readonly contract: ContractService;
+
   constructor() {
     this.brand = new BrandService();
     this.assetCategory = new AssetCategoryService();
@@ -54,6 +58,7 @@ export class ServiceContainer {
     this.digitalSoftwareLicense = new DigitalSoftwareLicenseService();
     this.digitalInternetLine = new DigitalInternetLineService();
     this.computerAudit = new ComputerAuditService();
+    this.contract = new ContractService();
   }
 }
 

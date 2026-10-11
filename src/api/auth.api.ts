@@ -1,3 +1,4 @@
+import axios from "axios";
 import { API_ENDPOINTS } from "../common/apiEndpoints";
 import { ENV } from "../config/env";
 import { api, setAccessToken } from "../library/axios";
@@ -22,7 +23,7 @@ const DEMO_ACCOUNTS: Record<string, AuthUser> = {
     fullName: "Nguyễn Huy Hoàng (IT Admin)",
     avatarUrl: "/images/user/user-01.jpg",
     roles: ["AssetManager", "ITSupport"],
-    permissions: ["assets:*", "monitoring:*", "reports:*"],
+    permissions: ["assets:*"],
     departmentName: "Phòng Công nghệ Thông tin",
   },
   "lan.hr": {
@@ -74,46 +75,88 @@ export async function login(payload: LoginCredentials): Promise<AuthResponse> {
 
     const data = extractAuthResponse(response.data);
 
-    if (data?.accessToken) {
-      setAccessToken(data.accessToken);
+    // 1. Kiểm tra tính hợp lệ của phản hồi từ máy chủ:
+    // Nếu isSuccess là false HOẶC isError là true HOẶC không có accessToken
+    if (
+      data.isSuccess === false ||
+      data.isError === true ||
+      !data.accessToken ||
+      data.accessToken.trim() === ""
+    ) {
+      const errorMsg =
+        data.errorMessage ||
+        (data.errorCode === 401
+          ? "The username or password does not exist."
+          : "Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản và mật khẩu.");
+      const error = new Error(errorMsg);
+      (error as unknown as { response: { data: AuthResponse } }).response = { data };
+      throw error;
     }
 
+    setAccessToken(data.accessToken);
     return data;
-  } catch {
-    // Nếu kết nối tới Backend thực tế bị lỗi mạng / chưa bật server:
-    // Cung cấp Fallback Development Mode thông minh cho các tài khoản mẫu
-    const normalizedUser = payload.username.toLowerCase();
-    const demoUser = DEMO_ACCOUNTS[normalizedUser] || {
-      id: 99,
-      username: payload.username,
-      email: `${payload.username}@aims.vn`,
-      fullName: payload.username,
-      roles: ["AssetManager"],
-      permissions: ["assets:*"],
-      departmentName: "Bộ phận IT",
-    };
+  } catch (error: unknown) {
+    // 2. Nếu có phản hồi lỗi từ máy chủ (HTTP 400, 401, 500,...)
+    if (axios.isAxiosError(error) && error.response) {
+      const responseData = error.response.data as
+        | (Partial<AuthResponse> & { message?: string; title?: string })
+        | undefined;
+      const errorMsg =
+        responseData?.errorMessage ||
+        responseData?.message ||
+        responseData?.title ||
+        (error.response.status === 401
+          ? "The username or password does not exist."
+          : "Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.");
 
-    console.warn(
-      "[Auth Security Notice]: Không thể kết nối tới máy chủ backend tại " +
-        ENV.API_URL +
-        ". Kích hoạt chế độ xác thực mô phỏng an toàn (In-Memory Access Token + Mock HttpOnly Cookie) cho tài khoản: " +
-        payload.username
-    );
-
-    const mockResponse: AuthResponse = {
-      accessToken: `mock_jwt_access_token_${Date.now()}`,
-      accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 phút
-      user: demoUser,
-    };
-
-    setAccessToken(mockResponse.accessToken);
-    // Lưu phiên demo tạm thời vào sessionStorage để F5 không bị mất khi test offline
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("aims_demo_session", JSON.stringify(mockResponse.user));
-      localStorage.setItem("aims_has_session", "true");
+      const err = new Error(errorMsg);
+      (err as unknown as { response: unknown }).response = error.response;
+      throw err;
     }
 
-    return mockResponse;
+    // 3. Nếu lỗi do chính chúng ta ném ra từ việc kiểm tra data.isSuccess === false
+    if (error instanceof Error && error.message) {
+      if (!error.message.includes("Network Error") && !error.message.includes("ERR_NETWORK")) {
+        throw error;
+      }
+    }
+
+    // 4. Fallback chỉ kích hoạt khi máy chủ offline hoàn toàn (Network Error) VÀ dùng tài khoản demo
+    const isNetworkError =
+      axios.isAxiosError(error) &&
+      (!error.response || error.code === "ERR_NETWORK" || error.message.includes("Network Error"));
+
+    if (isNetworkError) {
+      const normalizedUser = payload.username.toLowerCase();
+      if (DEMO_ACCOUNTS[normalizedUser]) {
+        console.warn(
+          "[Auth Offline Demo]: Không thể kết nối tới máy chủ backend tại " +
+            ENV.API_URL +
+            ". Kích hoạt tài khoản mẫu offline: " +
+            payload.username
+        );
+        const demoUser = DEMO_ACCOUNTS[normalizedUser];
+        const mockResponse: AuthResponse = {
+          accessToken: `mock_jwt_access_token_${Date.now()}`,
+          accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          user: demoUser,
+          isSuccess: true,
+          isError: false,
+          errorMessage: "",
+          errorCode: 200,
+        };
+        setAccessToken(mockResponse.accessToken);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("aims_demo_session", JSON.stringify(mockResponse.user));
+          localStorage.setItem("aims_has_session", "true");
+        }
+        return mockResponse;
+      }
+
+      throw new Error("Không thể kết nối đến máy chủ backend. Vui lòng kiểm tra lại dịch vụ backend.");
+    }
+
+    throw error;
   }
 }
 
@@ -133,6 +176,10 @@ export async function refreshSession(): Promise<AuthResponse> {
           accessToken: `mock_refreshed_token_${Date.now()}`,
           accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
           user: demoUser,
+          isSuccess: true,
+          isError: false,
+          errorMessage: "",
+          errorCode: 200,
         };
         setAccessToken(mockResponse.accessToken);
         return mockResponse;
@@ -147,10 +194,18 @@ export async function refreshSession(): Promise<AuthResponse> {
     const response = await api.post(API_ENDPOINTS.AUTH.REFRESH);
     const data = extractAuthResponse(response.data);
 
-    if (data?.accessToken) {
-      setAccessToken(data.accessToken);
+    if (
+      !data ||
+      data.isSuccess === false ||
+      data.isError === true ||
+      !data.accessToken ||
+      data.accessToken.trim() === ""
+    ) {
+      setAccessToken(null);
+      throw new Error(data?.errorMessage || "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
     }
 
+    setAccessToken(data.accessToken);
     return data;
   } catch (error) {
     setAccessToken(null);

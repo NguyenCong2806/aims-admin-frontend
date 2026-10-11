@@ -48,7 +48,7 @@ const navItems: NavItem[] = [
     name: "Hợp đồng & Đối tác",
     icon: <DocsIcon />,
     subItems: [
-      { name: "Hợp đồng & Bảo hành", path: "/blank", pro: false },
+      { name: "Hợp đồng & Bảo hành", path: "/hop-dong-bao-hanh", pro: false },
       { name: "Nhà cung cấp", path: "/nha-cung-cap", pro: false },
     ],
   },

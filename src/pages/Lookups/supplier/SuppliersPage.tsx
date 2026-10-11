@@ -11,8 +11,23 @@ import {
   useSupplierById,
   useSupplierParams,
   useUpdateSupplier,
+  useBatchImportSuppliers,
 } from "../../../query/suppliers/suppliersQuery";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const SUPPLIER_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã nhà cung cấp", required: true, description: "Mã ký hiệu nhà cung cấp (bắt buộc, duy nhất)" },
+  { key: "name", label: "Tên nhà cung cấp", required: true, description: "Tên đầy đủ của nhà cung ứng (bắt buộc)" },
+  { key: "tax_code", label: "Mã số thuế", description: "Mã số thuế doanh nghiệp" },
+  { key: "phone", label: "Số điện thoại", description: "Số điện thoại liên hệ" },
+  { key: "email", label: "Email", description: "Thư điện tử liên hệ" },
+  { key: "address", label: "Địa chỉ", description: "Địa chỉ trụ sở / văn phòng" },
+  { key: "contact_person", label: "Người liên hệ", description: "Họ và tên người đại diện liên hệ" },
+  { key: "description", label: "Mô tả", description: "Ghi chú, ngành nghề cung ứng" },
+  { key: "is_active", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "display_order", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+  { key: "id", label: "ID", description: "ID hệ thống (để 0 khi thêm mới)" },
+];
 
 const SuppliersPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,9 +51,11 @@ const SuppliersPage: React.FC = () => {
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
   const deleteMutation = useRemoveSupplier();
+  const batchImportMutation = useBatchImportSuppliers();
 
   const items = (data?.items ?? []) as supplier[];
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -151,6 +168,24 @@ const SuppliersPage: React.FC = () => {
         }}
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu nhà cung cấp ra file Excel...")}
+        templateFileName="Mau_Nhap_Nha_Cung_Cap.csv"
+        templateUrl="/templates/Mau_Nhap_Nha_Cung_Cap.csv"
+        importTemplateColumns={SUPPLIER_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu nhà cung cấp từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

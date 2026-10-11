@@ -43,3 +43,13 @@ export function useRemoveUnit() {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn: (id: number) => services.unit.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: unitKeys.all }) });
 }
+
+export function useBatchImportUnits() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: File | FormData | any[]) => services.unit.batchImport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: unitKeys.all });
+    },
+  });
+}

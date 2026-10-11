@@ -1,3 +1,14 @@
+import { ENV } from "../config/env";
+
+/**
+ * Trả về đường dẫn API đầy đủ kết hợp các biến môi trường VITE_BACKEND_TARGET và VITE_API_URL
+ * Ví dụ: getFullApiUrl("/units/batch-import") -> "https://localhost:8687/api/v1/units/batch-import"
+ */
+export const getFullApiUrl = (endpoint: string): string => {
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return `${ENV.BACKEND_TARGET}${ENV.API_URL}${cleanEndpoint}`;
+};
+
 /**
  * Danh sách toàn bộ Endpoint API của hệ thống AIMS Enterprise
  * Quản lý tập trung (Single Source of Truth) để tránh magic strings và dễ bảo trì.
@@ -24,7 +35,23 @@ export const API_ENDPOINTS = {
     MAINTENANCE_TYPES: "/maintenance-type",
     POSITIONS: "/positions",
     SUPPLIERS: "/suppliers",
+    SUPPLIERS_BATCH_IMPORT: "/suppliers/batch-import",
     UNITS: "/units",
+    UNITS_BATCH_IMPORT: "/units/batch-import",
+  },
+
+  // Quản lý Nhà cung cấp (Suppliers)
+  SUPPLIERS: {
+    BASE: "/suppliers",
+    BATCH_IMPORT: "/suppliers/batch-import",
+    FULL_BATCH_IMPORT_URL: getFullApiUrl("/suppliers/batch-import"),
+  },
+
+  // Quản lý Đơn vị tính (Units)
+  UNITS: {
+    BASE: "/units",
+    BATCH_IMPORT: "/units/batch-import",
+    FULL_BATCH_IMPORT_URL: getFullApiUrl("/units/batch-import"),
   },
   DEVICE: {
     BASE: "/computer-audit",
@@ -43,6 +70,13 @@ export const API_ENDPOINTS = {
   // Quản lý Thiết bị phần cứng (Hardware Assets)
   HARDWARE: {
     BASE: "/hardware-assets",
+  },
+
+  // Quản lý Hợp đồng & Bảo hành (Contracts & Warranties)
+  CONTRACTS: {
+    BASE: "/contracts",
+    UPLOAD: "/contracts/upload",
+    DOWNLOAD: "/contracts/download",
   },
 
   // Giám sát máy trạm & Phần mềm cài đặt (Monitoring)

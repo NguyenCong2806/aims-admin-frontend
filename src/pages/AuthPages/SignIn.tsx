@@ -8,6 +8,11 @@ import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
 
 interface ApiErrorResponse {
   message?: string;
+  errorMessage?: string;
+  title?: string;
+  errorCode?: number;
+  isError?: boolean;
+  isSuccess?: boolean;
 }
 
 export default function SignIn() {
@@ -38,11 +43,25 @@ export default function SignIn() {
 
     try {
       setIsLoading(true);
-      await login({
+      const res = await login({
         username: trimmedUsername,
         password,
         rememberMe,
       });
+
+      // Kiểm tra bảo vệ bổ sung: Nếu isSuccess là false thì hiển thị lỗi và không cho vào
+      if (
+        !res ||
+        res.isSuccess === false ||
+        res.isError === true ||
+        !res.accessToken ||
+        res.accessToken.trim() === ""
+      ) {
+        const message = res?.errorMessage || "The username or password does not exist.";
+        setErrorMessage(message);
+        toast.error(message);
+        return;
+      }
 
       toast.success("Đăng nhập thành công! Đang chuyển hướng...");
 
@@ -51,20 +70,33 @@ export default function SignIn() {
       const targetUrl = rawRedirect ? decodeURIComponent(rawRedirect) : "/";
       navigate(targetUrl, { replace: true });
     } catch (error: unknown) {
+      let message = "Đăng nhập không thành công. Vui lòng thử lại.";
+
       if (axios.isAxiosError<ApiErrorResponse>(error)) {
-        const message =
-          error.response?.data?.message ??
-          "Tên đăng nhập hoặc mật khẩu không chính xác.";
-        setErrorMessage(message);
-        toast.error(message);
-      } else {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Đăng nhập không thành công. Vui lòng thử lại.";
-        setErrorMessage(message);
-        toast.error(message);
+        const data = error.response?.data;
+        message =
+          data?.errorMessage ||
+          data?.message ||
+          data?.title ||
+          (error.response?.status === 401
+            ? "The username or password does not exist."
+            : "Tên đăng nhập hoặc mật khẩu không chính xác.");
+      } else if (error && typeof error === "object") {
+        const errObj = error as {
+          message?: string;
+          response?: { data?: ApiErrorResponse };
+        };
+        message =
+          errObj.response?.data?.errorMessage ||
+          errObj.response?.data?.message ||
+          errObj.message ||
+          message;
+      } else if (error instanceof Error) {
+        message = error.message;
       }
+
+      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -256,7 +288,7 @@ export default function SignIn() {
                 {/* Username / Email */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                    Tên đăng nhập / Email công vụ <span className="text-rose-500">*</span>
+                    Tên đăng nhập<span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
