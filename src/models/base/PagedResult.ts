@@ -1,6 +1,6 @@
 export interface PagedResult<T> {
- items: Array<T>[],
- pagination:PaginationInfo
+  items: T[];
+  pagination: PaginationInfo;
 }
 
 export interface PaginationInfo{

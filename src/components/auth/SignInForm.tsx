@@ -17,6 +17,11 @@ import { login } from "../../api/auth.api";
 
 interface ApiErrorResponse {
   message?: string;
+  errorMessage?: string;
+  title?: string;
+  errorCode?: number;
+  isError?: boolean;
+  isSuccess?: boolean;
 }
 
 export default function SignInForm() {
@@ -65,13 +70,17 @@ export default function SignInForm() {
 
       console.log("LOGIN SUCCESS:", response);
 
-      /**
-       * login() đã xử lý:
-       *
-       * 1. POST /auth/login
-       * 2. Backend set refresh_token vào HttpOnly Cookie
-       * 3. Lưu access token vào memory
-       */
+      if (
+        !response ||
+        response.isSuccess === false ||
+        response.isError === true ||
+        !response.accessToken ||
+        response.accessToken.trim() === ""
+      ) {
+        const message = response?.errorMessage || "The username or password does not exist.";
+        setErrorMessage(message);
+        return;
+      }
 
       navigate("/", {
         replace: true,
@@ -79,17 +88,31 @@ export default function SignInForm() {
     } catch (error: unknown) {
       console.error("LOGIN ERROR:", error);
 
+      let message = "Đã xảy ra lỗi. Vui lòng thử lại.";
       if (axios.isAxiosError<ApiErrorResponse>(error)) {
-        const message =
-          error.response?.data?.message ??
-          "Tên đăng nhập hoặc mật khẩu không chính xác.";
-
-        setErrorMessage(message);
-      } else {
-        setErrorMessage(
-          "Đã xảy ra lỗi. Vui lòng thử lại."
-        );
+        const data = error.response?.data;
+        message =
+          data?.errorMessage ||
+          data?.message ||
+          data?.title ||
+          (error.response?.status === 401
+            ? "The username or password does not exist."
+            : "Tên đăng nhập hoặc mật khẩu không chính xác.");
+      } else if (error && typeof error === "object") {
+        const errObj = error as {
+          message?: string;
+          response?: { data?: ApiErrorResponse };
+        };
+        message =
+          errObj.response?.data?.errorMessage ||
+          errObj.response?.data?.message ||
+          errObj.message ||
+          message;
+      } else if (error instanceof Error) {
+        message = error.message;
       }
+
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }
