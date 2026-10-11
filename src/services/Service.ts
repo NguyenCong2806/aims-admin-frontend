@@ -98,8 +98,12 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await api.post<FileUploadResult>(`${this.endpoint}/upload`, formData);
-        return response.data;
+        const response = await api.post<any>(`${this.endpoint}/upload`, formData);
+        const raw = response.data;
+        if (raw && typeof raw === "object" && "data" in raw && raw.data) {
+            return raw.data as FileUploadResult;
+        }
+        return raw as FileUploadResult;
     }
     async uploadFiles(files: File[]): Promise<Array<FileUploadResult>> {
         const formData = new FormData();
@@ -108,12 +112,19 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
             formData.append("files", file);
         });
 
-        const response = await api.post<Array<FileUploadResult>>(
+        const response = await api.post<any>(
             `${this.endpoint}/upload-multiple`,
             formData
         );
 
-        return response.data;
+        const raw = response.data;
+        if (raw && typeof raw === "object" && "data" in raw && Array.isArray(raw.data)) {
+            return raw.data as Array<FileUploadResult>;
+        }
+        if (Array.isArray(raw)) {
+            return raw as Array<FileUploadResult>;
+        }
+        return [];
     }
     async deleteFile(fileurl: string): Promise<Result<TEntity>> {
         const response = await api.delete<Result<TEntity>>(`${this.endpoint}/${fileurl}`);

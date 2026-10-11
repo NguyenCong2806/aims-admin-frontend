@@ -72,6 +72,15 @@ export const API_ENDPOINTS = {
     BASE: "/hardware-assets",
   },
 
+  // Quản lý Tập tin & Đính kèm (Files & Attachments)
+  FILES: {
+    BASE: "/files",
+    UPLOAD: "/files/upload",
+    UPLOAD_MULTIPLE: "/files/upload-multiple",
+    DOWNLOAD: "/files/download",
+    DELETE: "/files/delete",
+  },
+
   // Quản lý Hợp đồng & Bảo hành (Contracts & Warranties)
   CONTRACTS: {
     BASE: "/contracts",

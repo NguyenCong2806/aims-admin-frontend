@@ -70,7 +70,7 @@ export default function ContractsPage() {
       return rawItems.filter((item) => (item.warrantyMonths ?? 0) > 0);
     }
     if (selectedFacet === "has_file") {
-      return rawItems.filter((item) => Boolean(item.fileUrl));
+      return rawItems.filter((item) => Boolean(item.documentFileUrl || item.fileUrl));
     }
 
     return rawItems;
@@ -95,7 +95,7 @@ export default function ContractsPage() {
     rawItems.forEach((c) => {
       statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
       typeCounts[c.contractType] = (typeCounts[c.contractType] || 0) + 1;
-      if (c.fileUrl) withFileCount++;
+      if (c.documentFileUrl || c.fileUrl) withFileCount++;
     });
 
     return [
@@ -139,7 +139,7 @@ export default function ContractsPage() {
     const target = rawItems.find((c) => c.id === id);
     const result = await Swal.fire({
       title: "Xác nhận xóa hợp đồng?",
-      html: `Bạn có chắc muốn xóa hợp đồng <b class="text-rose-600 font-mono">${target?.contractCode}</b> (${target?.title})?<br><span class="text-xs text-gray-500">Hành động này sẽ không thể khôi phục.</span>`,
+      html: `Bạn có chắc muốn xóa hợp đồng <b class="text-rose-600 font-mono">${target?.contractNumber || target?.contractCode}</b> (${target?.title})?<br><span class="text-xs text-gray-500">Hành động này sẽ không thể khôi phục.</span>`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Đồng ý xóa",
@@ -234,16 +234,16 @@ export default function ContractsPage() {
 
     const rows = items.map((c) => [
       c.id,
-      `"${c.contractCode}"`,
+      `"${c.contractNumber || c.contractCode || ""}"`,
       `"${c.title}"`,
       `"${CONTRACT_TYPE_LABELS[c.contractType]?.label || c.contractType}"`,
-      `"${c.supplierName || ""}"`,
+      `"${c.supplier?.name || c.supplierName || ""}"`,
       c.totalValue,
-      c.startDate,
-      c.endDate,
+      c.effectiveDate || c.startDate || "",
+      c.expiryDate || c.endDate || "",
       c.warrantyMonths || 0,
       `"${STATUS_CONFIG[c.status]?.label || c.status}"`,
-      `"${c.fileName || ""}"`,
+      `"${c.documentFileUrl || c.fileUrl || ""}"`,
     ]);
 
     const csvContent =
@@ -263,15 +263,16 @@ export default function ContractsPage() {
 
   // Cấu hình các cột nhập liệu từ Excel cho Hợp đồng
   const CONTRACT_IMPORT_COLUMNS = [
-    { key: "contractCode", label: "Mã hợp đồng", sample: "HD-2026-8899", required: true },
+    { key: "contractNumber", label: "Số hợp đồng", sample: "HD-2026-8899", required: true },
     { key: "title", label: "Tên hợp đồng", sample: "Mua sắm Máy chủ Dell PowerEdge R750", required: true },
-    { key: "contractType", label: "Loại hợp đồng", sample: "IT_HARDWARE", description: "IT_HARDWARE, SOFTWARE_LICENSE, CLOUD_HOSTING..." },
+    { key: "contractType", label: "Loại hợp đồng", sample: "SERVICE_MAINTENANCE", description: "SERVICE_MAINTENANCE, IT_HARDWARE, SOFTWARE_LICENSE, CLOUD_HOSTING..." },
     { key: "totalValue", label: "Giá trị (VND)", sample: 450000000 },
     { key: "currency", label: "Loại tiền", sample: "VND" },
-    { key: "startDate", label: "Ngày bắt đầu", sample: "2026-01-01" },
-    { key: "endDate", label: "Ngày kết thúc", sample: "2027-01-01" },
-    { key: "warrantyMonths", label: "Bảo hành (tháng)", sample: 24 },
+    { key: "effectiveDate", label: "Ngày hiệu lực", sample: "2026-01-01" },
+    { key: "expiryDate", label: "Ngày hết hạn", sample: "2027-01-01" },
     { key: "status", label: "Trạng thái", sample: "ACTIVE", description: "ACTIVE, DRAFT, EXPIRING_SOON, EXPIRED, TERMINATED" },
+    { key: "paymentTerms", label: "Điều khoản thanh toán", sample: "Đợt 1: 30%, Đợt 2: 70%" },
+    { key: "documentFileUrl", label: "URL file tài liệu", sample: "/files/upload/hd.pdf" },
     { key: "notes", label: "Ghi chú", sample: "Nhập khẩu từ file Excel" },
   ];
 
@@ -279,21 +280,29 @@ export default function ContractsPage() {
   const handleImportContracts = async (rows: any[]) => {
     let successCount = 0;
     for (const r of rows) {
-      const code = String(r.contractCode || r["Mã hợp đồng"] || r["Số HĐ"] || "").trim();
+      const code = String(r.contractNumber || r.contractCode || r["Mã hợp đồng"] || r["Số HĐ"] || r["Số hợp đồng"] || "").trim();
       const titleStr = String(r.title || r["Tên hợp đồng"] || "").trim();
       if (!titleStr) continue;
 
+      const eff = r.effectiveDate || r.startDate || r["Ngày bắt đầu"] || r["Ngày hiệu lực"] || new Date().toISOString().split("T")[0];
+      const exp = r.expiryDate || r.endDate || r["Ngày kết thúc"] || r["Ngày hết hạn"] || new Date().toISOString().split("T")[0];
+
       const newContract: createcontract = {
-        contractCode: code || `HD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        contractNumber: code || `HD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
         title: titleStr,
-        contractType: String(r.contractType || r["Loại hợp đồng"] || "IT_HARDWARE").trim(),
-        totalValue: Number(r.totalValue || r["Giá trị (VND)"] || 0),
+        contractType: String(r.contractType || r["Loại hợp đồng"] || "SERVICE_MAINTENANCE").trim(),
+        totalValue: Number(r.totalValue || r["Giá trị (VND)"] || r["Giá trị"] || 0),
         currency: String(r.currency || r["Loại tiền"] || "VND").trim(),
-        startDate: r.startDate || r["Ngày bắt đầu"] || new Date().toISOString().split("T")[0],
-        endDate: r.endDate || r["Ngày kết thúc"] || new Date().toISOString().split("T")[0],
-        warrantyMonths: Number(r.warrantyMonths || r["Bảo hành (tháng)"] || 12),
+        effectiveDate: new Date(eff).toISOString(),
+        expiryDate: new Date(exp).toISOString(),
         status: String(r.status || r["Trạng thái"] || "ACTIVE").trim(),
+        paymentTerms: r.paymentTerms || r["Điều khoản thanh toán"] || null,
+        documentFileUrl: r.documentFileUrl || r.fileUrl || null,
         notes: String(r.notes || r["Ghi chú"] || "Nhập từ file Excel").trim(),
+
+        contractCode: code,
+        startDate: eff,
+        endDate: exp,
       };
 
       try {
@@ -515,7 +524,11 @@ export default function ContractsPage() {
                     const typeConfig = CONTRACT_TYPE_LABELS[item.contractType] || CONTRACT_TYPE_LABELS["OTHER"];
                     const statusCfg = STATUS_CONFIG[item.status] || STATUS_CONFIG["ACTIVE"];
                     const isSelected = selectedIds.has(item.id);
-                    const progress = calculateProgress(item.startDate, item.endDate);
+                    const effDate = item.effectiveDate ? item.effectiveDate.split("T")[0] : (item.startDate || "");
+                    const expDate = item.expiryDate ? item.expiryDate.split("T")[0] : (item.endDate || "");
+                    const progress = calculateProgress(effDate, expDate);
+                    const docUrl = item.documentFileUrl || item.fileUrl;
+                    const docName = item.fileName || (docUrl ? docUrl.split("/").pop() : "Tài liệu");
 
                     return (
                       <tr
@@ -538,7 +551,7 @@ export default function ContractsPage() {
                         <td className="py-3.5 px-4">
                           <div className="space-y-0.5">
                             <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60">
-                              {item.contractCode}
+                              {item.contractNumber || item.contractCode}
                             </span>
                             <h4
                               onClick={() => {
@@ -565,11 +578,11 @@ export default function ContractsPage() {
 
                         {/* Đối tác / Nhà cung cấp */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          {item.supplierName ? (
+                          {item.supplier?.name || item.supplierName ? (
                             <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200 font-medium">
                               <span className="text-base">🏢</span>
-                              <span className="truncate max-w-[180px]" title={item.supplierName}>
-                                {item.supplierName}
+                              <span className="truncate max-w-[180px]" title={item.supplier?.name || item.supplierName}>
+                                {item.supplier?.name || item.supplierName}
                               </span>
                             </div>
                           ) : (
@@ -589,7 +602,7 @@ export default function ContractsPage() {
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <div className="space-y-1">
                             <div className="text-[11px] text-gray-600 dark:text-gray-300 font-mono">
-                              {item.startDate} &rarr; {item.endDate}
+                              {effDate} &rarr; {expDate}
                             </div>
                             {/* Progress bar */}
                             <div className="w-28 bg-gray-100 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
@@ -609,7 +622,11 @@ export default function ContractsPage() {
 
                         {/* Bảo hành */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          {item.warrantyMonths ? (
+                          {item.paymentTerms ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-700 dark:text-gray-300 truncate max-w-[140px]" title={item.paymentTerms}>
+                              💳 {item.paymentTerms}
+                            </span>
+                          ) : item.warrantyMonths ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-md border border-purple-200 dark:border-purple-800">
                               🛡️ {item.warrantyMonths} tháng
                             </span>
@@ -620,18 +637,17 @@ export default function ContractsPage() {
 
                         {/* File đính kèm */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          {item.fileUrl && item.fileName ? (
-                            <a
-                              href={item.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                          {docUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => services.file.downloadFile(docUrl, docName)}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-indigo-50 dark:bg-gray-800 dark:hover:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 transition-colors group cursor-pointer max-w-[150px]"
-                              title={`Tải xuống: ${item.fileName} (${formatFileSize(item.fileSize)})`}
+                              title={`Tải xuống tài liệu qua /files/download: ${docName}`}
                             >
                               <FileIcon className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                              <span className="truncate text-[11px]">{item.fileName}</span>
+                              <span className="truncate text-[11px]">{docName}</span>
                               <DownloadIcon className="w-3 h-3 text-gray-400 group-hover:text-indigo-600 shrink-0" />
-                            </a>
+                            </button>
                           ) : (
                             <span className="text-gray-400 text-[11px] italic">Chưa đính kèm</span>
                           )}
@@ -685,7 +701,13 @@ export default function ContractsPage() {
             {items.map((item) => {
               const typeConfig = CONTRACT_TYPE_LABELS[item.contractType] || CONTRACT_TYPE_LABELS["OTHER"];
               const statusCfg = STATUS_CONFIG[item.status] || STATUS_CONFIG["ACTIVE"];
-              const progress = calculateProgress(item.startDate, item.endDate);
+              const effDate = (item.effectiveDate || item.startDate || "").split("T")[0];
+              const expDate = (item.expiryDate || item.endDate || "").split("T")[0];
+              const progress = calculateProgress(effDate, expDate);
+              const contractNum = item.contractNumber || item.contractCode || `HD-${item.id}`;
+              const supplierTitle = item.supplier?.name || item.supplierName || "—";
+              const docUrl = item.documentFileUrl || item.fileUrl;
+              const docName = item.fileName || (docUrl ? docUrl.split("/").pop() : null);
 
               return (
                 <div
@@ -696,7 +718,7 @@ export default function ContractsPage() {
                     {/* Header Card */}
                     <div className="flex items-center justify-between mb-3">
                       <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-800/60">
-                        {item.contractCode}
+                        {contractNum}
                       </span>
                       <span
                         className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${statusCfg.bg}`}
@@ -733,19 +755,19 @@ export default function ContractsPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Đối tác:</span>
                         <span className="font-medium text-gray-900 dark:text-white truncate max-w-[160px]">
-                          {item.supplierName || "—"}
+                          {supplierTitle}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Giá trị:</span>
                         <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          {Number(item.totalValue).toLocaleString("vi-VN")} đ
+                          {Number(item.totalValue).toLocaleString("vi-VN")} {item.currency || "VND"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Bảo hành:</span>
-                        <span className="font-medium text-purple-600 dark:text-purple-400">
-                          {item.warrantyMonths ? `🛡️ ${item.warrantyMonths} tháng` : "—"}
+                        <span className="text-gray-400">Điều khoản TT:</span>
+                        <span className="font-medium text-gray-700 dark:text-gray-300 truncate max-w-[160px]" title={item.paymentTerms || ""}>
+                          {item.paymentTerms ? `💳 ${item.paymentTerms}` : item.warrantyMonths ? `🛡️ ${item.warrantyMonths} tháng` : "—"}
                         </span>
                       </div>
                     </div>
@@ -753,8 +775,8 @@ export default function ContractsPage() {
                     {/* Timeline bar */}
                     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60">
                       <div className="flex items-center justify-between text-[11px] text-gray-400 mb-1 font-mono">
-                        <span>{item.startDate}</span>
-                        <span>{item.endDate}</span>
+                        <span>{effDate || "—"}</span>
+                        <span>{expDate || "—"}</span>
                       </div>
                       <div className="w-full bg-gray-100 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
                         <div
@@ -774,16 +796,17 @@ export default function ContractsPage() {
                   {/* Footer Card */}
                   <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
                     <div>
-                      {item.fileUrl && item.fileName ? (
-                        <a
-                          href={item.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                      {docUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => services.file.downloadFile(docUrl, docName)}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline max-w-[160px] cursor-pointer"
+                          title={`Tải xuống tài liệu qua /files/download: ${docName}`}
                         >
-                          <FileIcon className="w-3.5 h-3.5" />
-                          <span className="truncate max-w-[120px]">{item.fileName}</span>
-                        </a>
+                          <FileIcon className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{docName}</span>
+                          <DownloadIcon className="w-3 h-3 text-gray-400 shrink-0" />
+                        </button>
                       ) : (
                         <span className="text-[11px] text-gray-400 italic">Chưa có file</span>
                       )}

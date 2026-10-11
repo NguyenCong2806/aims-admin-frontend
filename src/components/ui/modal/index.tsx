@@ -51,12 +51,14 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
+  const hasCustomMaxWidth = className && /\bmax-w-/.test(className);
+
   const contentClasses = isFullscreen
     ? "w-full h-full"
     : `
       relative
       w-[calc(100%-2rem)]
-      max-w-lg
+      ${hasCustomMaxWidth ? "" : "max-w-lg"}
       max-h-[90vh]
       overflow-y-auto
       rounded-2xl

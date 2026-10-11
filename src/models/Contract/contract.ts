@@ -1,93 +1,107 @@
-// Interface thực thể Hợp đồng & Bảo hành (Contracts & Warranties)
+// Interface thực thể Hợp đồng & Bảo hành (Contracts) khớp chuẩn C# Entity [Table("contracts")]
 import { FileUploadResult } from "../base/FileUploadResult";
 
 export type ContractStatus = "ACTIVE" | "EXPIRING_SOON" | "EXPIRED" | "DRAFT" | "TERMINATED";
 
-export type ContractType =
-  | "IT_HARDWARE"
-  | "SOFTWARE_LICENSE"
-  | "MAINTENANCE_SLA"
-  | "INTERNET_TELECOM"
-  | "CLOUD_HOSTING"
-  | "CONSULTING_OUTSOURCE"
-  | "OTHER";
-
-export interface ContractAttachment {
-  id?: string | number;
-  fileName: string;
-  fileUrl: string;
-  fileSizeBytes?: number;
-  contentType?: string;
-  uploadedAt?: string;
+export interface ContractAddendum {
+  id?: number;
+  contractId?: number;
+  addendumNumber?: string;
+  title?: string;
+  signDate?: string;
+  documentFileUrl?: string | null;
+  notes?: string | null;
 }
 
+/**
+ * Thực thể Hợp đồng từ Database Backend (Contract.cs)
+ */
 export interface contract {
   id: number;
-  contractCode: string; // Số hiệu / Mã hợp đồng (VD: HD-2026-FPT-01)
-  title: string; // Tên / Tiêu đề hợp đồng
-  contractType: ContractType | string; // Loại hợp đồng
+  contractNumber: string; // [Required, MaxLength(100)]
+  title: string; // [Required, MaxLength(250)]
+  contractType: string; // [MaxLength(50)] default "SERVICE_MAINTENANCE"
   
   // Quan hệ Đối tác / Nhà cung cấp
   supplierId?: number | null;
-  supplierName?: string | null;
-
-  // Tài chính & Tiền tệ
-  totalValue: number; // Giá trị hợp đồng (VND)
-  currency?: string; // Mặc định "VND"
+  supplier?: {
+    id: number;
+    name?: string;
+    code?: string;
+    email?: string;
+    phone?: string;
+    taxCode?: string;
+  } | null;
 
   // Thời hạn & Hiệu lực
-  signedDate?: string | null; // Ngày ký kết (YYYY-MM-DD)
-  startDate: string; // Ngày bắt đầu có hiệu lực
-  endDate: string; // Ngày kết thúc / hết hạn hợp đồng
+  signedDate?: string | null; // DateTime?
+  effectiveDate: string; // DateTime [Required]
+  expiryDate: string; // DateTime [Required]
+
+  // Tài chính & Tiền tệ
+  totalValue: number; // decimal(18,2)
+  currency: string; // [MaxLength(10)] default "VND"
+
+  // Điều khoản thanh toán & File tài liệu
+  paymentTerms?: string | null; // [MaxLength(250)]
+  documentFileUrl?: string | null; // [MaxLength(500)]
   
-  // Bảo hành & Cam kết SLA
-  warrantyMonths?: number | null; // Thời hạn bảo hành tính theo tháng
-  warrantyEndDate?: string | null; // Ngày kết thúc bảo hành
-  slaTerms?: string | null; // Cam kết thời gian phản hồi & chất lượng SLA (VD: 24/7 4h Onsite)
-  paymentTerms?: string | null; // Tiến độ / Điều khoản thanh toán
-
-  // Trạng thái hợp đồng
-  status: ContractStatus | string;
-
-  // File đính kèm chính & Tài liệu hợp đồng
-  fileUrl?: string | null; // Đường dẫn file hợp đồng chính
-  fileName?: string | null; // Tên file tài liệu (VD: HopDong_FPT_Signed.pdf)
-  fileSize?: number | null; // Kích thước file (bytes)
-  attachments?: (ContractAttachment | FileUploadResult)[];
-
-  // Ghi chú & Quản trị
+  // Trạng thái & Ghi chú
+  status: ContractStatus | string; // [MaxLength(50)] default "ACTIVE"
   notes?: string | null;
-  departmentId?: number | null;
-  departmentName?: string | null;
-  createdBy?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-}
 
-export interface createcontract {
-  id?: number;
-  contractCode: string;
-  title: string;
-  contractType: string;
-  supplierId?: number | null;
-  supplierName?: string | null;
-  totalValue: number;
-  currency?: string;
-  signedDate?: string | null;
-  startDate: string;
-  endDate: string;
+  // Metadata hệ thống
+  createdAt?: string; // DateTime
+  updatedAt?: string | null; // DateTime?
+
+  // Navigation property
+  addendums?: ContractAddendum[];
+
+  // ============================================================
+  // Các trường bí danh tương thích giao diện cũ (Compatibility Aliases)
+  // ============================================================
+  contractCode?: string; // bí danh cho contractNumber
+  startDate?: string; // bí danh cho effectiveDate
+  endDate?: string; // bí danh cho expiryDate
+  fileUrl?: string | null; // bí danh cho documentFileUrl
+  supplierName?: string | null; // bí danh cho supplier?.name
+  fileName?: string | null;
+  fileSize?: number | null;
   warrantyMonths?: number | null;
   warrantyEndDate?: string | null;
   slaTerms?: string | null;
-  paymentTerms?: string | null;
-  status: string;
-  fileUrl?: string | null;
-  fileName?: string | null;
-  fileSize?: number | null;
-  notes?: string | null;
-  departmentId?: number | null;
+  attachments?: (FileUploadResult)[];
 }
 
+/**
+ * Dữ liệu JSON gửi lên Backend khi Thêm mới Hợp đồng (POST /contracts)
+ */
+export interface createcontract {
+  id?: number;
+  contractNumber: string; // [Required, MaxLength(100)]
+  title: string; // [Required, MaxLength(250)]
+  contractType: string; // [MaxLength(50)] default "SERVICE_MAINTENANCE"
+  supplierId?: number | null;
+  signedDate?: string | null; // DateTime?
+  effectiveDate: string; // DateTime
+  expiryDate: string; // DateTime
+  totalValue: number; // decimal(18,2)
+  currency?: string; // [MaxLength(10)] default "VND"
+  paymentTerms?: string | null; // [MaxLength(250)]
+  documentFileUrl?: string | null; // [MaxLength(500)]
+  status?: string; // [MaxLength(50)] default "ACTIVE"
+  notes?: string | null;
+
+  // Tương thích nếu code cũ còn gửi
+  contractCode?: string;
+  startDate?: string;
+  endDate?: string;
+  fileUrl?: string | null;
+}
+
+/**
+ * Dữ liệu JSON gửi lên Backend khi Cập nhật Hợp đồng (PUT /contracts/{id})
+ */
 export interface updatecontract extends Partial<createcontract> {
   id: number;
 }

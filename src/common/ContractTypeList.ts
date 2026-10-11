@@ -1,6 +1,10 @@
 // Danh sách loại hợp đồng chuẩn CNTT
 export const contractTypeList = [
   {
+    value: "SERVICE_MAINTENANCE",
+    label: "🛠️ Bảo trì & Dịch vụ / Service Maintenance",
+  },
+  {
     value: "IT_HARDWARE",
     label: "🖥️ Mua sắm Thiết bị phần cứng CNTT",
   },
@@ -594,6 +598,11 @@ export const CONTRACT_TYPES = contractTypeList;
 
 // Map cấu hình hiển thị loại hợp đồng cho Bảng, Card & Badge
 export const CONTRACT_TYPE_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+  SERVICE_MAINTENANCE: {
+    label: "Bảo trì & Dịch vụ",
+    icon: "🛠️",
+    color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+  },
   IT_HARDWARE: {
     label: "Phần cứng CNTT",
     icon: "🖥️",
