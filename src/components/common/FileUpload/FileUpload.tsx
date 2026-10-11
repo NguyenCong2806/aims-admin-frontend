@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import { useDropzone, Accept } from "react-dropzone";
 import { toast } from "sonner";
 import {
@@ -8,11 +8,8 @@ import {
 } from "../../../models/File/file";
 import {
   formatFileSize,
-  getPresetExtensions,
-  isImageFile,
   resolveAcceptString,
   resolveFileUrl,
-  validateFile,
 } from "../../../helpper/fileHelper";
 import { useFileUpload } from "../../../hooks/useFileUpload";
 import { FilePreviewItem } from "./FilePreviewItem";
@@ -20,9 +17,8 @@ import {
   FileIcon,
   PlusIcon,
   TrashBinIcon,
-  CheckCircleIcon,
-  AlertIcon,
 } from "../../../icons";
+import { services } from "../../../di/ServiceContainer";
 
 export type FileUploadVariant = "dropzone" | "compact" | "button" | "avatar";
 

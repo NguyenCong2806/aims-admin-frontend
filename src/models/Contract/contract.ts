@@ -4,13 +4,47 @@ import { FileUploadResult } from "../base/FileUploadResult";
 export type ContractStatus = "ACTIVE" | "EXPIRING_SOON" | "EXPIRED" | "DRAFT" | "TERMINATED";
 
 export interface ContractAddendum {
+  id: number;
+  contractId: number;
+  addendumNumber: string; // character varying(100)
+  title: string; // character varying(250)
+  addendumType?: string; // character varying(50) default "RENEWAL"
+  startDate: string; // timestamp with time zone
+  endDate: string; // timestamp with time zone
+  renewalAlertDate?: string | null; // timestamp with time zone
+  cyclePeriodMonths?: number | null; // integer
+  unitPricePerMonth?: number | null; // numeric(18,2)
+  totalPeriodAmount?: number | null; // numeric(18,2)
+  documentFileUrl?: string | null; // character varying(500)
+  status?: string; // character varying(50) default "ACTIVE"
+  notes?: string | null; // text
+  createdAt?: string;
+  updatedAt?: string | null;
+
+  // Bí danh tương thích
+  signDate?: string | null;
+  fileName?: string | null;
+}
+
+export interface CreateContractAddendum {
   id?: number;
-  contractId?: number;
-  addendumNumber?: string;
-  title?: string;
-  signDate?: string;
+  contractId: number;
+  addendumNumber: string;
+  title: string;
+  addendumType?: string;
+  startDate: string;
+  endDate: string;
+  renewalAlertDate?: string | null;
+  cyclePeriodMonths?: number | null;
+  unitPricePerMonth?: number | null;
+  totalPeriodAmount?: number | null;
   documentFileUrl?: string | null;
+  status?: string;
   notes?: string | null;
+}
+
+export interface UpdateContractAddendum extends Partial<CreateContractAddendum> {
+  id: number;
 }
 
 /**

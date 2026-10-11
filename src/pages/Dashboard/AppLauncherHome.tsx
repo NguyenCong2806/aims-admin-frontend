@@ -101,43 +101,6 @@ export default function AppLauncherHome() {
       ),
     },
     {
-      id: "create-asset",
-      name: "Thêm tài sản",
-      path: "/tai-nguyen-so/tao-moi",
-      category: "asset",
-      badge: "Mới",
-      badgeColor: "bg-emerald-500",
-      description: "Kê khai & tạo mới tài sản số vào hệ thống",
-      renderIcon: () => (
-        <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(16,185,129,0.3)]">
-          <defs>
-            <radialGradient id="g3d_plus_shadow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#064e3b" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#064e3b" stopOpacity="0" />
-            </radialGradient>
-            <linearGradient id="g3d_plus_body" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="60%" stopColor="#10b981" />
-              <stop offset="100%" stopColor="#059669" />
-            </linearGradient>
-          </defs>
-          <ellipse cx="32" cy="56" rx="20" ry="5" fill="url(#g3d_plus_shadow)" />
-          {/* 3D Extruded Depth */}
-          <path d="M25 15h14v10h10v14H39v10H25V39H15V25h10V15z" fill="#047857" transform="translate(0, 4)" />
-          {/* 3D Plus Front Face */}
-          <path d="M25 11h14a3 3 0 013 3v8h8a3 3 0 013 3v14a3 3 0 01-3 3h-8v8a3 3 0 01-3 3H25a3 3 0 01-3-3v-8h-8a3 3 0 01-3-3V25a3 3 0 013-3h8v-8a3 3 0 013-3z" fill="url(#g3d_plus_body)" />
-          {/* Top Bevel Highlight */}
-          <path d="M26 13h12a1 1 0 011 1v9h10a1 1 0 011 1v2H38v-11H26v-2z" fill="#ffffff" fillOpacity="0.45" />
-          {/* 3D Inner Emboss */}
-          <circle cx="32" cy="32" r="6" fill="#ffffff" fillOpacity="0.25" />
-          <circle cx="32" cy="32" r="3" fill="#ffffff" />
-          {/* Sparkles */}
-          <circle cx="48" cy="14" r="3" fill="#6ee7b7" />
-          <circle cx="16" cy="46" r="2" fill="#a7f3d0" />
-        </svg>
-      ),
-    },
-    {
       id: "hardware",
       name: "Thiết bị phần cứng",
       path: "/thiet-bi-phan-cung",

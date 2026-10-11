@@ -11,7 +11,8 @@ import {
   useRemoveContract,
   useUpdateContract,
 } from "../../query/contracts/contractsQuery";
-import ContractModal, { formatFileSize } from "./ContractModal";
+import ContractModal from "./ContractModal";
+import { services } from "../../di/ServiceContainer";
 import {
   PencilIcon,
   TrashBinIcon,
@@ -581,7 +582,7 @@ export default function ContractsPage() {
                           {item.supplier?.name || item.supplierName ? (
                             <div className="flex items-center gap-1.5 text-gray-800 dark:text-gray-200 font-medium">
                               <span className="text-base">🏢</span>
-                              <span className="truncate max-w-[180px]" title={item.supplier?.name || item.supplierName}>
+                              <span className="truncate max-w-[180px]" title={(item.supplier?.name || item.supplierName) ?? undefined}>
                                 {item.supplier?.name || item.supplierName}
                               </span>
                             </div>
@@ -707,7 +708,7 @@ export default function ContractsPage() {
               const contractNum = item.contractNumber || item.contractCode || `HD-${item.id}`;
               const supplierTitle = item.supplier?.name || item.supplierName || "—";
               const docUrl = item.documentFileUrl || item.fileUrl;
-              const docName = item.fileName || (docUrl ? docUrl.split("/").pop() : null);
+              const docName = item.fileName || (docUrl ? docUrl.split("/").pop() : "Tài liệu");
 
               return (
                 <div

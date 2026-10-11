@@ -17,6 +17,7 @@ import { DigitalSoftwareLicenseService } from "../services/DigitalSoftwareLicens
 import { DigitalInternetLineService } from "../services/DigitalInternetLine/DigitalInternetLineService";
 import { ComputerAuditService } from "../services/ComputerAudit/ComputerAuditSerice";
 import { ContractService } from "../services/Contract/ContractService";
+import { ContractAddendumService } from "../services/Contract/ContractAddendumService";
 import { FileService } from "../services/File/FileService";
 
 export class ServiceContainer {
@@ -39,6 +40,7 @@ export class ServiceContainer {
   public readonly digitalInternetLine: DigitalInternetLineService;
   public readonly computerAudit: ComputerAuditService;
   public readonly contract: ContractService;
+  public readonly contractAddendum: ContractAddendumService;
   public readonly file: FileService;
 
   constructor() {
@@ -61,6 +63,7 @@ export class ServiceContainer {
     this.digitalInternetLine = new DigitalInternetLineService();
     this.computerAudit = new ComputerAuditService();
     this.contract = new ContractService();
+    this.contractAddendum = new ContractAddendumService();
     this.file = new FileService();
   }
 }

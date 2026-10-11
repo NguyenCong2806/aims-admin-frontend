@@ -1,7 +1,26 @@
 import { z } from "zod";
 
 const optionalText = (max: number, message: string) =>
-  z.string().trim().max(max, message).optional().or(z.literal(""));
+  z.string().trim().max(max, message).optional().or(z.literal("")).nullable();
+
+const safeNumber = (minMessage = "Giá trị không thể là số âm.") =>
+  z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .transform((val) => {
+      if (val === "" || val === null || val === undefined) return 0;
+      const num = Number(val);
+      return isNaN(num) ? 0 : num;
+    })
+    .refine((n) => n >= 0, { message: minMessage });
+
+const safeNullableNumber = () =>
+  z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .transform((val) => {
+      if (val === "" || val === null || val === undefined) return null;
+      const num = Number(val);
+      return isNaN(num) ? null : num;
+    });
 
 export const contractSchema = z.object({
   // [Required, MaxLength(100)]
@@ -25,7 +44,7 @@ export const contractSchema = z.object({
     .min(1, "Vui lòng chọn loại hợp đồng.")
     .max(50, "Loại hợp đồng tối đa 50 ký tự."),
 
-  supplierId: z.number().nullable().optional(),
+  supplierId: safeNullableNumber(),
 
   // DateTime?
   signedDate: optionalText(50, "Ngày ký không hợp lệ."),
@@ -43,9 +62,7 @@ export const contractSchema = z.object({
     .min(1, "Vui lòng chọn ngày kết thúc / hết hạn (ExpiryDate)."),
 
   // decimal(18,2)
-  totalValue: z
-    .number()
-    .min(0, "Giá trị hợp đồng không thể là số âm."),
+  totalValue: safeNumber("Giá trị hợp đồng không thể là số âm."),
 
   // [MaxLength(10)] default "VND"
   currency: z
@@ -75,4 +92,6 @@ export const contractSchema = z.object({
   fileUrl: z.string().optional(),
 });
 
-export type ContractFormData = z.infer<typeof contractSchema>;
+export type ContractInput = z.input<typeof contractSchema>;
+export type ContractFormData = z.output<typeof contractSchema>;
+

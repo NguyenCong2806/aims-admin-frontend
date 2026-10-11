@@ -50,6 +50,7 @@ export function useUpdateContract() {
     mutationFn: ({ id, params }: { id: number; params: updatecontract }) =>
       services.contract.update(id, params),
     onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: contractKeys.all });
       queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
       queryClient.invalidateQueries({ queryKey: contractKeys.detail(id) });
     },

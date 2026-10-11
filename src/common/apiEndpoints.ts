@@ -81,11 +81,10 @@ export const API_ENDPOINTS = {
     DELETE: "/files/delete",
   },
 
-  // Quản lý Hợp đồng & Bảo hành (Contracts & Warranties)
+  // Quản lý Hợp đồng & Phụ lục (Contracts & Addendums)
   CONTRACTS: {
     BASE: "/contracts",
-    UPLOAD: "/contracts/upload",
-    DOWNLOAD: "/contracts/download",
+    ADDENDUMS: "/contract_addendums",
   },
 
   // Giám sát máy trạm & Phần mềm cài đặt (Monitoring)

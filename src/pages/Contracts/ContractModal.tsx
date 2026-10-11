@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { Modal } from "../../components/ui/modal";
 import { contract, createcontract, updatecontract } from "../../models/Contract/contract";
-import { ContractFormData, contractSchema } from "../../validations/contract.schema";
+import { ContractFormData, ContractInput, contractSchema } from "../../validations/contract.schema";
 import { useSupplierAll } from "../../query/suppliers/suppliersQuery";
 import { FileUpload, FileUploadResult } from "../../components/common/FileUpload";
 import { formatFileSize } from "../../helpper/fileHelper";
 
 import { CONTRACT_TYPES } from "../../common/ContractTypeList";
 import { CONTRACT_STATUSES } from "../../common/ContractStatusList";
+import { ContractAddendumsTab } from "./ContractAddendumsTab";
 
 export { CONTRACT_TYPES, CONTRACT_STATUSES, formatFileSize };
 
@@ -46,7 +48,7 @@ const ContractModal: React.FC<ContractModalProps> = ({
     fileSize: number;
   } | null>(null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [activeTab, setActiveTab] = useState<"general" | "terms" | "file">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "terms" | "file" | "addendums">("general");
 
   const {
     register,
@@ -55,7 +57,7 @@ const ContractModal: React.FC<ContractModalProps> = ({
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<ContractFormData>({
+  } = useForm<ContractInput, any, ContractFormData>({
     resolver: zodResolver(contractSchema),
     defaultValues: {
       contractNumber: "",
@@ -74,8 +76,6 @@ const ContractModal: React.FC<ContractModalProps> = ({
     },
   });
 
-  const watchEffectiveDate = watch("effectiveDate");
-  const watchExpiryDate = watch("expiryDate");
   const watchTotalValue = watch("totalValue");
   const watchDocumentFileUrl = watch("documentFileUrl");
 
@@ -185,8 +185,40 @@ const ContractModal: React.FC<ContractModalProps> = ({
       } else {
         await onSubmit(payload);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Lỗi khi lưu hợp đồng:", err);
+      toast.error(err?.response?.data?.message || "Đã xảy ra lỗi khi lưu hợp đồng.");
+    }
+  };
+
+  const onFormError = (fieldErrors: any) => {
+    console.warn("Lỗi xác thực form Hợp đồng:", fieldErrors);
+    const errorKeys = Object.keys(fieldErrors);
+    if (errorKeys.length > 0) {
+      const firstKey = errorKeys[0];
+      const firstError = fieldErrors[firstKey];
+      toast.error(`Vui lòng kiểm tra: ${firstError?.message || "Dữ liệu hợp đồng chưa hợp lệ"}`);
+
+      // Tự động chuyển tab đến trường bị lỗi để người dùng thấy ngay
+      if (
+        [
+          "contractNumber",
+          "title",
+          "contractType",
+          "supplierId",
+          "totalValue",
+          "currency",
+          "signedDate",
+          "effectiveDate",
+          "expiryDate",
+        ].includes(firstKey)
+      ) {
+        setActiveTab("general");
+      } else if (["paymentTerms", "notes"].includes(firstKey)) {
+        setActiveTab("terms");
+      } else if (["documentFileUrl"].includes(firstKey)) {
+        setActiveTab("file");
+      }
     }
   };
 
@@ -201,7 +233,7 @@ const ContractModal: React.FC<ContractModalProps> = ({
       }
       className="max-w-4xl lg:max-w-5xl w-full"
     >
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+      <div className="space-y-5">
         {/* Navigation Tabs bên trong Modal */}
         <div className="flex border-b border-gray-100 dark:border-gray-800 gap-6 text-xs font-semibold">
           <button
@@ -240,7 +272,43 @@ const ContractModal: React.FC<ContractModalProps> = ({
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             )}
           </button>
+          {isEdit && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("addendums")}
+              className={`pb-2.5 transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === "addendums"
+                  ? "border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400"
+                  : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              }`}
+            >
+              📑 Phụ lục hợp đồng
+              {currentContract?.addendums && currentContract.addendums.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold font-mono">
+                  {currentContract.addendums.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
+
+        {/* ================= TAB 4: PHỤ LỤC HỢP ĐỒNG (Hoàn toàn độc lập ngoài thẻ form) ================= */}
+        {activeTab === "addendums" ? (
+          <div className="space-y-4">
+            <ContractAddendumsTab contract={currentContract || null} />
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ================= TABS 1, 2, 3: FORM HỢP ĐỒNG ================= */
+          <form onSubmit={handleSubmit(handleFormSubmit, onFormError)} className="space-y-5">
 
         {/* ================= TAB 1: THÔNG TIN CHUNG ================= */}
         {activeTab === "general" && (
@@ -330,7 +398,7 @@ const ContractModal: React.FC<ContractModalProps> = ({
                   placeholder="VD: 850000000"
                   className={getInputClass(!!errors.totalValue)}
                 />
-                {watchTotalValue > 0 && (
+                {Number(watchTotalValue) > 0 && (
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1">
                     ≈ {Number(watchTotalValue).toLocaleString("vi-VN")} đ
                   </p>
@@ -573,7 +641,9 @@ const ContractModal: React.FC<ContractModalProps> = ({
           </div>
         </div>
       </form>
-    </Modal>
+    )}
+  </div>
+</Modal>
   );
 };
 
