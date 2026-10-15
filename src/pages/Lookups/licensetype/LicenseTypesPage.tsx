@@ -15,8 +15,18 @@ import {
   useLicenseTypeParams,
   useRemoveLicenseType,
   useUpdateLicenseType,
+  useBatchImportLicenseTypes,
 } from "../../../query/licensetypes/licensetypesQuery";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const LICENSE_TYPE_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã loại giấy phép", required: true, description: "Mã ký hiệu phân loại giấy phép (duy nhất)" },
+  { key: "name", label: "Tên loại giấy phép", required: true, description: "Tên định danh loại bản quyền/giấy phép" },
+  { key: "isSubscription", label: "Gói thuê bao", description: "TRUE: Thuê bao định kỳ / FALSE: Vĩnh viễn" },
+  { key: "description", label: "Mô tả", description: "Mô tả phạm vi áp dụng giấy phép" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const LicenseTypesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,9 +50,11 @@ const LicenseTypesPage: React.FC = () => {
   const createMutation = useCreateLicenseType();
   const updateMutation = useUpdateLicenseType();
   const deleteMutation = useRemoveLicenseType();
+  const batchImportMutation = useBatchImportLicenseTypes();
 
   const items = (data?.items ?? []) as licensetype[];
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -152,6 +164,24 @@ const LicenseTypesPage: React.FC = () => {
         }}
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu loại giấy phép ra file Excel...")}
+        templateFileName="Mau_Nhap_Loai_Giay_Phep.xlsx"
+        templateCsvContent="code,name,isSubscription,description,isactive,displayorder\n"
+        importTemplateColumns={LICENSE_TYPE_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu loại giấy phép từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

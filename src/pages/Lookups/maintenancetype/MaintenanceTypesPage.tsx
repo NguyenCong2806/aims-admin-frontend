@@ -15,8 +15,18 @@ import {
   useMaintenanceTypeParams,
   useRemoveMaintenanceType,
   useUpdateMaintenanceType,
+  useBatchImportMaintenanceTypes,
 } from "../../../query/maintenancetypes/maintenancetypesQuery";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const MAINTENANCE_TYPE_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã loại bảo trì", required: true, description: "Mã ký hiệu phân loại bảo trì (duy nhất)" },
+  { key: "name", label: "Tên loại bảo trì", required: true, description: "Tên định danh hình thức bảo trì" },
+  { key: "isPreventive", label: "Bảo trì định kỳ", description: "TRUE: Bảo trì phòng ngừa / FALSE: Đột xuất" },
+  { key: "description", label: "Mô tả", description: "Mô tả quy trình bảo trì" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const MaintenanceTypesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,9 +50,11 @@ const MaintenanceTypesPage: React.FC = () => {
   const createMutation = useCreateMaintenanceType();
   const updateMutation = useUpdateMaintenanceType();
   const deleteMutation = useRemoveMaintenanceType();
+  const batchImportMutation = useBatchImportMaintenanceTypes();
 
   const items = (data?.items ?? []) as maintenancetype[];
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -152,6 +164,24 @@ const MaintenanceTypesPage: React.FC = () => {
         }}
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu loại bảo trì ra file Excel...")}
+        templateFileName="Mau_Nhap_Loai_Bao_Tri.xlsx"
+        templateCsvContent="code,name,isPreventive,description,isactive,displayorder\n"
+        importTemplateColumns={MAINTENANCE_TYPE_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu loại bảo trì từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

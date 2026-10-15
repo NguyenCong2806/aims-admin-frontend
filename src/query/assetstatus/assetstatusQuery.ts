@@ -109,3 +109,14 @@ export function useRemoveAssetStatus() {
     },
   });
 }
+
+export function useBatchImportAssetStatuses() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: File | FormData | any[]) => services.assetStatus.batchImport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assetstatusKeys.all });
+    },
+  });
+}

@@ -16,8 +16,19 @@ import {
   useDepartmentParams,
   useRemoveDepartment,
   useUpdateDepartment,
+  useBatchImportDepartments,
 } from "../../../query/departments/departmentsQuery";
-import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, TreeFilterGroup, ExcelImportColumn } from "../../../components/aims";
+
+const DEPARTMENT_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã phòng ban", required: true, description: "Mã định danh phòng ban (duy nhất)" },
+  { key: "name", label: "Tên phòng ban", required: true, description: "Tên cơ cấu tổ chức phòng ban" },
+  { key: "parentId", label: "ID Phòng ban cha", description: "Mã số định danh phòng ban cấp trên" },
+  { key: "managerName", label: "Người quản lý", description: "Họ tên trưởng bộ phận / quản lý" },
+  { key: "description", label: "Mô tả", description: "Mô tả chức năng nhiệm vụ phòng ban" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const DepartmentsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,10 +55,12 @@ const DepartmentsPage: React.FC = () => {
   const createMutation = useCreateDepartment();
   const updateMutation = useUpdateDepartment();
   const deleteMutation = useRemoveDepartment();
+  const batchImportMutation = useBatchImportDepartments();
 
   const items = (data?.items ?? []) as department[];
   const departments = allDepartments as department[];
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -238,7 +251,26 @@ const DepartmentsPage: React.FC = () => {
           setDepartmentId(null);
           setIsModalOpen(true);
         }}
+        addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu ra file Excel...")}
+        templateFileName="Mau_Nhap_Phong_Ban.xlsx"
+        templateCsvContent="code,name,parentId,managerName,description,isactive,displayorder\n"
+        importTemplateColumns={DEPARTMENT_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu phòng ban từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

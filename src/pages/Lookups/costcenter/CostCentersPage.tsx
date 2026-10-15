@@ -15,8 +15,19 @@ import {
   useCreateCostCenter,
   useRemoveCostCenter,
   useUpdateCostCenter,
+  useBatchImportCostCenters,
 } from "../../../query/costcenters/costcentersQuery";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const COST_CENTER_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã TT chi phí", required: true, description: "Mã ký hiệu trung tâm chi phí (duy nhất)" },
+  { key: "name", label: "Tên TT chi phí", required: true, description: "Tên định danh trung tâm hạch toán chi phí" },
+  { key: "budgetLimit", label: "Hạn mức ngân sách", description: "Hạn mức ngân sách tối đa được cấp" },
+  { key: "fiscalYear", label: "Năm tài chính", description: "Năm tài chính áp dụng (VD: 2026)" },
+  { key: "description", label: "Mô tả", description: "Mô tả mục đích sử dụng ngân sách" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const CostCentersPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,9 +51,11 @@ const CostCentersPage: React.FC = () => {
   const createMutation = useCreateCostCenter();
   const updateMutation = useUpdateCostCenter();
   const deleteMutation = useRemoveCostCenter();
+  const batchImportMutation = useBatchImportCostCenters();
 
   const items = (data?.items ?? []) as costcenter[];
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -155,7 +168,26 @@ const CostCentersPage: React.FC = () => {
           setCostCenterId(null);
           setIsModalOpen(true);
         }}
+        addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu trung tâm chi phí ra file Excel...")}
+        templateFileName="Mau_Nhap_Trung_Tam_Chi_Phi.xlsx"
+        templateCsvContent="code,name,budgetLimit,fiscalYear,description,isactive,displayorder\n"
+        importTemplateColumns={COST_CENTER_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu trung tâm chi phí từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

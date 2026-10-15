@@ -19,6 +19,8 @@ import { ComputerAuditService } from "../services/ComputerAudit/ComputerAuditSer
 import { ContractService } from "../services/Contract/ContractService";
 import { ContractAddendumService } from "../services/Contract/ContractAddendumService";
 import { FileService } from "../services/File/FileService";
+import { AuditLogService } from "../services/AuditLog/AuditLogService";
+import { PermissionService } from "../services/Permission/permissionService";
 
 export class ServiceContainer {
   public readonly brand: BrandService;
@@ -42,6 +44,8 @@ export class ServiceContainer {
   public readonly contract: ContractService;
   public readonly contractAddendum: ContractAddendumService;
   public readonly file: FileService;
+  public readonly auditLog: AuditLogService;
+  public readonly permission: PermissionService;
 
   constructor() {
     this.brand = new BrandService();
@@ -65,6 +69,8 @@ export class ServiceContainer {
     this.contract = new ContractService();
     this.contractAddendum = new ContractAddendumService();
     this.file = new FileService();
+    this.auditLog = new AuditLogService();
+    this.permission = new PermissionService();
   }
 }
 

@@ -2,8 +2,9 @@ import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../components/aims";
 import PageMeta from "../../components/common/PageMeta";
-import { SystemLog } from "../../models/SystemLog/systemLog";
-import { systemLogService } from "../../services/SystemLog/systemLogService";
+import { AuditLogDto, AuditLogFilter } from "../../models/AuditLog/AuditLogDto";
+import { services } from "../../di/ServiceContainer";
+import { useAuditLogs } from "../../query/auditlogs/auditLogsQuery";
 import { INITIAL_SYSTEM_LOGS } from "../../services/SystemLog/systemLogMockData";
 import { SystemLogDetailModal } from "./components/SystemLogDetailModal";
 import {
@@ -13,37 +14,75 @@ import {
 } from "./diffHelper";
 
 export const SystemLogsPage: React.FC = () => {
-  const [logs] = useState<SystemLog[]>(INITIAL_SYSTEM_LOGS);
   const [keyword, setKeyword] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<string | number | null>("all");
   const [pageIndex, setPageIndex] = useState<number>(1);
   const [pageSize] = useState<number>(10);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [inspectingLog, setInspectingLog] = useState<SystemLog | null>(null);
+  const [inspectingLog, setInspectingLog] = useState<AuditLogDto | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState<boolean>(false);
 
-  // 1. Phân loại thống kê nhanh (KPIs)
+  // 1. Xây dựng filter gửi lên server
+  const queryFilter: AuditLogFilter = useMemo(() => {
+    const f: AuditLogFilter = {
+      pageIndex,
+      pageSize,
+      PageIndex: pageIndex,
+      PageSize: pageSize,
+      keyword: keyword.trim() || undefined,
+      Keyword: keyword.trim() || undefined,
+    };
+
+    if (selectedFilter && selectedFilter !== "all") {
+      const filterStr = String(selectedFilter);
+      if (filterStr.startsWith("act_")) {
+        f.action = filterStr.replace("act_", "");
+      } else if (filterStr.startsWith("tbl_")) {
+        f.tableName = filterStr.replace("tbl_", "");
+      } else if (filterStr.startsWith("time_")) {
+        f.dateRange = filterStr.replace("time_", "") as "today" | "week" | "month";
+      }
+    }
+
+    return f;
+  }, [pageIndex, pageSize, keyword, selectedFilter]);
+
+  // 2. React Query: Lấy dữ liệu nhật ký kiểm toán (AuditLog / SystemLog)
+  const { data: pagedData, isLoading, isFetching, error } = useAuditLogs(queryFilter);
+
+  // Danh sách bản ghi trang hiện tại
+  const paginatedLogs: AuditLogDto[] = useMemo(() => {
+    if (pagedData?.items && Array.isArray(pagedData.items)) {
+      return pagedData.items;
+    }
+    return INITIAL_SYSTEM_LOGS.slice((pageIndex - 1) * pageSize, pageIndex * pageSize);
+  }, [pagedData?.items, pageIndex, pageSize]);
+
+  // Tổng số bản ghi (từ API phân trang hoặc fallback)
+  const totalRecords: number = pagedData?.pagination?.totalRecords ?? INITIAL_SYSTEM_LOGS.length;
+
+  // 3. Phân loại thống kê nhanh (KPIs)
   const stats = useMemo(() => {
-    const total = logs.length;
-    const inserts = logs.filter((l) => l.action.toUpperCase() === "INSERT").length;
-    const updates = logs.filter((l) => l.action.toUpperCase() === "UPDATE").length;
-    const deletes = logs.filter((l) => l.action.toUpperCase() === "DELETE").length;
-    const uniqueUsers = new Set(logs.map((l) => l.userName).filter(Boolean)).size;
+    const source = pagedData?.items && pagedData.items.length > 0 ? pagedData.items : INITIAL_SYSTEM_LOGS;
+    const total = pagedData?.pagination?.totalRecords ?? source.length;
+    const inserts = source.filter((l) => l.action.toUpperCase() === "INSERT").length;
+    const updates = source.filter((l) => l.action.toUpperCase() === "UPDATE").length;
+    const deletes = source.filter((l) => l.action.toUpperCase() === "DELETE").length;
+    const uniqueUsers = new Set(source.map((l) => l.userName).filter(Boolean)).size;
 
     return { total, inserts, updates, deletes, uniqueUsers };
-  }, [logs]);
+  }, [pagedData]);
 
-  // 2. Cây phân cấp bộ lọc bên trái (AimsTreeFilter)
+  // 4. Cây phân cấp bộ lọc bên trái (AimsTreeFilter)
   const treeGroups: TreeFilterGroup[] = useMemo(() => {
-    // Đếm theo Action
-    const insertCount = logs.filter((l) => l.action.toUpperCase() === "INSERT").length;
-    const updateCount = logs.filter((l) => l.action.toUpperCase() === "UPDATE").length;
-    const deleteCount = logs.filter((l) => l.action.toUpperCase() === "DELETE").length;
+    const source = pagedData?.items && pagedData.items.length > 0 ? pagedData.items : INITIAL_SYSTEM_LOGS;
+    const insertCount = source.filter((l) => l.action.toUpperCase() === "INSERT").length;
+    const updateCount = source.filter((l) => l.action.toUpperCase() === "UPDATE").length;
+    const deleteCount = source.filter((l) => l.action.toUpperCase() === "DELETE").length;
 
-    // Đếm theo TableName
     const tableCounts: Record<string, number> = {};
-    logs.forEach((l) => {
+    source.forEach((l) => {
       const t = l.tableName.toLowerCase();
       tableCounts[t] = (tableCounts[t] || 0) + 1;
     });
@@ -53,7 +92,7 @@ export const SystemLogsPage: React.FC = () => {
         id: "actions",
         title: "HÀNH ĐỘNG HỆ THỐNG",
         items: [
-          { id: "all", label: "Tất cả hành động", count: logs.length },
+          { id: "all", label: "Tất cả hành động", count: totalRecords },
           { id: "act_INSERT", label: "Thêm mới (INSERT)", count: insertCount },
           { id: "act_UPDATE", label: "Cập nhật (UPDATE)", count: updateCount },
           { id: "act_DELETE", label: "Xóa dữ liệu (DELETE)", count: deleteCount },
@@ -75,86 +114,34 @@ export const SystemLogsPage: React.FC = () => {
         id: "time_ranges",
         title: "KHOẢNG THỜI GIAN",
         items: [
-          { id: "time_today", label: "Hôm nay", count: logs.filter((l) => {
-            const diffDays = (Date.now() - new Date(l.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-            return diffDays <= 1;
-          }).length },
-          { id: "time_week", label: "7 ngày qua", count: logs.filter((l) => {
-            const diffDays = (Date.now() - new Date(l.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-            return diffDays <= 7;
-          }).length },
-          { id: "time_month", label: "30 ngày qua", count: logs.filter((l) => {
-            const diffDays = (Date.now() - new Date(l.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-            return diffDays <= 30;
-          }).length },
+          {
+            id: "time_today",
+            label: "Hôm nay",
+            count: source.filter((l) => {
+              const diffDays = (Date.now() - new Date(l.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+              return diffDays <= 1;
+            }).length,
+          },
+          {
+            id: "time_week",
+            label: "7 ngày qua",
+            count: source.filter((l) => {
+              const diffDays = (Date.now() - new Date(l.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+              return diffDays <= 7;
+            }).length,
+          },
+          {
+            id: "time_month",
+            label: "30 ngày qua",
+            count: source.filter((l) => {
+              const diffDays = (Date.now() - new Date(l.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+              return diffDays <= 30;
+            }).length,
+          },
         ],
       },
     ];
-  }, [logs]);
-
-  // 3. Lọc danh sách theo từ khóa & Tree filter
-  const filteredLogs = useMemo(() => {
-    return logs.filter((item) => {
-      // Tìm kiếm từ khóa
-      if (keyword.trim()) {
-        const q = keyword.toLowerCase().trim();
-        const matchAction = item.action.toLowerCase().includes(q);
-        const matchTable = item.tableName.toLowerCase().includes(q);
-        const matchRecord = item.recordId ? item.recordId.toLowerCase().includes(q) : false;
-        const matchUser = item.userName ? item.userName.toLowerCase().includes(q) : false;
-        const matchIp = item.ipAddress ? item.ipAddress.toLowerCase().includes(q) : false;
-        const matchOld = item.oldData ? item.oldData.toLowerCase().includes(q) : false;
-        const matchNew = item.newData ? item.newData.toLowerCase().includes(q) : false;
-
-        if (
-          !matchAction &&
-          !matchTable &&
-          !matchRecord &&
-          !matchUser &&
-          !matchIp &&
-          !matchOld &&
-          !matchNew
-        ) {
-          return false;
-        }
-      }
-
-      // Lọc theo cây phân cấp
-      if (selectedFilter && selectedFilter !== "all") {
-        const filterStr = String(selectedFilter);
-
-        // Lọc theo Action
-        if (filterStr.startsWith("act_")) {
-          const act = filterStr.replace("act_", "");
-          if (item.action.toUpperCase() !== act) return false;
-        }
-
-        // Lọc theo TableName
-        if (filterStr.startsWith("tbl_")) {
-          const tbl = filterStr.replace("tbl_", "");
-          if (item.tableName.toLowerCase() !== tbl) return false;
-        }
-
-        // Lọc theo Thời gian
-        if (filterStr.startsWith("time_")) {
-          const timeType = filterStr.replace("time_", "");
-          const diffDays =
-            (Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-          if (timeType === "today" && diffDays > 1) return false;
-          if (timeType === "week" && diffDays > 7) return false;
-          if (timeType === "month" && diffDays > 30) return false;
-        }
-      }
-
-      return true;
-    });
-  }, [logs, keyword, selectedFilter]);
-
-  // 4. Phân trang
-  const paginatedLogs = useMemo(() => {
-    const start = (pageIndex - 1) * pageSize;
-    return filteredLogs.slice(start, start + pageSize);
-  }, [filteredLogs, pageIndex, pageSize]);
+  }, [pagedData, totalRecords]);
 
   // 5. Chọn / bỏ chọn dòng
   const handleSelectAll = (checked: boolean) => {
@@ -175,20 +162,20 @@ export const SystemLogsPage: React.FC = () => {
   };
 
   // 6. Mở modal xem chi tiết
-  const handleOpenDetail = (log: SystemLog) => {
+  const handleOpenDetail = (log: AuditLogDto) => {
     setInspectingLog(log);
     setIsDetailOpen(true);
   };
 
-  // 7. Xuất file
+  // 7. Xuất file CSV
   const handleExport = () => {
     const itemsToExport =
       selectedIds.size > 0
-        ? logs.filter((l) => selectedIds.has(l.id))
-        : filteredLogs;
+        ? paginatedLogs.filter((l) => selectedIds.has(l.id))
+        : paginatedLogs;
 
-    systemLogService.exportToCsv(itemsToExport);
-    toast.success(`Đã xuất ${itemsToExport.length} bản ghi nhật ký ra file CSV thành công!`);
+    services.auditLog.exportToCsv(itemsToExport);
+    toast.success(`Đã xuất ${itemsToExport.length} bản ghi nhật ký hệ thống ra file CSV thành công!`);
   };
 
   // Helper render Badge Hành động
@@ -266,12 +253,12 @@ export const SystemLogsPage: React.FC = () => {
           </svg>
         }
         moduleTabs={[
-          { name: "Nhật ký hệ thống", path: "/nhat-ky-he-thong", badge: filteredLogs.length },
+          { name: "Nhật ký hệ thống", path: "/nhat-ky-he-thong", badge: totalRecords },
           { name: "Báo cáo & Phân tích", path: "/bao-cao-thong-ke" },
         ]}
         title="Nhật ký hệ thống"
         subtitle="Giám sát kiểm toán toàn diện (Audit Trail): Lịch sử thao tác thêm mới, cập nhật & xóa dữ liệu trong hệ thống"
-        totalRecords={filteredLogs.length}
+        totalRecords={totalRecords}
         pageIndex={pageIndex}
         pageSize={pageSize}
         onPageChange={setPageIndex}
@@ -291,6 +278,10 @@ export const SystemLogsPage: React.FC = () => {
           setSelectedFilter(val);
           setPageIndex(1);
         }}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        loadingMessage="Đang tải dữ liệu nhật ký hệ thống..."
+        error={error ? (error instanceof Error ? error.message : "Không thể tải nhật ký hệ thống.") : null}
       >
         {/* KPI OVERVIEW METRICS CARDS */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">

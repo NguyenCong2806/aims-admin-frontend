@@ -10,8 +10,17 @@ import {
   useCreateAssetType,
   useRemoveAssetType,
   useUpdateAssetType,
+  useBatchImportAssetTypes,
 } from "../../../query/assettypes/assettypesQuery";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const ASSET_TYPE_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã loại tài sản", required: true, description: "Mã định danh loại tài sản (duy nhất)" },
+  { key: "name", label: "Tên loại tài sản", required: true, description: "Tên phân loại tài sản" },
+  { key: "description", label: "Mô tả", description: "Mô tả mục đích quản lý loại tài sản" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const AssetTypesPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,8 +44,10 @@ const AssetTypesPage: React.FC = () => {
   const createAssetType = useCreateAssetType();
   const updateAssetType = useUpdateAssetType();
   const deleteAssetType = useRemoveAssetType();
+  const batchImportMutation = useBatchImportAssetTypes();
 
-  const isSubmitting = createAssetType.isPending || updateAssetType.isPending;
+  const isSubmitting =
+    createAssetType.isPending || updateAssetType.isPending || batchImportMutation.isPending;
   const items = (data?.items ?? []) as Array<assettype>;
 
   const handleAdd = () => {
@@ -167,6 +178,24 @@ const AssetTypesPage: React.FC = () => {
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu loại tài sản ra file Excel...")}
+        templateFileName="Mau_Nhap_Loai_Tai_San.xlsx"
+        templateCsvContent="code,name,description,isactive,displayorder\n"
+        importTemplateColumns={ASSET_TYPE_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu loại tài sản từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

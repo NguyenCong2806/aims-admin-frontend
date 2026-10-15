@@ -13,8 +13,18 @@ import {
   usePositionParams,
   useRemovePosition,
   useUpdatePosition,
+  useBatchImportPositions,
 } from "../../../query/positions/positionsQuery";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const POSITION_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã chức vụ", required: true, description: "Mã ký hiệu chức danh (duy nhất)" },
+  { key: "name", label: "Tên chức vụ", required: true, description: "Tên chức danh công việc" },
+  { key: "departmentId", label: "ID Phòng ban", description: "Mã số định danh phòng ban" },
+  { key: "description", label: "Mô tả", description: "Mô tả trách nhiệm vị trí" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const PositionsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,10 +49,12 @@ const PositionsPage: React.FC = () => {
   const createMutation = useCreatePosition();
   const updateMutation = useUpdatePosition();
   const deleteMutation = useRemovePosition();
+  const batchImportMutation = useBatchImportPositions();
 
   const items = (data?.items ?? []) as position[];
   const departments = allDepartments as department[];
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -157,7 +169,26 @@ const PositionsPage: React.FC = () => {
           setPositionId(null);
           setIsModalOpen(true);
         }}
+        addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu chức vụ ra file Excel...")}
+        templateFileName="Mau_Nhap_Chuc_Vu.xlsx"
+        templateCsvContent="code,name,departmentId,description,isactive,displayorder\n"
+        importTemplateColumns={POSITION_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu chức vụ từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

@@ -8,6 +8,7 @@ import {
   useCreateAssetCategory,
   useRemoveAssetCategory,
   useUpdateAssetCategory,
+  useBatchImportAssetCategories,
 } from "../../../query/assetcategories/assetcategoriesQuery";
 import {
   assetcategorie,
@@ -15,7 +16,15 @@ import {
   updateassetcategorie,
 } from "../../../models/Lookup/assetcategorie/assetcategorie";
 import AssetCategoryModal from "./AssetCategoryModal";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const ASSET_CATEGORY_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã danh mục", required: true, description: "Mã nhóm danh mục tài sản (duy nhất)" },
+  { key: "name", label: "Tên danh mục", required: true, description: "Tên nhóm danh mục tài sản" },
+  { key: "description", label: "Mô tả", description: "Mô tả thông tin nhóm danh mục" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const AssetCategorysPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,8 +48,10 @@ const AssetCategorysPage: React.FC = () => {
   const createMutation = useCreateAssetCategory();
   const updateMutation = useUpdateAssetCategory();
   const deleteMutation = useRemoveAssetCategory();
+  const batchImportMutation = useBatchImportAssetCategories();
 
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
   const items = (data?.items ?? []) as Array<assetcategorie>;
 
   const handleAdd = () => {
@@ -170,6 +181,24 @@ const AssetCategorysPage: React.FC = () => {
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu danh mục ra file Excel...")}
+        templateFileName="Mau_Nhap_Nhom_Danh_Muc.xlsx"
+        templateCsvContent="code,name,description,isactive,displayorder\n"
+        importTemplateColumns={ASSET_CATEGORY_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu nhóm danh mục từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

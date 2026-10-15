@@ -8,6 +8,7 @@ import {
   useCreateAssetStatus,
   useRemoveAssetStatus,
   useUpdateAssetStatus,
+  useBatchImportAssetStatuses,
 } from "../../../query/assetstatus/assetstatusQuery";
 import AssetStatusModal from "./AssetStatusModal";
 import {
@@ -16,8 +17,18 @@ import {
   updateassetstatus,
 } from "../../../models/Lookup/assetstatus/assetstatus";
 import { AssetStatusFormData } from "../../../validations/assetstatuse.schema";
-import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, TreeFilterGroup, ExcelImportColumn } from "../../../components/aims";
 import { useMemo } from "react";
+
+const ASSET_STATUS_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã trạng thái", required: true, description: "Mã ký hiệu trạng thái tài sản (duy nhất)" },
+  { key: "name", label: "Tên trạng thái", required: true, description: "Tên định danh trạng thái tài sản" },
+  { key: "colorCode", label: "Mã màu", description: "Mã màu HEX (VD: #10b981)" },
+  { key: "allowAllocation", label: "Cho phép cấp phát", description: "TRUE / FALSE" },
+  { key: "description", label: "Mô tả", description: "Mô tả trạng thái tài sản" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const AssetStatusPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,8 +54,10 @@ const AssetStatusPage: React.FC = () => {
   const createAssetStatus = useCreateAssetStatus();
   const updateAssetStatus = useUpdateAssetStatus();
   const deleteAssetStatus = useRemoveAssetStatus();
+  const batchImportMutation = useBatchImportAssetStatuses();
 
-  const isSubmitting = createAssetStatus.isPending || updateAssetStatus.isPending;
+  const isSubmitting =
+    createAssetStatus.isPending || updateAssetStatus.isPending || batchImportMutation.isPending;
   const items = (data?.items ?? []) as Array<assetstatus>;
 
   // Build tree filter groups for Asset Status
@@ -219,6 +232,24 @@ const AssetStatusPage: React.FC = () => {
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu trạng thái tài sản ra file Excel...")}
+        templateFileName="Mau_Nhap_Trang_Thai_Tai_San.xlsx"
+        templateCsvContent="code,name,colorCode,allowAllocation,description,isactive,displayorder\n"
+        importTemplateColumns={ASSET_STATUS_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu trạng thái tài sản từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

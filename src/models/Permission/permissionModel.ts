@@ -42,3 +42,26 @@ export interface RoleMember {
   departmentName: string;
   assignedAt: string;
 }
+
+/**
+ * DTO Quan hệ Phân quyền Vai trò (Bảng trung gian RolePermissions)
+ */
+export interface RolePermissionDto {
+  roleId: string; // Guid / string
+  permissionCode: string; // VD: "hardware.create"
+  grantedAt?: string; // DateTime ISO
+  grantedBy?: number | null; // UserId người cấp
+}
+
+/**
+ * Request DTO khi cập nhật danh sách quyền cho vai trò
+ */
+export interface UpdateRolePermissionsRequest {
+  roleId: string;
+  permissionCodes: string[];
+}
+
+export type RoleDto = AppRole;
+export type Role = AppRole;
+export type PermissionDto = PermissionDefinition;
+export type Permission = PermissionDefinition;

@@ -1,6 +1,9 @@
+import { api } from "../../library/axios";
+import { API_ENDPOINTS } from "../../common/apiEndpoints";
 import {
   AppRole,
   PermissionModuleGroup,
+  UpdateRolePermissionsRequest,
 } from "../../models/Permission/permissionModel";
 import {
   INITIAL_APP_ROLES,
@@ -9,28 +12,82 @@ import {
 import { INITIAL_USER_ACCOUNTS } from "../Users/userMockData";
 import { UserRole } from "../../models/User/userAccount";
 
-class PermissionService {
+export class PermissionService {
   private roles: AppRole[] = [...INITIAL_APP_ROLES];
   private modules: PermissionModuleGroup[] = [...PERMISSION_MODULES];
 
   async getRoles(): Promise<AppRole[]> {
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    try {
+      const response = await api.get<any>(API_ENDPOINTS.ROLES.BASE);
+      const data = response.data;
+      if (Array.isArray(data)) {
+        this.roles = data;
+        return data;
+      }
+      if (data && typeof data === "object" && Array.isArray(data.items)) {
+        this.roles = data.items;
+        return data.items;
+      }
+      if (data && typeof data === "object" && "data" in data && Array.isArray(data.data)) {
+        this.roles = data.data;
+        return data.data;
+      }
+    } catch {
+      // Fallback cục bộ
+    }
     return [...this.roles];
   }
 
   async getModules(): Promise<PermissionModuleGroup[]> {
+    try {
+      const response = await api.get<any>(API_ENDPOINTS.PERMISSIONS.MODULES);
+      const data = response.data;
+      if (Array.isArray(data)) {
+        this.modules = data;
+        return data;
+      }
+      if (data && typeof data === "object" && "data" in data && Array.isArray(data.data)) {
+        this.modules = data.data;
+        return data.data;
+      }
+    } catch {
+      // Fallback cục bộ
+    }
     return [...this.modules];
   }
 
   async getRoleById(roleId: string): Promise<AppRole | null> {
+    try {
+      const response = await api.get<any>(`${API_ENDPOINTS.ROLES.BASE}/${roleId}`);
+      const data = response.data?.data ?? response.data;
+      if (data && typeof data === "object") return data;
+    } catch {
+      // Fallback
+    }
     const role = this.roles.find((r) => r.id === roleId);
     return role ? { ...role } : null;
   }
 
   /**
-   * Cập nhật danh sách quyền cho vai trò
+   * Cập nhật danh sách quyền cho vai trò (Gán / Thu hồi các dấu tick)
    */
   async updateRolePermissions(roleId: string, permissions: string[]): Promise<AppRole> {
+    try {
+      const payload: UpdateRolePermissionsRequest = {
+        roleId,
+        permissionCodes: permissions,
+      };
+      const response = await api.put<any>(API_ENDPOINTS.ROLES.PERMISSIONS(roleId), payload);
+      const data = response.data?.data ?? response.data;
+      if (data && typeof data === "object" && data.id) {
+        const idx = this.roles.findIndex((r) => r.id === roleId);
+        if (idx !== -1) this.roles[idx] = data;
+        return data;
+      }
+    } catch (e) {
+      console.warn("Update role permissions API fallback to local:", e);
+    }
+
     const index = this.roles.findIndex((r) => r.id === roleId);
     if (index === -1) throw new Error("Không tìm thấy vai trò");
 

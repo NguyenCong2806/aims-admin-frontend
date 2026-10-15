@@ -47,3 +47,13 @@ export function useRemovePosition() {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn: (id: number) => services.position.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: positionKeys.all }) });
 }
+
+export function useBatchImportPositions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: File | FormData | any[]) => services.position.batchImport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: positionKeys.all });
+    },
+  });
+}

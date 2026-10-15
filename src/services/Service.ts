@@ -139,4 +139,30 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
             });
         return response.data;
     }
+
+    async batchImport(data: File | FormData | any[]): Promise<any> {
+        const importEndpoint = `${this.endpoint}/batch-import`;
+        if (data instanceof File) {
+            const formData = new FormData();
+            formData.append("file", data);
+            const response = await api.post(importEndpoint, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return response.data;
+        }
+
+        if (data instanceof FormData) {
+            const response = await api.post(importEndpoint, data, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return response.data;
+        }
+
+        const response = await api.post(importEndpoint, data);
+        return response.data;
+    }
 }

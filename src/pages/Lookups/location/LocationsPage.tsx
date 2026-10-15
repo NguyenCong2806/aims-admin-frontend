@@ -12,8 +12,19 @@ import {
   useLocationParams,
   useRemoveLocation,
   useUpdateLocation,
+  useBatchImportLocations,
 } from "../../../query/locations/locationsQuery";
-import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, TreeFilterGroup, ExcelImportColumn } from "../../../components/aims";
+
+const LOCATION_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã địa điểm", required: true, description: "Mã định danh địa điểm/kho (duy nhất)" },
+  { key: "name", label: "Tên địa điểm", required: true, description: "Tên địa điểm hoặc chi nhánh" },
+  { key: "address", label: "Địa chỉ", description: "Địa chỉ trụ sở / chi nhánh" },
+  { key: "parentId", label: "ID Địa điểm cha", description: "Mã số định danh địa điểm cấp trên" },
+  { key: "description", label: "Mô tả", description: "Ghi chú thêm về địa điểm" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const LocationsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,10 +51,12 @@ const LocationsPage: React.FC = () => {
   const createMutation = useCreateLocation();
   const updateMutation = useUpdateLocation();
   const deleteMutation = useRemoveLocation();
+  const batchImportMutation = useBatchImportLocations();
 
   const items = (data?.items ?? []) as location[];
   const locations = allLocations as location[];
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting =
+    createMutation.isPending || updateMutation.isPending || batchImportMutation.isPending;
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -244,7 +257,26 @@ const LocationsPage: React.FC = () => {
           setLocationId(null);
           setIsModalOpen(true);
         }}
+        addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu ra file Excel...")}
+        templateFileName="Mau_Nhap_Dia_Diem.xlsx"
+        templateCsvContent="code,name,address,parentId,description,isactive,displayorder\n"
+        importTemplateColumns={LOCATION_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu địa điểm từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

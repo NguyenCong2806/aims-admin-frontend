@@ -1,4 +1,5 @@
 // Interface phản chiếu thực thể C# SystemLog / AuditLog (Nhật ký hệ thống)
+export * from "../AuditLog/AuditLogDto";
 
 export type SystemLogAction = "INSERT" | "UPDATE" | "DELETE" | string;
 

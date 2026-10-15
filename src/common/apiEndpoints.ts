@@ -25,15 +25,25 @@ export const API_ENDPOINTS = {
   // Danh mục dùng chung (Lookups)
   LOOKUPS: {
     ASSET_CATEGORIES: "/asset-categories",
+    ASSET_CATEGORIES_BATCH_IMPORT: "/asset-categories/batch-import",
     ASSET_STATUSES: "/asset-status",
+    ASSET_STATUSES_BATCH_IMPORT: "/asset-status/batch-import",
     ASSET_TYPES: "/asset-types",
+    ASSET_TYPES_BATCH_IMPORT: "/asset-types/batch-import",
     BRANDS: "/brands",
+    BRANDS_BATCH_IMPORT: "/brands/batch-import",
     COST_CENTERS: "/cost-center",
+    COST_CENTERS_BATCH_IMPORT: "/cost-center/batch-import",
     DEPARTMENTS: "/department",
+    DEPARTMENTS_BATCH_IMPORT: "/department/batch-import",
     LICENSE_TYPES: "/license-type",
+    LICENSE_TYPES_BATCH_IMPORT: "/license-type/batch-import",
     LOCATIONS: "/location",
+    LOCATIONS_BATCH_IMPORT: "/location/batch-import",
     MAINTENANCE_TYPES: "/maintenance-type",
+    MAINTENANCE_TYPES_BATCH_IMPORT: "/maintenance-type/batch-import",
     POSITIONS: "/positions",
+    POSITIONS_BATCH_IMPORT: "/positions/batch-import",
     SUPPLIERS: "/suppliers",
     SUPPLIERS_BATCH_IMPORT: "/suppliers/batch-import",
     UNITS: "/units",
@@ -105,12 +115,23 @@ export const API_ENDPOINTS = {
     ROLES: "/roles",
     PERMISSIONS: "/permissions",
   },
+  ROLES: {
+    BASE: "/roles",
+    PERMISSIONS: (roleId: string) => `/roles/${roleId}/permissions`,
+  },
+  PERMISSIONS: {
+    BASE: "/permissions",
+    MODULES: "/permissions/modules",
+  },
 
   // Hệ thống & Cấu hình (System Logs & Configs)
   SYSTEM: {
     LOGS: "/system-logs",
     CONFIG: "/system-configs",
     SETTINGS: "/system-settings",
+  },
+  AUDIT_LOGS: {
+    BASE: "/audit-logs",
   },
 } as const;
 

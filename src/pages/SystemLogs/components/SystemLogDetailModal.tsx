@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { SystemLog } from "../../../models/SystemLog/systemLog";
+import { AuditLogDto } from "../../../models/AuditLog/AuditLogDto";
 import {
   computeFieldDiffs,
   formatValueForDisplay,
@@ -11,7 +12,7 @@ import {
 interface SystemLogDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  log: SystemLog | null;
+  log: AuditLogDto | SystemLog | null;
 }
 
 export const SystemLogDetailModal: React.FC<SystemLogDetailModalProps> = ({

@@ -47,3 +47,13 @@ export function useRemoveDepartment() {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn: (id: number) => services.department.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: departmentKeys.all }) });
 }
+
+export function useBatchImportDepartments() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: File | FormData | any[]) => services.department.batchImport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: departmentKeys.all });
+    },
+  });
+}

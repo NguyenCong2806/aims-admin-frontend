@@ -109,3 +109,14 @@ export function useRemoveAssetCategory() {
     },
   });
 }
+
+export function useBatchImportAssetCategories() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: File | FormData | any[]) => services.assetCategory.batchImport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assetcategorieKeys.all });
+    },
+  });
+}

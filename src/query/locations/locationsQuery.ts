@@ -20,3 +20,12 @@ export function usePrefetchLocationPage() {
 export function useCreateLocation() { const queryClient = useQueryClient(); return useMutation({ mutationFn: (params: createlocation) => services.location.create(params), onSuccess: () => queryClient.invalidateQueries({ queryKey: locationKeys.all }) }); }
 export function useUpdateLocation() { const queryClient = useQueryClient(); return useMutation({ mutationFn: ({ id, params }: { id: number; params: updatelocation }) => services.location.update(id, params), onSuccess: (_, { id }) => { queryClient.invalidateQueries({ queryKey: locationKeys.lists() }); queryClient.invalidateQueries({ queryKey: locationKeys.detail(id) }); } }); }
 export function useRemoveLocation() { const queryClient = useQueryClient(); return useMutation({ mutationFn: (id: number) => services.location.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: locationKeys.all }) }); }
+export function useBatchImportLocations() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: File | FormData | any[]) => services.location.batchImport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: locationKeys.all });
+    },
+  });
+}

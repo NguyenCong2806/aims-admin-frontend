@@ -66,3 +66,13 @@ export function useRemoveCostCenter() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: costcenterKeys.all }),
   });
 }
+
+export function useBatchImportCostCenters() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: File | FormData | any[]) => services.costCenter.batchImport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: costcenterKeys.all });
+    },
+  });
+}

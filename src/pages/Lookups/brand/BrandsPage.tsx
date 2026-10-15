@@ -9,9 +9,18 @@ import {
   useCreateBrand as usecreateBrand,
   useUpdateBrand as useupdateBrand,
   useRemoveBrand as useremoveBrand,
+  useBatchImportBrands,
 } from "../../../query/brand/brandQuery";
 import { PaginationFilter } from "../../../models/base/PaginationFilter";
-import { AimsBasePageLayout, ViewMode } from "../../../components/aims";
+import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../components/aims";
+
+const BRAND_IMPORT_COLUMNS: ExcelImportColumn[] = [
+  { key: "code", label: "Mã hãng", required: true, description: "Mã ký hiệu thương hiệu/hãng (duy nhất)" },
+  { key: "name", label: "Tên hãng", required: true, description: "Tên nhà sản xuất/thương hiệu" },
+  { key: "description", label: "Mô tả", description: "Mô tả xuất xứ, thương hiệu" },
+  { key: "isactive", label: "Trạng thái", description: "TRUE: Hoạt động / FALSE: Tạm ngừng" },
+  { key: "displayorder", label: "Thứ tự hiển thị", description: "Thứ tự sắp xếp hiển thị" },
+];
 
 const BrandsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,8 +44,10 @@ const BrandsPage: React.FC = () => {
   const createBrand = usecreateBrand();
   const updateBrand = useupdateBrand();
   const deleteBrand = useremoveBrand();
+  const batchImportMutation = useBatchImportBrands();
 
-  const isSubmitting = createBrand.isPending || updateBrand.isPending;
+  const isSubmitting =
+    createBrand.isPending || updateBrand.isPending || batchImportMutation.isPending;
   const items = (data?.items ?? []) as Array<brand>;
 
   const handleAdd = () => {
@@ -171,6 +182,24 @@ const BrandsPage: React.FC = () => {
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu hãng sản xuất ra Excel...")}
+        templateFileName="Mau_Nhap_Hang_San_Xuat.xlsx"
+        templateCsvContent="code,name,description,isactive,displayorder\n"
+        importTemplateColumns={BRAND_IMPORT_COLUMNS}
+        onImportData={async (rows, file) => {
+          try {
+            if (file) {
+              await batchImportMutation.mutateAsync(file);
+            } else {
+              await batchImportMutation.mutateAsync(rows);
+            }
+            toast.success("Nhập dữ liệu hãng sản xuất từ tệp thành công!");
+          } catch (err) {
+            toast.error(
+              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+            );
+            throw err;
+          }
+        }}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}
