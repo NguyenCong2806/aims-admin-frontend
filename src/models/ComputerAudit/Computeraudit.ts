@@ -62,7 +62,7 @@ export interface DeviceDiskAudit {
   disk_type?: string | null;
   diskType?: string | null;
   partitions?: DeviceDiskPartitionAudit[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Màn hình (Displays)
@@ -71,7 +71,7 @@ export interface DeviceDisplayAudit {
   name?: string;
   physicalSizeInch?: string;
   resolution?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Card mạng (Networks)
@@ -79,7 +79,7 @@ export interface DeviceNetworkAudit {
   name: string;
   macAddress: string;
   ipAddress?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Phần mềm cài đặt (Softwares)
@@ -87,7 +87,7 @@ export interface DeviceSoftwareAudit {
   name: string;
   version: string;
   installType?: "Admin" | "Non-Admin" | string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Model chính phản chiếu chuỗi JSON thực tế từ API

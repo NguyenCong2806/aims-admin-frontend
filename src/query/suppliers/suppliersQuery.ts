@@ -52,7 +52,7 @@ export function useRemoveSupplier() {
 export function useBatchImportSuppliers() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: File | FormData | any[]) => services.supplier.batchImport(data),
+    mutationFn: (data: File | FormData | Record<string, unknown>[]) => services.supplier.batchImport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: supplierKeys.all });
     },

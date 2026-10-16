@@ -111,13 +111,14 @@ export const API_ENDPOINTS = {
 
   // Quản trị người dùng & Phân quyền (Users & RBAC)
   USERS: {
-    BASE: "/users",
-    ROLES: "/roles",
-    PERMISSIONS: "/permissions",
+    BASE: "/accounts",
+    USERS_FALLBACK: "/users",
   },
   ROLES: {
     BASE: "/roles",
-    PERMISSIONS: (roleId: string) => `/roles/${roleId}/permissions`,
+    PERMISSIONS: (roleId: string | number) => `/roles/${roleId}/permissions`,
+    TOGGLE_PERMISSION: (roleId: string | number) => `/roles/${roleId}/toggle-permission`,
+    MEMBERS: (roleId: string | number) => `/roles/${roleId}/members`,
   },
   PERMISSIONS: {
     BASE: "/permissions",
@@ -132,7 +133,9 @@ export const API_ENDPOINTS = {
   },
   AUDIT_LOGS: {
     BASE: "/audit-logs",
+    PAGED: "/audit-logs/paged",
   },
 } as const;
 
 export type ApiEndpoints = typeof API_ENDPOINTS;
+

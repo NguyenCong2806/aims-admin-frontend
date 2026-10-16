@@ -32,8 +32,8 @@ export interface AimsBasePageLayoutProps {
   templateFileName?: string;
   templateUrl?: string;
   templateCsvContent?: string;
-  importTemplateColumns?: any[];
-  onImportData?: (rows: any[], file?: File) => Promise<void> | void;
+  importTemplateColumns?: ExcelImportColumn[];
+  onImportData?: (rows: Record<string, unknown>[], file?: File) => Promise<void> | void;
   selectedCount?: number;
   onClearSelection?: () => void;
   onBatchDelete?: () => void;

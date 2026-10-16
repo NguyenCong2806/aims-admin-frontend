@@ -47,7 +47,7 @@ export function useRemoveMaintenanceType() {
 export function useBatchImportMaintenanceTypes() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: File | FormData | any[]) => services.maintenanceType.batchImport(data),
+    mutationFn: (data: File | FormData | Record<string, unknown>[]) => services.maintenanceType.batchImport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: maintenancetypeKeys.all });
     },

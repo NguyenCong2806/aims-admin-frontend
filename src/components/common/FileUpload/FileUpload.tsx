@@ -35,7 +35,7 @@ export interface FileUploadProps {
   /**
    * Callback khi giá trị tệp tin thay đổi (thêm, upload xong, xóa)
    */
-  onChange?: (value: any) => void;
+  onChange?: (value: FileUploadResult | FileUploadResult[] | null) => void;
   /**
    * Kiểu giao diện hiển thị: dropzone (mặc định), compact, button, avatar
    */
@@ -174,9 +174,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   // Đồng bộ prop `value` bên ngoài vào local `fileList`
   useEffect(() => {
     if (value === undefined || value === null) {
-      if (fileList.length > 0 && !isUploading) {
-        setFileList([]);
-      }
+      setFileList((prev) => (prev.length > 0 ? [] : prev));
       return;
     }
 
@@ -238,7 +236,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         },
       ]);
     }
-  }, [value]);
+  }, [value, setFileList]);
 
   // Thông báo thay đổi ra ngoài khi fileList thay đổi do upload hoàn tất
   const notifyChange = useCallback(
@@ -289,8 +287,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       if (multiple) {
         const results = await uploadMultiple(acceptedFiles);
         if (results.length > 0 && onChange) {
-          const combined = [
-            ...fileList.filter((f) => f.status === "success" && f.relativeUrl),
+          const existingSuccess: FileUploadResult[] = fileList
+            .filter((f) => f.status === "success" && f.relativeUrl)
+            .map((f) => ({
+              fileName: f.fileName,
+              storedFileName: f.storedFileName || f.fileName,
+              relativeUrl: f.relativeUrl,
+              fileSizeBytes: f.fileSizeBytes,
+              contentType: f.contentType || "",
+            }));
+          const combined: FileUploadResult[] = [
+            ...existingSuccess,
             ...results,
           ];
           onChange(combined);

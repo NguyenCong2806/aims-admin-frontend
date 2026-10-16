@@ -278,15 +278,17 @@ export default function ContractsPage() {
   ];
 
   // Xử lý nhập hợp đồng từ file Excel
-  const handleImportContracts = async (rows: any[]) => {
+  const handleImportContracts = async (rows: Record<string, unknown>[]) => {
     let successCount = 0;
     for (const r of rows) {
       const code = String(r.contractNumber || r.contractCode || r["Mã hợp đồng"] || r["Số HĐ"] || r["Số hợp đồng"] || "").trim();
       const titleStr = String(r.title || r["Tên hợp đồng"] || "").trim();
       if (!titleStr) continue;
 
-      const eff = r.effectiveDate || r.startDate || r["Ngày bắt đầu"] || r["Ngày hiệu lực"] || new Date().toISOString().split("T")[0];
-      const exp = r.expiryDate || r.endDate || r["Ngày kết thúc"] || r["Ngày hết hạn"] || new Date().toISOString().split("T")[0];
+      const eff = String(r.effectiveDate || r.startDate || r["Ngày bắt đầu"] || r["Ngày hiệu lực"] || new Date().toISOString().split("T")[0]);
+      const exp = String(r.expiryDate || r.endDate || r["Ngày kết thúc"] || r["Ngày hết hạn"] || new Date().toISOString().split("T")[0]);
+      const paymentTermsVal = r.paymentTerms || r["Điều khoản thanh toán"];
+      const docUrlVal = r.documentFileUrl || r.fileUrl;
 
       const newContract: createcontract = {
         contractNumber: code || `HD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -297,8 +299,8 @@ export default function ContractsPage() {
         effectiveDate: new Date(eff).toISOString(),
         expiryDate: new Date(exp).toISOString(),
         status: String(r.status || r["Trạng thái"] || "ACTIVE").trim(),
-        paymentTerms: r.paymentTerms || r["Điều khoản thanh toán"] || null,
-        documentFileUrl: r.documentFileUrl || r.fileUrl || null,
+        paymentTerms: paymentTermsVal ? String(paymentTermsVal) : null,
+        documentFileUrl: docUrlVal ? String(docUrlVal) : null,
         notes: String(r.notes || r["Ghi chú"] || "Nhập từ file Excel").trim(),
 
         contractCode: code,

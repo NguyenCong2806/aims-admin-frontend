@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "sonner";
-import { usecomputerauditsByDetail } from "../../../query/computeraudits/computerauditsQuery";
+import { useComputerAuditsByDetail } from "../../../query/computeraudits/computerauditsQuery";
 import { distributePartitionsToDisks } from "../../../models/Monitoring/DeviceSystemAuditDto";
 import type {
   ComputerAuditDetailDto,
@@ -19,16 +19,20 @@ export const WorkstationDetailModal: React.FC<WorkstationDetailModalProps> = ({
   onClose,
 }) => {
   // Gọi API lấy thông số phần cứng chi tiết theo ID
-  const { data: detailData, isLoading, isError, refetch } = usecomputerauditsByDetail(id);
+  const { data: detailData, isLoading, isError, refetch } = useComputerAuditsByDetail(id);
+
 
   if (!id) return null;
 
   // Hỗ trợ cả trường hợp API trả về Result wrapper { data: { ... } } hoặc trực tiếp { ... }
+  const detailDataObj = detailData as { data?: ComputerAuditDetailDto } | ComputerAuditDetailDto | null;
   const detail: ComputerAuditDetailDto | null =
-    (detailData as any)?.data ?? detailData ?? null;
+    detailDataObj && typeof detailDataObj === "object" && "data" in detailDataObj && detailDataObj.data
+      ? detailDataObj.data
+      : (detailDataObj as ComputerAuditDetailDto | null);
 
   const rawDisks: DiskDto[] = detail?.disks || [];
-  const disks = distributePartitionsToDisks(rawDisks as any[]);
+  const disks = distributePartitionsToDisks(rawDisks);
   const displays: DisplayDto[] = detail?.displays || [];
   const networks: NetworkDto[] = detail?.networks || [];
   const assetId = detail?.asset_id || detail?.assetId || id;
@@ -102,7 +106,7 @@ export const WorkstationDetailModal: React.FC<WorkstationDetailModalProps> = ({
 
               {disks.length > 0 ? (
                 <div className="space-y-3">
-                  {disks.map((d: any, idx: number) => {
+                  {disks.map((d, idx: number) => {
                     const totalGb = Number(d.total_gb ?? d.totalGB ?? 0);
                     const partitions = Array.isArray(d.partitions) ? d.partitions : [];
                     const isSsd =
@@ -143,7 +147,7 @@ export const WorkstationDetailModal: React.FC<WorkstationDetailModalProps> = ({
                         {/* Danh sách phân vùng */}
                         {partitions.length > 0 ? (
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2 border-t border-gray-200/60 dark:border-gray-700/60">
-                            {partitions.map((part: any, pIdx: number) => {
+                            {partitions.map((part, pIdx: number) => {
                               const pTotal = Number(part.totalGB ?? part.total_gb ?? 0);
                               const pFree = Number(part.freeGB ?? part.free_gb ?? 0);
                               const pUsed = Number(

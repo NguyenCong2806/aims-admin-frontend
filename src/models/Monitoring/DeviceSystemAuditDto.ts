@@ -1,5 +1,6 @@
 import type {
   DiskDto,
+  DiskPartitionDto,
   DisplayDto,
   NetworkDto,
   SoftwareDto,
@@ -51,7 +52,7 @@ export interface DeviceSystemAuditDto {
   displays?: DisplayDto[];
   networks?: NetworkDto[];
   softwares?: SoftwareDto[];
-  rawAudit?: any;
+  rawAudit?: unknown;
 }
 
 // Alias định danh tương thích ngược
@@ -77,14 +78,14 @@ export function isOfficeLicensed(status?: string): boolean {
 /**
  * Phân bổ chính xác danh sách phân vùng (C:\, D:\, G:\...) về đúng ổ đĩa vật lý tương ứng.
  */
-export function distributePartitionsToDisks(rawDisks: any[]): DiskDto[] {
+export function distributePartitionsToDisks(rawDisks: DiskDto[]): DiskDto[] {
   if (!rawDisks || rawDisks.length === 0) return [];
 
-  const allPartitionsMap = new Map<string, any>();
+  const allPartitionsMap = new Map<string, DiskPartitionDto>();
 
-  rawDisks.forEach((d: any) => {
+  rawDisks.forEach((d: DiskDto) => {
     if (Array.isArray(d.partitions)) {
-      d.partitions.forEach((p: any) => {
+      d.partitions.forEach((p: DiskPartitionDto) => {
         const key = (p?.label || p?.drive_letter || p?.driveLetter || "").trim().toUpperCase();
         if (key) {
           allPartitionsMap.set(key, p);
@@ -96,7 +97,7 @@ export function distributePartitionsToDisks(rawDisks: any[]): DiskDto[] {
       try {
         const parsed = JSON.parse(d.disk_type);
         if (Array.isArray(parsed)) {
-          parsed.forEach((p: any) => {
+          parsed.forEach((p: DiskPartitionDto) => {
             const key = (p?.label || p?.drive_letter || p?.driveLetter || "").trim().toUpperCase();
             if (key) {
               allPartitionsMap.set(key, p);
@@ -134,11 +135,11 @@ export function distributePartitionsToDisks(rawDisks: any[]): DiskDto[] {
       driveLetterStr,
       totalCap,
       sizes: sizeMatches,
-      matchedPartitions: [] as any[],
+      matchedPartitions: [] as DiskPartitionDto[],
     };
   });
 
-  const unassignedPartitions: any[] = [];
+  const unassignedPartitions: DiskPartitionDto[] = [];
 
   allPartitions.forEach((p) => {
     const pTotalGB = Number(p.totalGB ?? p.total_gb ?? (p.usedGB && p.freeGB ? p.usedGB + p.freeGB : 0));

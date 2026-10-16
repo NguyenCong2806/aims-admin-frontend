@@ -21,7 +21,7 @@ export interface ExcelImportModalProps {
   templateUrl?: string;
   templateCsvContent?: string;
   columns?: ExcelImportColumn[];
-  onImport: (data: any[], file?: File) => Promise<void> | void;
+  onImport: (data: Record<string, unknown>[], file?: File) => Promise<void> | void;
   isLoading?: boolean;
 }
 
@@ -38,7 +38,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
   isLoading: isExternalLoading = false,
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [parsedRows, setParsedRows] = useState<any[]>([]);
+  const [parsedRows, setParsedRows] = useState<Record<string, unknown>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -147,7 +147,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
 
           const ws = wb.Sheets[firstSheetName];
           // Đọc dữ liệu thành mảng JSON
-          const rawData = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
+          const rawData = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
 
           if (!rawData || rawData.length === 0) {
             toast.warning("Tệp Excel không có dòng dữ liệu nào!");
@@ -168,7 +168,7 @@ export const ExcelImportModal: React.FC<ExcelImportModalProps> = ({
             });
 
             mappedRows = rawData.map((row) => {
-              const mappedItem: Record<string, any> = {};
+              const mappedItem: Record<string, unknown> = {};
               Object.entries(row).forEach(([colHeader, cellVal]) => {
                 const normalized = colHeader.trim().toLowerCase();
                 const matchedKey = labelToKeyMap.get(normalized) || colHeader;

@@ -15,17 +15,26 @@ export class ComputerAuditService extends Service<DeviceSystemAuditDto, CreateDe
         super(endpoint);
     }
     async getByDetail(id: string): Promise<ComputerAuditDetailDto> {
-        const response = await api.get<any>(
+        const response = await api.get<ComputerAuditDetailDto | { data?: ComputerAuditDetailDto }>(
             `${this.endpoint}/details/${id}`
         );
-        return response.data?.data ?? response.data;
+        const data = response.data;
+        if (data && typeof data === "object" && "data" in data) {
+            return (data as { data: ComputerAuditDetailDto }).data;
+        }
+        return data as ComputerAuditDetailDto;
     }
     async getListInstalledSoftware(id: string): Promise<SoftwareDto[]> {
-        const response = await api.get<any>(
+        const response = await api.get<SoftwareDto[] | { data?: SoftwareDto[] }>(
             `${this.endpoint}/detail_softwares/${id}`
         );
-        return response.data?.data ?? response.data;
+        const data = response.data;
+        if (data && typeof data === "object" && "data" in data) {
+            return (data as { data: SoftwareDto[] }).data;
+        }
+        return data as SoftwareDto[];
     }
+
     async getAllParams(
         params?: PaginationFilter
     ): Promise<PagedResult<DeviceSystemAuditDto>> {

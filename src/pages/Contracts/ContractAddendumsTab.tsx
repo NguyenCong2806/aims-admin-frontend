@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ContractAddendum,
@@ -17,7 +17,7 @@ import {
   ContractAddendumInput,
   ContractAddendumFormData,
 } from "../../validations/contractAddendum.schema";
-import { FileUpload, FileUploadResult } from "../../components/common/FileUpload";
+import { FileUpload } from "../../components/common/FileUpload";
 import { services } from "../../di/ServiceContainer";
 import { Modal } from "../../components/ui/modal";
 import {
@@ -34,7 +34,7 @@ interface ContractAddendumsTabProps {
   contract: contract | null;
 }
 
-export const ADDENDUM_TYPES = [
+const ADDENDUM_TYPES = [
   { value: "RENEWAL", label: "🔄 Gia hạn thời gian", badge: "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" },
   { value: "SCOPE_EXPANSION", label: "📦 Mở rộng phạm vi / Thiết bị", badge: "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" },
   { value: "PRICE_ADJUSTMENT", label: "💰 Điều chỉnh đơn giá / Chu kỳ", badge: "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800" },
@@ -71,7 +71,7 @@ export const ContractAddendumsTab: React.FC<ContractAddendumsTabProps> = ({ cont
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<ContractAddendumInput, any, ContractAddendumFormData>({
+  } = useForm<ContractAddendumInput, Record<string, unknown>, ContractAddendumFormData>({
     resolver: zodResolver(contractAddendumSchema),
     defaultValues: {
       addendumNumber: "",
@@ -162,9 +162,9 @@ export const ContractAddendumsTab: React.FC<ContractAddendumsTabProps> = ({ cont
     setIsModalOpen(true);
   };
 
-  const onAddendumError = (fieldErrors: any) => {
+  const onAddendumError = (fieldErrors: FieldErrors<ContractAddendumInput>) => {
     console.warn("Lỗi xác thực phụ lục:", fieldErrors);
-    const errorKeys = Object.keys(fieldErrors);
+    const errorKeys = Object.keys(fieldErrors) as (keyof ContractAddendumInput)[];
     if (errorKeys.length > 0) {
       const firstKey = errorKeys[0];
       const firstError = fieldErrors[firstKey];
@@ -221,9 +221,12 @@ export const ContractAddendumsTab: React.FC<ContractAddendumsTabProps> = ({ cont
 
       setIsModalOpen(false);
       refetch();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Lỗi khi lưu phụ lục:", err);
-      toast.error(err?.response?.data?.message || "Không thể lưu phụ lục hợp đồng.");
+      const errMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : "Không thể lưu phụ lục hợp đồng.");
+      toast.error(errMsg);
     }
   };
 
@@ -249,8 +252,11 @@ export const ContractAddendumsTab: React.FC<ContractAddendumsTabProps> = ({ cont
       await deleteMutation.mutateAsync({ id: item.id, contractId });
       toast.success("Đã xóa phụ lục thành công!");
       refetch();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Lỗi khi xóa phụ lục.");
+    } catch (err: unknown) {
+      const errMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : "Lỗi khi xóa phụ lục.");
+      toast.error(errMsg);
     }
   };
 
@@ -644,14 +650,15 @@ export const ContractAddendumsTab: React.FC<ContractAddendumsTabProps> = ({ cont
                   setValue("documentFileUrl", item.relativeUrl, { shouldValidate: true });
                 }
               }}
-              onChange={(res: FileUploadResult | null) => {
-                if (res) {
+              onChange={(res) => {
+                const item = Array.isArray(res) ? res[0] : res;
+                if (item) {
                   setUploadedFileMeta({
-                    fileName: res.fileName,
-                    fileUrl: res.relativeUrl,
-                    fileSize: res.fileSizeBytes,
+                    fileName: item.fileName,
+                    fileUrl: item.relativeUrl,
+                    fileSize: item.fileSizeBytes,
                   });
-                  setValue("documentFileUrl", res.relativeUrl, { shouldValidate: true });
+                  setValue("documentFileUrl", item.relativeUrl, { shouldValidate: true });
                 } else {
                   setUploadedFileMeta(null);
                   setValue("documentFileUrl", "", { shouldValidate: true });

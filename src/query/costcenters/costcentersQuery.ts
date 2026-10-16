@@ -70,7 +70,7 @@ export function useRemoveCostCenter() {
 export function useBatchImportCostCenters() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: File | FormData | any[]) => services.costCenter.batchImport(data),
+    mutationFn: (data: File | FormData | Record<string, unknown>[]) => services.costCenter.batchImport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: costcenterKeys.all });
     },

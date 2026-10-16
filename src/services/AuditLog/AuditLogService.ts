@@ -24,7 +24,7 @@ export class AuditLogService
       const pageSize = filter?.PageSize ?? filter?.pageSize ?? 10;
       const keyword = filter?.Keyword ?? filter?.keyword;
 
-      const params: Record<string, any> = {
+      const params: Record<string, unknown> = {
         ...filter,
         PageIndex: pageIndex,
         PageSize: pageSize,
@@ -36,20 +36,18 @@ export class AuditLogService
         params.keyword = keyword;
       }
 
-      const response = await api.get<any>(`${this.endpoint}/paged`, {
-        params,
-      });
+      const response = await api.get<PagedResult<AuditLogDto> | AuditLogDto[] | { data?: PagedResult<AuditLogDto> }>(
+        `${this.endpoint}/paged`,
+        { params }
+      );
+
 
       const resData = response.data;
-      // Trả về nếu dữ liệu chuẩn PagedResult { items, pagination }
-      if (resData && Array.isArray(resData.items)) {
-        return resData as PagedResult<AuditLogDto>;
-      }
 
       // Nếu API trả về dạng mảng thuần túy
       if (Array.isArray(resData)) {
         return {
-          items: resData as AuditLogDto[],
+          items: resData,
           pagination: {
             pageIndex,
             pageSize,
@@ -61,7 +59,12 @@ export class AuditLogService
         };
       }
 
-      if (resData && typeof resData === "object" && "data" in resData) {
+      // Trả về nếu dữ liệu chuẩn PagedResult { items, pagination }
+      if (resData && typeof resData === "object" && "items" in resData && Array.isArray(resData.items)) {
+        return resData as PagedResult<AuditLogDto>;
+      }
+
+      if (resData && typeof resData === "object" && "data" in resData && resData.data) {
         return resData.data as PagedResult<AuditLogDto>;
       }
 

@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Modal } from "../../components/ui/modal";
 import { contract, createcontract, updatecontract } from "../../models/Contract/contract";
 import { ContractFormData, ContractInput, contractSchema } from "../../validations/contract.schema";
 import { useSupplierAll } from "../../query/suppliers/suppliersQuery";
-import { FileUpload, FileUploadResult } from "../../components/common/FileUpload";
-import { formatFileSize } from "../../helpper/fileHelper";
+import { FileUpload } from "../../components/common/FileUpload";
 
 import { CONTRACT_TYPES } from "../../common/ContractTypeList";
 import { CONTRACT_STATUSES } from "../../common/ContractStatusList";
 import { ContractAddendumsTab } from "./ContractAddendumsTab";
-
-export { CONTRACT_TYPES, CONTRACT_STATUSES, formatFileSize };
 
 interface ContractModalProps {
   isOpen: boolean;
@@ -57,7 +54,7 @@ const ContractModal: React.FC<ContractModalProps> = ({
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<ContractInput, any, ContractFormData>({
+  } = useForm<ContractInput, Record<string, unknown>, ContractFormData>({
     resolver: zodResolver(contractSchema),
     defaultValues: {
       contractNumber: "",
@@ -185,15 +182,18 @@ const ContractModal: React.FC<ContractModalProps> = ({
       } else {
         await onSubmit(payload);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Lỗi khi lưu hợp đồng:", err);
-      toast.error(err?.response?.data?.message || "Đã xảy ra lỗi khi lưu hợp đồng.");
+      const errMsg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : "Đã xảy ra lỗi khi lưu hợp đồng.");
+      toast.error(errMsg);
     }
   };
 
-  const onFormError = (fieldErrors: any) => {
+  const onFormError = (fieldErrors: FieldErrors<ContractInput>) => {
     console.warn("Lỗi xác thực form Hợp đồng:", fieldErrors);
-    const errorKeys = Object.keys(fieldErrors);
+    const errorKeys = Object.keys(fieldErrors) as (keyof ContractInput)[];
     if (errorKeys.length > 0) {
       const firstKey = errorKeys[0];
       const firstError = fieldErrors[firstKey];
@@ -567,7 +567,8 @@ const ContractModal: React.FC<ContractModalProps> = ({
                   });
                 }
               }}
-              onChange={(fileResult: FileUploadResult | null) => {
+              onChange={(res) => {
+                const fileResult = Array.isArray(res) ? res[0] : res;
                 if (fileResult) {
                   setUploadedFileMeta({
                     fileName: fileResult.fileName,

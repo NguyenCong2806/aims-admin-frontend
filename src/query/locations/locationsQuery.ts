@@ -23,7 +23,7 @@ export function useRemoveLocation() { const queryClient = useQueryClient(); retu
 export function useBatchImportLocations() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: File | FormData | any[]) => services.location.batchImport(data),
+    mutationFn: (data: File | FormData | Record<string, unknown>[]) => services.location.batchImport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: locationKeys.all });
     },

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from "react";
-import { usecomputerauditsofware } from "../../query/computeraudits/computerauditsQuery";
+import { useComputerAuditSoftware } from "../../query/computeraudits/computerauditsQuery";
 import type { SoftwareDto } from "../../models/ComputerAudit/SoftwareDto";
 
 export type { SoftwareDto };
@@ -10,8 +10,9 @@ export type { SoftwareDto };
  * Endpoint: /api/computeraudits/detail_softwares/{id}
  */
 export function useInstalledSoftware(id: string | null) {
-  return usecomputerauditsofware(id);
+  return useComputerAuditSoftware(id);
 }
+
 
 /**
  * Phân loại thông tin và định dạng badge cho trường `installType` ("Admin" | "Non-Admin")

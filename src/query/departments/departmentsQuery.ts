@@ -51,7 +51,7 @@ export function useRemoveDepartment() {
 export function useBatchImportDepartments() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: File | FormData | any[]) => services.department.batchImport(data),
+    mutationFn: (data: File | FormData | Record<string, unknown>[]) => services.department.batchImport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: departmentKeys.all });
     },

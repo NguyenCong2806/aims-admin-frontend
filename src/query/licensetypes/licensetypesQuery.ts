@@ -47,7 +47,7 @@ export function useRemoveLicenseType() {
 export function useBatchImportLicenseTypes() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: File | FormData | any[]) => services.licenseType.batchImport(data),
+    mutationFn: (data: File | FormData | Record<string, unknown>[]) => services.licenseType.batchImport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: licensetypeKeys.all });
     },

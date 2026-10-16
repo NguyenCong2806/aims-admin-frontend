@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { AimsBasePageLayout, ViewMode } from "../../components/aims";
 import PageMeta from "../../components/common/PageMeta";
 import { PaginationFilter } from "../../models/base/PaginationFilter";
-import { usecomputerauditsParams } from "../../query/computeraudits/computerauditsQuery";
+import { useComputerAuditsParams } from "../../query/computeraudits/computerauditsQuery";
 import { WorkstationDetailModal } from "./components/WorkstationDetailModal";
 import {
   DeviceSystemAuditDto,
@@ -34,7 +34,8 @@ export const WorkstationMonitoringPage: React.FC = () => {
     [pageIndex, pageSize, keyword]
   );
 
-  const { data, isPending, isFetching, isError, refetch } = usecomputerauditsParams(filter);
+  const { data, isPending, isFetching, isError, refetch } = useComputerAuditsParams(filter);
+
 
   // Hiển thị trực tiếp danh sách máy trạm từ backend
   const items: DeviceSystemAuditDto[] = data?.items || [];

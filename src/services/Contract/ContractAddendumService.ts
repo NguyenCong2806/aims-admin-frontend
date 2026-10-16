@@ -68,15 +68,16 @@ export class ContractAddendumService
 
     for (const url of candidateUrls) {
       try {
-        const response = await api.get<any>(url);
+        const response = await api.get<ContractAddendum[] | { data?: ContractAddendum[]; items?: ContractAddendum[] }>(url);
         const data = response.data;
         if (Array.isArray(data)) return data;
         if (data && typeof data === "object") {
           if (Array.isArray(data.data)) return data.data;
           if (Array.isArray(data.items)) return data.items;
         }
-      } catch (err: any) {
-        if (err?.response?.status === 404) {
+      } catch (err: unknown) {
+        const errObj = err as { response?: { status?: number } };
+        if (errObj?.response?.status === 404) {
           continue;
         }
       }
@@ -89,15 +90,16 @@ export class ContractAddendumService
    */
   override async create(request: CreateContractAddendum): Promise<Result<ContractAddendum>> {
     const endpoints = this.getCandidateEndpoints(request.contractId);
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     for (const ep of endpoints) {
       try {
         const response = await api.post<Result<ContractAddendum>>(ep, request);
         return response.data;
-      } catch (err: any) {
+      } catch (err: unknown) {
         lastError = err;
-        if (err?.response?.status === 404) {
+        const errObj = err as { response?: { status?: number } };
+        if (errObj?.response?.status === 404) {
           continue;
         }
         throw err;
@@ -111,15 +113,16 @@ export class ContractAddendumService
    */
   override async update(id: number, request: UpdateContractAddendum): Promise<Result<ContractAddendum>> {
     const endpoints = this.getCandidateEndpoints(request.contractId, id);
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     for (const ep of endpoints) {
       try {
         const response = await api.put<Result<ContractAddendum>>(ep, request);
         return response.data;
-      } catch (err: any) {
+      } catch (err: unknown) {
         lastError = err;
-        if (err?.response?.status === 404) {
+        const errObj = err as { response?: { status?: number } };
+        if (errObj?.response?.status === 404) {
           continue;
         }
         throw err;
@@ -133,21 +136,23 @@ export class ContractAddendumService
    */
   override async delete(id: number): Promise<Result<ContractAddendum> | null> {
     const endpoints = this.getCandidateEndpoints(undefined, id);
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     for (const ep of endpoints) {
       try {
         const response = await api.delete<Result<ContractAddendum>>(ep);
         return response.data;
-      } catch (err: any) {
+      } catch (err: unknown) {
         lastError = err;
-        if (err?.response?.status === 404) {
+        const errObj = err as { response?: { status?: number } };
+        if (errObj?.response?.status === 404) {
           continue;
         }
         throw err;
       }
     }
     throw lastError;
+
   }
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { PagedResult } from "../../models/base/PagedResult";
 import { PaginationFilter } from "../../models/base/PaginationFilter";
 import { ComputerAuditDetailDto, SoftwareDto } from "../../models/ComputerAudit/ComputerAuditDetailDto";

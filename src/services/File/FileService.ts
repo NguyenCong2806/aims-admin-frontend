@@ -56,7 +56,7 @@ export class FileService implements IFileService {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await api.post<any>(this.uploadEndpoint, formData, {
+    const response = await api.post<FileUploadResult | { data?: FileUploadResult }>(this.uploadEndpoint, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -94,7 +94,7 @@ export class FileService implements IFileService {
       formData.append("files", file);
     });
 
-    const response = await api.post<any>(this.uploadMultipleEndpoint, formData, {
+    const response = await api.post<FileUploadResult[] | { data?: FileUploadResult[] }>(this.uploadMultipleEndpoint, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -103,6 +103,7 @@ export class FileService implements IFileService {
         if (options?.onProgress && progressEvent.total) {
           const percentCompleted = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
+
           );
           options.onProgress(percentCompleted);
         }
@@ -157,11 +158,12 @@ export class FileService implements IFileService {
           responseType: "blob",
         });
         blobData = response.data;
-      } catch (fallbackErr) {
+      } catch {
         toast.error(`Không thể tải xuống tệp: ${cleanFileName}`);
         throw err;
       }
     }
+
 
     const blobUrl = window.URL.createObjectURL(blobData);
     const link = document.createElement("a");
@@ -214,29 +216,32 @@ export class FileService implements IFileService {
 
     try {
       // 1. Thử gọi HTTP DELETE với cả query params và JSON body để tương thích mọi cấu hình controller
-      await api.delete<any>(this.deleteEndpoint, {
+      await api.delete<unknown>(this.deleteEndpoint, {
         params: payload,
         data: payload,
       });
       toast.success(`Đã xóa tệp vật lý "${extractedName}" thành công!`);
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { status?: number; data?: { message?: string } } };
       // 2. Dự phòng: Nếu server chỉ chấp nhận POST cho action delete
-      if (err?.response?.status === 405) {
+      if (errorObj?.response?.status === 405) {
         try {
-          await api.post<any>(this.deleteEndpoint, payload);
+          await api.post<unknown>(this.deleteEndpoint, payload);
           toast.success(`Đã xóa tệp vật lý "${extractedName}" thành công!`);
           return true;
-        } catch (postErr: any) {
-          toast.error(postErr?.response?.data?.message || "Không thể xóa file trên máy chủ.");
+        } catch (postErr: unknown) {
+          const postErrorObj = postErr as { response?: { data?: { message?: string } } };
+          toast.error(postErrorObj?.response?.data?.message || "Không thể xóa file trên máy chủ.");
           throw postErr;
         }
       }
 
-      toast.error(err?.response?.data?.message || "Không thể xóa file vật lý trên máy chủ.");
+      toast.error(errorObj?.response?.data?.message || "Không thể xóa file vật lý trên máy chủ.");
       throw err;
     }
   }
 }
+
 
 export const fileService = new FileService();

@@ -12,8 +12,8 @@ import {
   exportSoftwareToCsv,
 } from "./installedSoftwareHelper";
 import {
-  usecomputerauditsParams,
-  usecomputerauditsofware,
+  useComputerAuditsParams,
+  useComputerAuditSoftware,
 } from "../../query/computeraudits/computerauditsQuery";
 
 export const WorkstationInstalledSoftwarePage: React.FC = () => {
@@ -21,11 +21,12 @@ export const WorkstationInstalledSoftwarePage: React.FC = () => {
   const navigate = useNavigate();
 
   // Gọi API lấy danh sách máy trạm từ backend để hiển thị dropdown chuyển đổi máy trạm
-  const { data: auditData, isLoading: isLoadingAudits } = usecomputerauditsParams({
+  const { data: auditData, isLoading: isLoadingAudits } = useComputerAuditsParams({
     MaxPageSize: 100,
     PageIndex: 1,
     PageSize: 100,
   });
+
 
   const workstations = useMemo<DeviceSystemAuditDto[]>(() => {
     if (!auditData?.items || !Array.isArray(auditData.items)) return [];
@@ -79,7 +80,8 @@ export const WorkstationInstalledSoftwarePage: React.FC = () => {
     isLoading: isLoadingSoftwares,
     isError,
     refetch,
-  } = usecomputerauditsofware(targetAuditId);
+  } = useComputerAuditSoftware(targetAuditId);
+
 
   // Danh sách phần mềm gốc từ API backend
   const softwareList: SoftwareDto[] = useMemo(() => {

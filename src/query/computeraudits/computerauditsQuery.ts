@@ -24,14 +24,14 @@ export const computerauditsKeys = {
 // QUERIES
 // =====================================================
 
-export function usecomputerauditsAll() {
+export function useComputerAuditsAll() {
     return useQuery({
         queryKey: computerauditsKeys.all,
         queryFn: () => services.computerAudit.getAll(),
     });
 }
 
-export function usecomputerauditsParams(params?: PaginationFilter) {
+export function useComputerAuditsParams(params?: PaginationFilter) {
     return useQuery({
         queryKey: computerauditsKeys.list(params),
         queryFn: () => services.computerAudit.getAllParams(params),
@@ -40,7 +40,7 @@ export function usecomputerauditsParams(params?: PaginationFilter) {
     });
 }
 
-export function usecomputerauditsById(id: string | null) {
+export function useComputerAuditsById(id: string | null) {
     return useQuery({
         queryKey: computerauditsKeys.detail(id),
         queryFn: () => {
@@ -51,7 +51,7 @@ export function usecomputerauditsById(id: string | null) {
     });
 }
 
-export function usecomputerauditsofware(id: string | null) {
+export function useComputerAuditSoftware(id: string | null) {
     return useQuery({
         queryKey: computerauditsKeys.listsofware(id),
         queryFn: () => {
@@ -61,7 +61,8 @@ export function usecomputerauditsofware(id: string | null) {
         enabled: id !== null,
     });
 }
-export function usecomputerauditsByDetail(id: string | null) {
+
+export function useComputerAuditsByDetail(id: string | null) {
     return useQuery({
         queryKey: computerauditsKeys.detail(id),
         queryFn: () => {
@@ -71,11 +72,12 @@ export function usecomputerauditsByDetail(id: string | null) {
         enabled: id !== null,
     });
 }
+
 // =====================================================
 // PREFETCH HOOK (Khắc phục lỗi gọi Hook sai vị trí)
 // =====================================================
 
-export function usePrefetchcomputerauditsPage() {
+export function usePrefetchComputerAuditsPage() {
     const queryClient = useQueryClient();
 
     return (targetPage: number, currentFilter: Omit<PaginationFilter, "PageIndex">) => {
@@ -91,3 +93,12 @@ export function usePrefetchcomputerauditsPage() {
         });
     };
 }
+
+// Backwards-compatible aliases
+export const usecomputerauditsAll = useComputerAuditsAll;
+export const usecomputerauditsParams = useComputerAuditsParams;
+export const usecomputerauditsById = useComputerAuditsById;
+export const usecomputerauditsofware = useComputerAuditSoftware;
+export const usecomputerauditsByDetail = useComputerAuditsByDetail;
+export const usePrefetchcomputerauditsPage = usePrefetchComputerAuditsPage;
+

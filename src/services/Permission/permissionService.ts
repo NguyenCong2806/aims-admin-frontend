@@ -18,13 +18,13 @@ export class PermissionService {
 
   async getRoles(): Promise<AppRole[]> {
     try {
-      const response = await api.get<any>(API_ENDPOINTS.ROLES.BASE);
+      const response = await api.get<AppRole[] | { items?: AppRole[]; data?: AppRole[] }>(API_ENDPOINTS.ROLES.BASE);
       const data = response.data;
       if (Array.isArray(data)) {
         this.roles = data;
         return data;
       }
-      if (data && typeof data === "object" && Array.isArray(data.items)) {
+      if (data && typeof data === "object" && "items" in data && Array.isArray(data.items)) {
         this.roles = data.items;
         return data.items;
       }
@@ -40,7 +40,7 @@ export class PermissionService {
 
   async getModules(): Promise<PermissionModuleGroup[]> {
     try {
-      const response = await api.get<any>(API_ENDPOINTS.PERMISSIONS.MODULES);
+      const response = await api.get<PermissionModuleGroup[] | { data?: PermissionModuleGroup[] }>(API_ENDPOINTS.PERMISSIONS.MODULES);
       const data = response.data;
       if (Array.isArray(data)) {
         this.modules = data;
@@ -58,9 +58,10 @@ export class PermissionService {
 
   async getRoleById(roleId: string): Promise<AppRole | null> {
     try {
-      const response = await api.get<any>(`${API_ENDPOINTS.ROLES.BASE}/${roleId}`);
-      const data = response.data?.data ?? response.data;
-      if (data && typeof data === "object") return data;
+      const response = await api.get<AppRole | { data?: AppRole }>(`${API_ENDPOINTS.ROLES.BASE}/${roleId}`);
+      const raw = response.data;
+      const data = (raw && typeof raw === "object" && "data" in raw && raw.data) ? raw.data : raw;
+      if (data && typeof data === "object") return data as AppRole;
     } catch {
       // Fallback
     }
@@ -77,13 +78,15 @@ export class PermissionService {
         roleId,
         permissionCodes: permissions,
       };
-      const response = await api.put<any>(API_ENDPOINTS.ROLES.PERMISSIONS(roleId), payload);
-      const data = response.data?.data ?? response.data;
+      const response = await api.put<AppRole | { data?: AppRole }>(API_ENDPOINTS.ROLES.PERMISSIONS(roleId), payload);
+      const raw = response.data;
+      const data = (raw && typeof raw === "object" && "data" in raw && raw.data) ? (raw.data as AppRole) : (raw as AppRole);
       if (data && typeof data === "object" && data.id) {
         const idx = this.roles.findIndex((r) => r.id === roleId);
         if (idx !== -1) this.roles[idx] = data;
         return data;
       }
+
     } catch (e) {
       console.warn("Update role permissions API fallback to local:", e);
     }

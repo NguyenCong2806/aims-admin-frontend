@@ -117,7 +117,7 @@ export function useBatchImportBrands() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: File | FormData | any[]) => services.brand.batchImport(data),
+    mutationFn: (data: File | FormData | Record<string, unknown>[]) => services.brand.batchImport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brandKeys.all });
     },

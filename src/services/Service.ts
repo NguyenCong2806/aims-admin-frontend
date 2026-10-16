@@ -98,7 +98,7 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await api.post<any>(`${this.endpoint}/upload`, formData);
+        const response = await api.post<FileUploadResult | { data?: FileUploadResult }>(`${this.endpoint}/upload`, formData);
         const raw = response.data;
         if (raw && typeof raw === "object" && "data" in raw && raw.data) {
             return raw.data as FileUploadResult;
@@ -112,7 +112,7 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
             formData.append("files", file);
         });
 
-        const response = await api.post<any>(
+        const response = await api.post<Array<FileUploadResult> | { data?: Array<FileUploadResult> }>(
             `${this.endpoint}/upload-multiple`,
             formData
         );
@@ -130,7 +130,7 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
         const response = await api.delete<Result<TEntity>>(`${this.endpoint}/${fileurl}`);
         return response.data;
     }
-    async deleteFiles(fileurls: Array<string>[]): Promise<Result<TEntity>> {
+    async deleteFiles(fileurls: string[]): Promise<Result<TEntity>> {
         const response = await api.delete<Result<TEntity>>(`${this.endpoint}/bulk`,
             {
                 data: {
@@ -140,7 +140,7 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
         return response.data;
     }
 
-    async batchImport(data: File | FormData | any[]): Promise<any> {
+    async batchImport(data: File | FormData | Record<string, unknown>[]): Promise<unknown> {
         const importEndpoint = `${this.endpoint}/batch-import`;
         if (data instanceof File) {
             const formData = new FormData();
@@ -165,4 +165,4 @@ export abstract class Service<TEntity, TCreateRequest = Partial<TEntity>,
         const response = await api.post(importEndpoint, data);
         return response.data;
     }
-}
+}

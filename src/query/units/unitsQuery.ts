@@ -47,7 +47,7 @@ export function useRemoveUnit() {
 export function useBatchImportUnits() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: File | FormData | any[]) => services.unit.batchImport(data),
+    mutationFn: (data: File | FormData | Record<string, unknown>[]) => services.unit.batchImport(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: unitKeys.all });
     },

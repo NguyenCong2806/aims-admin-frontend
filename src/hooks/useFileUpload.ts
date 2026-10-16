@@ -88,8 +88,9 @@ export function useFileUpload(options?: UseFileUploadOptions) {
         toast.success(`Tải lên tệp thành công: ${file.name}`);
         options?.onSuccess?.([result]);
         return result;
-      } catch (err: any) {
-        const errMsg = err?.response?.data?.message || err?.message || "Lỗi tải file lên máy chủ!";
+      } catch (err: unknown) {
+        const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+        const errMsg = errorObj?.response?.data?.message || errorObj?.message || "Lỗi tải file lên máy chủ!";
         setError(errMsg);
         setFileList((prev) =>
           prev.map((item) =>
@@ -196,8 +197,9 @@ export function useFileUpload(options?: UseFileUploadOptions) {
         toast.success(`Đã tải lên thành công ${results.length} tệp tin!`);
         options?.onSuccess?.(results);
         return results;
-      } catch (err: any) {
-        const errMsg = err?.response?.data?.message || err?.message || "Lỗi tải nhiều file lên máy chủ!";
+      } catch (err: unknown) {
+        const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+        const errMsg = errorObj?.response?.data?.message || errorObj?.message || "Lỗi tải nhiều file lên máy chủ!";
         setError(errMsg);
         setFileList((prev) =>
           prev.map((item) =>
