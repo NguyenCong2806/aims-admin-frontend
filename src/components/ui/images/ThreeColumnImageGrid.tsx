@@ -1,28 +1,16 @@
 export default function ThreeColumnImageGrid() {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-      <div>
-        <img
-          src="/images/grid-image/image-04.png"
-          alt=" grid"
-          className="border border-gray-200 rounded-xl dark:border-gray-800"
-        />
+      <div className="h-40 rounded-xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 flex items-center justify-center text-gray-400 text-xs font-medium">
+        Grid Image 1
       </div>
 
-      <div>
-        <img
-          src="/images/grid-image/image-05.png"
-          alt=" grid"
-          className="border border-gray-200 rounded-xl dark:border-gray-800"
-        />
+      <div className="h-40 rounded-xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center text-gray-400 text-xs font-medium">
+        Grid Image 2
       </div>
 
-      <div>
-        <img
-          src="/images/grid-image/image-06.png"
-          alt=" grid"
-          className="border border-gray-200 rounded-xl dark:border-gray-800"
-        />
+      <div className="h-40 rounded-xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-purple-500/10 to-pink-500/10 flex items-center justify-center text-gray-400 text-xs font-medium">
+        Grid Image 3
       </div>
     </div>
   );

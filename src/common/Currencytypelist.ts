@@ -1,0 +1,20 @@
+export const currencyTypeList = [
+  { value: "VND", label: "Vietnamese Dong" },
+  { value: "USD", label: "US Dollar" },
+  { value: "EUR", label: "Euro" },
+  { value: "GBP", label: "British Pound" },
+  { value: "JPY", label: "Japanese Yen" },
+  { value: "CNY", label: "Chinese Yuan" },
+  { value: "KRW", label: "South Korean Won" },
+  { value: "THB", label: "Thai Baht" },
+  { value: "SGD", label: "Singapore Dollar" },
+  { value: "AUD", label: "Australian Dollar" },
+  { value: "CAD", label: "Canadian Dollar" },
+  { value: "CHF", label: "Swiss Franc" },
+  { value: "HKD", label: "Hong Kong Dollar" },
+  { value: "TWD", label: "New Taiwan Dollar" },
+  { value: "INR", label: "Indian Rupee" },
+  { value: "MYR", label: "Malaysian Ringgit" },
+  { value: "IDR", label: "Indonesian Rupiah" },
+  { value: "PHP", label: "Philippine Peso" }
+];

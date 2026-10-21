@@ -7,6 +7,8 @@ export interface IService<TEntity, TCreateRequest = Partial<TEntity>, TUpdateReq
 
     getAll(): Promise<Array<TEntity>>;
 
+    getSelectList<TOption = unknown>(): Promise<Array<TOption>>;
+
     getByParams(params?: PaginationFilter): Promise<PagedResult<TEntity>>;
 
     getById(id: TId): Promise<Result<TEntity>>;
@@ -15,7 +17,7 @@ export interface IService<TEntity, TCreateRequest = Partial<TEntity>, TUpdateReq
 
     update(id: TId, request: TUpdateRequest): Promise<Result<TEntity>>;
 
-    delete(id: TId): Promise<Result<TEntity>>;
+    delete(id: TId): Promise<Result<TEntity> | null>;
 
     uploadFile(file: File): Promise<FileUploadResult>;
 
@@ -23,7 +25,9 @@ export interface IService<TEntity, TCreateRequest = Partial<TEntity>, TUpdateReq
 
     deleteFile(fileurl: string): Promise<Result<TEntity>>;
 
-    deleteFiles(fileurls: Array<string>[]): Promise<Result<TEntity>>;
+    deleteFiles(fileurls: string[]): Promise<Result<TEntity>>;
     
     downloadFile(fileurl: string): Promise<Blob>;
-}
+    
+    batchImport(data: File | FormData | Record<string, unknown>[]): Promise<unknown>;
+}
