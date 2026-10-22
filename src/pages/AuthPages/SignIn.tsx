@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import axios from "axios";
 import { toast } from "sonner";
 import PageMeta from "../../components/common/PageMeta";
@@ -118,19 +118,6 @@ export default function SignIn() {
       />
 
       <div className="relative min-h-screen w-full flex items-center justify-center bg-gray-50 dark:bg-[#090d16] text-gray-900 dark:text-gray-100 overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-        {/* Nền Gradient Ánh sáng vòm & Lưới Chấm Dot Matrix */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 -right-40 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 left-1/3 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl" />
-          <div className="absolute inset-0 bg-[radial-gradient(#6366f1_1px,transparent_1px)] [background-size:24px_24px] opacity-10 dark:opacity-20" />
-        </div>
-
-        {/* Nút chuyển Dark/Light mode ở góc phải */}
-        <div className="absolute top-6 right-6 z-20">
-          <ThemeTogglerTwo />
-        </div>
-
         {/* Main Wrapper Container */}
         <div className="relative z-10 w-full max-w-5xl rounded-3xl bg-white/70 dark:bg-gray-900/70 backdrop-blur-2xl border border-gray-200/80 dark:border-white/10 shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[640px]">
           {/* ================= CỘT TRÁI: THƯƠNG HIỆU & SHOWCASE ================= */}
@@ -159,7 +146,7 @@ export default function SignIn() {
               <div className="mt-8">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Phiên bản 2.5 • Bản quyền Doanh nghiệp
+                  Phiên bản 1.0 • Bản quyền Doanh nghiệp
                 </span>
                 <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold leading-tight tracking-tight">
                   Quản lý vòng đời tài sản & giám sát máy trạm thông minh.
@@ -209,7 +196,7 @@ export default function SignIn() {
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 Máy chủ: Online (99.98% SLA)
               </span>
-              <span>Bảo mật SSL 256-bit</span>
+
             </div>
           </div>
 
@@ -218,14 +205,6 @@ export default function SignIn() {
             <div>
               {/* Back to Home Link */}
               <div className="flex items-center justify-between mb-8">
-                <Link
-                  to="/"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors group"
-                >
-                  <span className="group-hover:-translate-x-1 transition-transform">&larr;</span>
-                  <span>Quay lại Trang chủ</span>
-                </Link>
-
                 <div className="lg:hidden flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
                     A
@@ -243,46 +222,6 @@ export default function SignIn() {
                   Nhập thông tin xác thực để truy cập không gian quản trị AIMS
                 </p>
               </div>
-
-              {/* Security Shield Banner */}
-              <div className="mb-4 p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-900/40 flex items-center gap-2.5 text-[11px] text-emerald-800 dark:text-emerald-300">
-                <span className="text-base">🛡️</span>
-                <span>
-                  Bảo mật cấp cao: <strong>Access Token In-Memory</strong> & <strong>Refresh Token trong HttpOnly Cookie</strong> (Chống XSS/CSRF).
-                </span>
-              </div>
-
-              {/* Quick Demo Chips */}
-              <div className="mb-6 p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
-                <div className="text-[11px] font-semibold text-indigo-900 dark:text-indigo-200 mb-2 flex items-center gap-1.5">
-                  <span>⚡</span>
-                  <span>Tài khoản mẫu thử nghiệm quyền hạn:</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill("admin", "Admin@123")}
-                    className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-700/80 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
-                  >
-                    👑 Super Admin
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill("hoang.it", "HoangIT@123")}
-                    className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-700/80 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
-                  >
-                    🛠️ IT Admin
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickFill("lan.hr", "LanHR@123")}
-                    className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-700/80 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
-                  >
-                    🏢 Trưởng phòng HR
-                  </button>
-                </div>
-              </div>
-
               {/* Form Thực tế */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Username / Email */}
@@ -392,51 +331,10 @@ export default function SignIn() {
                   ) : (
                     <>
                       <span>Đăng nhập vào AIMS</span>
-                      <span>&rarr;</span>
                     </>
                   )}
                 </button>
               </form>
-
-              {/* Single Sign-On (SSO) Enterprise */}
-              <div className="mt-6">
-                <div className="relative flex items-center justify-center">
-                  <div className="w-full border-t border-gray-200 dark:border-gray-800" />
-                  <span className="absolute px-3 text-[11px] font-semibold text-gray-400 bg-white dark:bg-gray-900">
-                    HOẶC ĐĂNG NHẬP SSO
-                  </span>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => toast.info("Đang chuyển hướng xác thực Microsoft Entra ID...")}
-                    className="flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 21 21">
-                      <path fill="#f25022" d="M1 1h9v9H1z" />
-                      <path fill="#00a4ef" d="M1 11h9v9H1z" />
-                      <path fill="#7fba00" d="M11 1h9v9h-9z" />
-                      <path fill="#ffb900" d="M11 11h9v9h-9z" />
-                    </svg>
-                    <span>Microsoft 365</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => toast.info("Đang chuyển hướng xác thực Google Workspace...")}
-                    className="flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                    </svg>
-                    <span>Google Work</span>
-                  </button>
-                </div>
-              </div>
             </div>
 
             {/* Bottom Footer */}
