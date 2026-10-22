@@ -199,7 +199,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
       try {
         const res = await apiLogin(credentials);
-        console.log("[Auth Login Response]:", res);
 
         // Kiểm tra chặt chẽ điều kiện thành công:
         // isSuccess phải khác false, isError không được true, và phải có accessToken hợp lệ

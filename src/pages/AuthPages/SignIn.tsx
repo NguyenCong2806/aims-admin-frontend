@@ -4,7 +4,6 @@ import axios from "axios";
 import { toast } from "sonner";
 import PageMeta from "../../components/common/PageMeta";
 import { useAuth } from "../../context/AuthContext";
-import ThemeTogglerTwo from "../../components/common/ThemeTogglerTwo";
 
 interface ApiErrorResponse {
   message?: string;
@@ -101,15 +100,6 @@ export default function SignIn() {
       setIsLoading(false);
     }
   };
-
-  // Quick fill tài khoản mẫu cho người dùng trải nghiệm nhanh
-  const handleQuickFill = (demoUser: string, demoPass: string) => {
-    setUsername(demoUser);
-    setPassword(demoPass);
-    setErrorMessage("");
-    toast.info(`Đã điền tài khoản mẫu: ${demoUser}`);
-  };
-
   return (
     <>
       <PageMeta
