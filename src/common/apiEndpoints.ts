@@ -52,9 +52,9 @@ export const API_ENDPOINTS = {
     LICENSE_TYPES_BATCH_IMPORT: "/license-type/batch-import",
     LICENSE_TYPES_SELECT_LIST: "/license-type/select-list",
 
-    LOCATIONS: "/location",
-    LOCATIONS_BATCH_IMPORT: "/location/batch-import",
-    LOCATIONS_SELECT_LIST: "/location/select-list",
+    LOCATIONS: "/locations",
+    LOCATIONS_BATCH_IMPORT: "/locations/batch-import",
+    LOCATIONS_SELECT_LIST: "/locations/select-list",
 
     MAINTENANCE_TYPES: "/maintenance-type",
     MAINTENANCE_TYPES_BATCH_IMPORT: "/maintenance-type/batch-import",

@@ -33,6 +33,14 @@ export function useBrandAll() {
   });
 }
 
+export function useBrandSelectList() {
+  return useQuery({
+    queryKey: [...brandKeys.all, "select-list"] as const,
+    queryFn: () => services.brand.getSelectList(),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useBrandParams(params?: PaginationFilter) {
   return useQuery({
     queryKey: brandKeys.list(params),

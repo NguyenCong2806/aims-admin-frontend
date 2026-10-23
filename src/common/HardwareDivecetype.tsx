@@ -22,34 +22,9 @@ export interface HardwareDeviceType {
 // Alias for typo compatibility
 export type HardwareDiveceType = HardwareDeviceType;
 
-// Danh sách 6 loại thiết bị phần cứng phổ biến nhất
+// Danh sách 4 loại thiết bị phần cứng phổ biến nhất
 export const HARDWARE_DEVICE_TYPES: HardwareDeviceType[] = [
-  {
-    id: "pc",
-    categoryName: "Máy trạm để bàn (Workstation)",
-    label: "Máy trạm / PC",
-    sublabel: "Workstation & Desktop",
-    prefix: "HW-PC",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    ),
-    color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-900/60",
-  },
-  {
-    id: "laptop",
-    categoryName: "Máy tính xách tay (Laptop)",
-    label: "Laptop xách tay",
-    sublabel: "ThinkPad, Dell, MacBook",
-    prefix: "HW-LAP",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
-    ),
-    color: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-900/60",
-  },
+
   {
     id: "server",
     categoryName: "Máy chủ & Hạ tầng mạng (Server)",

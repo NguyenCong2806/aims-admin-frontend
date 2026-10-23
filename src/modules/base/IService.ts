@@ -3,6 +3,11 @@ import { PagedResult } from "./models/PagedResult";
 import { PaginationFilter } from "./models/PaginationFilter";
 import { Result } from "./models/Result";
 
+export interface SelectListItem<TKey = number | string> {
+    key: TKey;
+    value: string;
+}
+
 export interface IService<TEntity, TCreateRequest, TUpdateRequest, TId> {
     ///get all
     getAll(): Promise<Array<TEntity>>;
@@ -12,6 +17,9 @@ export interface IService<TEntity, TCreateRequest, TUpdateRequest, TId> {
 
     ///get by id
     getById(id: TId): Promise<Result<TEntity>>;
+
+    ///get select list
+    getSelectList(): Promise<Array<SelectListItem>>;
 
     ///create
     create(request: TCreateRequest): Promise<Result<TEntity>>;

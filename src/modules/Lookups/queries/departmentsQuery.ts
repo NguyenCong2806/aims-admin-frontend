@@ -18,6 +18,10 @@ export function useDepartmentAll() {
   return useQuery({ queryKey: departmentKeys.all, queryFn: () => services.department.getAll(), staleTime: 1000 * 60 * 3 });
 }
 
+export function useDepartmentSelectList() {
+  return useQuery({ queryKey: [...departmentKeys.all, "select-list"] as const, queryFn: () => services.department.getSelectList(), staleTime: 1000 * 60 * 5 });
+}
+
 export function useDepartmentById(id: number | null) {
   return useQuery({ queryKey: departmentKeys.detail(id), queryFn: () => services.department.getById(id as number), enabled: id !== null });
 }

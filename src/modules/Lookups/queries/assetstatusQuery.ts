@@ -30,6 +30,14 @@ export function useAssetStatusAll() {
   });
 }
 
+export function useAssetStatusSelectList() {
+  return useQuery({
+    queryKey: [...assetstatusKeys.all, "select-list"] as const,
+    queryFn: () => services.assetStatus.getSelectList(),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useAssetStatusParams(params?: PaginationFilter) {
   return useQuery({
     queryKey: assetstatusKeys.list(params),

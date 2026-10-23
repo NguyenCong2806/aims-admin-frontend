@@ -2,7 +2,7 @@ import { api } from "../../library/axios";
 import { PagedResult } from "./models/PagedResult";
 import { PaginationFilter } from "./models/PaginationFilter";
 import { Result } from "./models/Result";
-import { IService } from "./IService";
+import { IService, SelectListItem } from "./IService";
 import { FileUploadResult } from "./models/FileUploadResult";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
@@ -39,6 +39,13 @@ export abstract class Service<TEntity, TCreateRequest, TUpdateRequest, TId> impl
 
     async getAll(): Promise<TEntity[]> {
         const response = await api.get<TEntity[]>(this.endpoint);
+        return response.data;
+    }
+
+    async getSelectList(): Promise<Array<SelectListItem>> {
+        const response = await api.get<Array<SelectListItem>>(
+            `${this.endpoint}/select-list`
+        );
         return response.data;
     }
 

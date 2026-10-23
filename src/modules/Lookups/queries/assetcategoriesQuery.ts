@@ -30,6 +30,14 @@ export function useAssetCategoryAll() {
   });
 }
 
+export function useAssetCategorySelectList() {
+  return useQuery({
+    queryKey: [...assetcategorieKeys.all, "select-list"] as const,
+    queryFn: () => services.assetCategory.getSelectList(),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useAssetCategoryParams(params?: PaginationFilter) {
   return useQuery({
     queryKey: assetcategorieKeys.list(params),

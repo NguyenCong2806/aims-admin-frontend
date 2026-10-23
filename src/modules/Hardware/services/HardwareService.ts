@@ -22,23 +22,6 @@ export class HardwareService
 
   getDefaultSpecs(deviceTypeId: string): Partial<HardwareTechnicalSpecs> {
     switch (deviceTypeId) {
-      case "pc":
-        return {
-          cpu: "Intel Core i7-13700",
-          ram: "32GB DDR5",
-          storage: "1TB NVMe SSD",
-          gpu: "NVIDIA RTX 4060 8GB",
-          os: "Windows 11 Pro 64-bit",
-        };
-      case "laptop":
-        return {
-          cpu: "Intel Core i7-13700H",
-          ram: "32GB LPDDR5",
-          storage: "1TB NVMe SSD",
-          gpu: "Intel Iris Xe Graphics",
-          os: "Windows 11 Pro 64-bit",
-          screenSize: "14 inch FHD IPS",
-        };
       case "server":
         return {
           cpu: "Dual Intel Xeon Silver 4314 (32 Cores)",

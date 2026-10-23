@@ -12,6 +12,7 @@ export const locationKeys = {
 
 export function useLocationParams(params?: PaginationFilter) { return useQuery({ queryKey: locationKeys.list(params), queryFn: () => services.location.getByParams(params), placeholderData: keepPreviousData, staleTime: 1000 * 60 * 3 }); }
 export function useLocationAll() { return useQuery({ queryKey: locationKeys.all, queryFn: () => services.location.getAll(), staleTime: 1000 * 60 * 3 }); }
+export function useLocationSelectList() { return useQuery({ queryKey: [...locationKeys.all, "select-list"] as const, queryFn: () => services.location.getSelectList(), staleTime: 1000 * 60 * 5 }); }
 export function useLocationById(id: number | null) { return useQuery({ queryKey: locationKeys.detail(id), queryFn: () => services.location.getById(id as number), enabled: id !== null }); }
 export function usePrefetchLocationPage() {
   const queryClient = useQueryClient();

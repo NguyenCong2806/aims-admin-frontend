@@ -1,6 +1,4 @@
 export const ALL_CATEGORY_OPTIONS = [
-    "Máy trạm để bàn (Workstation)",
-    "Máy tính xách tay (Laptop)",
     "Máy chủ & Hạ tầng mạng (Server)",
     "Màn hình hiển thị (Monitor)",
     "Máy in & Thiết bị số hóa (Printer)",

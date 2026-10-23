@@ -15,6 +15,13 @@ export function useSupplierAll() {
     queryFn: () => services.supplier.getAll(),
   });
 }
+export function useSupplierSelectList() {
+  return useQuery({
+    queryKey: [...supplierKeys.all, "select-list"] as const,
+    queryFn: () => services.supplier.getSelectList(),
+    staleTime: 1000 * 60 * 5,
+  });
+}
 export function useSupplierParams(params?: PaginationFilter) {
   return useQuery({ queryKey: supplierKeys.list(params), queryFn: () => services.supplier.getByParams(params), placeholderData: keepPreviousData, staleTime: 1000 * 60 * 3 });
 }

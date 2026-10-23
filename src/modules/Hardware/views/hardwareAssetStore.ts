@@ -1,114 +1,7 @@
 import { HardwareAsset } from "../models/hardwareAsset";
 
 export const INITIAL_HARDWARE_ASSETS: HardwareAsset[] = [
-  {
-    id: "h1-0001-4444-9999-111111111111",
-    assetCode: "HW-PC-0021",
-    name: "Máy trạm thiết kế đồ họa & phát triển",
-    model: "TUF Gaming Station B660M",
-    serialNumber: "220501838400192",
-    barcode: "893850100210",
-    categoryId: 1,
-    categoryName: "Máy trạm để bàn (Workstation)",
-    statusId: 1,
-    statusName: "Đang sử dụng",
-    brandId: 1,
-    brandName: "ASUS",
-    supplierId: 1,
-    supplierName: "Công ty Cổ phần Tin học Phong Vũ",
-    locationId: 1,
-    locationName: "Tòa nhà A - Tầng 4 (Phòng Dev)",
-    departmentId: 1,
-    departmentName: "Phòng Công nghệ & IT",
-    purchasePrice: 28500000,
-    purchaseDate: "2023-08-15T00:00:00Z",
-    effectiveDate: "2023-08-18T00:00:00Z",
-    warrantyMonths: 36,
-    description: "Cấu hình Intel Core i7-12700, 32GB RAM, 1TB NVMe, RTX 3060 12GB phục vụ dự án AIMS.",
-    createdAt: "2023-08-15T08:30:00Z",
-    updatedAt: "2024-01-10T14:20:00Z",
-    specs: {
-      cpu: "Intel Core i7-12700",
-      ram: "32GB DDR4 3200MHz",
-      storage: "1TB NVMe PCIe 4.0 SSD",
-      gpu: "NVIDIA RTX 3060 12GB",
-      os: "Windows 11 Pro 64-bit",
-    },
-    customAttributes: [
-      { id: "ca-1", name: "Địa chỉ MAC LAN", value: "D8:BB:C1:24:99:A1" },
-      { id: "ca-2", name: "Màn hình đi kèm", value: "Dell UltraSharp U2723QE" },
-    ],
-  },
-  {
-    id: "h1-0002-4444-9999-222222222222",
-    assetCode: "HW-PC-0088",
-    name: "Máy vi tính văn phòng nhân sự",
-    model: "OptiPlex 7000 Micro Form",
-    serialNumber: "9FC4KL3",
-    barcode: "893850100880",
-    categoryId: 1,
-    categoryName: "Máy trạm để bàn (Workstation)",
-    statusId: 1,
-    statusName: "Đang sử dụng",
-    brandId: 2,
-    brandName: "Dell Inc.",
-    supplierId: 2,
-    supplierName: "Công ty TNHH Thiết bị Sao Mai",
-    locationId: 1,
-    locationName: "Tòa nhà A - Tầng 2 (Phòng HCNS)",
-    departmentId: 2,
-    departmentName: "Phòng Hành chính - Nhân sự",
-    purchasePrice: 16800000,
-    purchaseDate: "2023-11-20T00:00:00Z",
-    effectiveDate: "2023-11-22T00:00:00Z",
-    warrantyMonths: 36,
-    description: "Máy tính micro gọn nhẹ trang bị Core i5-12500, 16GB RAM cho bộ phận tuyển dụng và nhân sự.",
-    createdAt: "2023-11-20T09:00:00Z",
-    updatedAt: "2024-02-15T11:00:00Z",
-    specs: {
-      cpu: "Intel Core i5-12500",
-      ram: "16GB DDR4",
-      storage: "512GB NVMe SSD",
-      os: "Windows 11 Home",
-    },
-  },
-  {
-    id: "h1-0003-4444-9999-333333333333",
-    assetCode: "HW-LAP-0015",
-    name: "Laptop doanh nhân ThinkPad T14",
-    model: "ThinkPad T14 Gen 3 (21CF)",
-    serialNumber: "PF3G9K12",
-    barcode: "893850100155",
-    categoryId: 2,
-    categoryName: "Máy tính xách tay (Laptop)",
-    statusId: 1,
-    statusName: "Đang sử dụng",
-    brandId: 3,
-    brandName: "Lenovo",
-    supplierId: 1,
-    supplierName: "Công ty Cổ phần Tin học Phong Vũ",
-    locationId: 1,
-    locationName: "Tòa nhà A - Tầng 4",
-    departmentId: 1,
-    departmentName: "Phòng Công nghệ & IT",
-    purchasePrice: 32000000,
-    purchaseDate: "2023-05-10T00:00:00Z",
-    effectiveDate: "2023-05-12T00:00:00Z",
-    warrantyMonths: 36,
-    description: "Cấp phát cho Trưởng nhóm phát triển phần mềm di động, AMD Ryzen 7 PRO 6850U, 32GB RAM.",
-    createdAt: "2023-05-10T10:15:00Z",
-    updatedAt: "2024-03-01T16:45:00Z",
-    specs: {
-      cpu: "AMD Ryzen 7 PRO 6850U",
-      ram: "32GB LPDDR5",
-      storage: "1TB PCIe Gen 4",
-      screenSize: "14 inch WUXGA IPS",
-      os: "Windows 11 Pro",
-    },
-    customAttributes: [
-      { id: "ca-3", name: "Sạc kèm theo", value: "Lenovo 65W GaN Type-C" },
-    ],
-  },
+
   {
     id: "h1-0004-4444-9999-444444444444",
     assetCode: "HW-MON-0042",
@@ -246,7 +139,15 @@ export const getStoredHardwareAssets = (): HardwareAsset[] => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter(
+          (it: HardwareAsset) =>
+            !it.categoryName?.includes("Workstation") &&
+            !it.categoryName?.includes("Máy trạm") &&
+            !it.categoryName?.includes("Laptop") &&
+            !it.categoryName?.includes("Máy tính xách tay")
+        );
+      }
     }
   } catch {
     // ignore
@@ -296,7 +197,7 @@ export const upsertHardwareAsset = (asset: Partial<HardwareAsset>): HardwareAsse
     serialNumber: asset.serialNumber || "",
     barcode: asset.barcode || "",
     categoryId: asset.categoryId ?? 1,
-    categoryName: asset.categoryName || "Máy trạm để bàn (Workstation)",
+    categoryName: asset.categoryName || "Máy chủ & Hạ tầng mạng (Server)",
     statusId: asset.statusId ?? 1,
     statusName: asset.statusName || "Sẵn sàng cấp phát",
     brandId: asset.brandId ?? 1,
