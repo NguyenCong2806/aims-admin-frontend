@@ -7,7 +7,7 @@ import {
   isImageFile,
   resolveFileUrl,
 } from "../../../helpper/fileHelper";
-import { FileUploadResult, UploadedFileItem } from "../../../models/File/file";
+import { FileUploadResult, UploadedFileItem } from "../../../modules/System/models/file";
 import {
   TrashBinIcon,
   DownloadIcon,

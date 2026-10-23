@@ -1,26 +1,40 @@
-import { AssetCategoryService } from "../services/AssetCategory/AssetCategorySerice";
-import { AssetStatusService } from "../services/AssetStatus/AssetStatusSerice";
-import { AssetTypeService } from "../services/AssetType/AssetTypeSerice";
-import { CostCenterService } from "../services/CostCenter/CostCenterService";
-import { BrandService } from "../services/Brand/BrandSerice";
-import { DepartmentService } from "../services/Department/DepartmentService";
-import { LicenseTypeService } from "../services/LicenseType/LicenseTypeService";
-import { LocationService } from "../services/Location/LocationService";
-import { MaintenanceTypeService } from "../services/MaintenanceType/MaintenanceTypeService";
-import { PositionService } from "../services/Position/PositionService";
-import { SupplierService } from "../services/Supplier/SupplierService";
-import { UnitService } from "../services/Unit/UnitService";
-import { DigitalAssetService } from "../services/DigitalAsset/DigitalAssetService";
-import { DigitalDomainSSLService } from "../services/DigitalDomainSSL/DigitalDomainSSLService";
-import { DigitalCloudServerService } from "../services/DigitalCloudServer/DigitalCloudServerService";
-import { DigitalSoftwareLicenseService } from "../services/DigitalSoftwareLicense/DigitalSoftwareLicenseService";
-import { DigitalInternetLineService } from "../services/DigitalInternetLine/DigitalInternetLineService";
-import { ComputerAuditService } from "../services/ComputerAudit/ComputerAuditSerice";
-import { ContractService } from "../services/Contract/ContractService";
-import { ContractAddendumService } from "../services/Contract/ContractAddendumService";
-import { FileService } from "../services/File/FileService";
-import { AuditLogService } from "../services/AuditLog/AuditLogService";
-import { PermissionService } from "../services/Permission/permissionService";
+import {
+  AssetCategoryService,
+  AssetStatusService,
+  AssetTypeService,
+  CostCenterService,
+  BrandService,
+  DepartmentService,
+  LicenseTypeService,
+  LocationService,
+  MaintenanceTypeService,
+  PositionService,
+  SupplierService,
+  UnitService,
+} from "../modules/Lookups/services";
+
+import {
+  DigitalAssetService,
+  DigitalDomainSSLService,
+  DigitalCloudServerService,
+  DigitalSoftwareLicenseService,
+  DigitalInternetLineService,
+} from "../modules/DigitalAsset/services";
+
+import { ComputerAuditService } from "../modules/Monitoring/services";
+
+import {
+  ContractService,
+  ContractAddendumService,
+} from "../modules/Contract/services";
+
+import {
+  FileService,
+  AuditLogService,
+} from "../modules/System/services";
+
+import { PermissionService } from "../modules/Users/services";
+import { HardwareService } from "../modules/Hardware/services";
 
 export class ServiceContainer {
   public readonly brand: BrandService;
@@ -46,6 +60,7 @@ export class ServiceContainer {
   public readonly file: FileService;
   public readonly auditLog: AuditLogService;
   public readonly permission: PermissionService;
+  public readonly hardware: HardwareService;
 
   constructor() {
     this.brand = new BrandService();
@@ -71,6 +86,7 @@ export class ServiceContainer {
     this.file = new FileService();
     this.auditLog = new AuditLogService();
     this.permission = new PermissionService();
+    this.hardware = new HardwareService();
   }
 }
 

@@ -1,47 +1,51 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
-import SignIn from "./pages/AuthPages/SignIn";
-import SignUp from "./pages/AuthPages/SignUp";
-import NotFound from "./pages/OtherPage/NotFound";
-import Videos from "./pages/UiElements/Videos";
-import Images from "./pages/UiElements/Images";
-import BarChart from "./pages/Charts/BarChart";
-import BasicTables from "./pages/Tables/BasicTables";
-import FormElements from "./pages/Forms/FormElements";
-import Blank from "./pages/Blank";
-import SystemLogsPage from "./pages/SystemLogs/SystemLogsPage";
-import MaintenanceSchedulePage from "./pages/Maintenance/MaintenanceSchedulePage";
-import UserAccountsPage from "./pages/Users/UserAccountsPage";
-import PermissionsPage from "./pages/Permissions/PermissionsPage";
-import SystemSettingsPage from "./pages/SystemSettings/SystemSettingsPage";
-import AppLayout from "./layout/AppLayout";
-import { ScrollToTop } from "./components/common/ScrollToTop";
-import Home from "./pages/Dashboard/Home";
+import { Toaster } from "sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./library/queryClient";
-import BrandsPage from "./pages/Lookups/brand/BrandsPage";
-import { Toaster } from "sonner";
-import AssetCategorysPage from "./pages/Lookups/assetcategorie/AssetCategorysPage";
-import AssetTypesPage from "./pages/Lookups/assettype/AssetTypesPage";
-import AssetStatusPage from "./pages/Lookups/assetstatus/AssetStatusPage";
-import CostCentersPage from "./pages/Lookups/costcenter/CostCentersPage";
-import DepartmentsPage from "./pages/Lookups/department/DepartmentsPage";
-import LicenseTypesPage from "./pages/Lookups/licensetype/LicenseTypesPage";
-import LocationsPage from "./pages/Lookups/location/LocationsPage";
-import MaintenanceTypesPage from "./pages/Lookups/maintenancetype/MaintenanceTypesPage";
-import PositionsPage from "./pages/Lookups/position/PositionsPage";
-import SuppliersPage from "./pages/Lookups/supplier/SuppliersPage";
-import UnitsPage from "./pages/Lookups/unit/UnitsPage";
-import DigitalAssetsPage from "./pages/Digital/digitalassets/DigitalAssetsPages";
-import CreateDigitalAssetsPage from "./pages/Digital/digitalassets/CreateDigitalAssetsPage";
-import WorkstationMonitoringPage from "./pages/Monitoring/WorkstationMonitoringPage";
-import WorkstationInstalledSoftwarePage from "./pages/Monitoring/WorkstationInstalledSoftwarePage";
-import HardwareAssetsPage from "./pages/Hardware/HardwareAssetsPage";
-import CreateHardwareAssetPage from "./pages/Hardware/CreateHardwareAssetPage";
-import AnalyticsReportsPage from "./pages/Reports/AnalyticsReportsPage";
-import ContractsPage from "./pages/Contracts/ContractsPage";
+import AppLayout from "./layout/AppLayout";
+import { ScrollToTop } from "./components/common/ScrollToTop";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicOnlyRoute from "./components/auth/PublicOnlyRoute";
+
+// Auth & Dashboard Modules
+import { SignIn, SignUp } from "./modules/Auth";
+import { Home } from "./modules/Dashboard";
+
+// Business Modules
+import { HardwareAssetsPage, CreateHardwareAssetPage } from "./modules/Hardware";
+import { DigitalAssetsPages as DigitalAssetsPage, CreateDigitalAssetsPage } from "./modules/DigitalAsset";
+import { ContractsPage } from "./modules/Contract";
+import { WorkstationMonitoringPage, WorkstationInstalledSoftwarePage } from "./modules/Monitoring";
+import {
+  BrandsPage,
+  AssetCategorysPage,
+  AssetTypesPage,
+  AssetStatusPage,
+  CostCentersPage,
+  DepartmentsPage,
+  LicenseTypesPage,
+  LocationsPage,
+  MaintenanceTypesPage,
+  PositionsPage,
+  SuppliersPage,
+  UnitsPage,
+} from "./modules/Lookups";
+import { UserAccountsPage, PermissionsPage } from "./modules/Users";
+import { MaintenanceSchedulePage } from "./modules/Maintenance";
+import { SystemLogsPage, SystemSettingsPage } from "./modules/System";
+import { AnalyticsReportsPage } from "./modules/Reports";
+
+// Template & Common Pages
+import {
+  Blank,
+  BarChart,
+  BasicTables,
+  FormElements,
+  Images,
+  Videos,
+  NotFound,
+} from "./modules/Templates";
 
 export default function App() {
   return (

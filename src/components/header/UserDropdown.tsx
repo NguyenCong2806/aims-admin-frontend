@@ -23,7 +23,7 @@ export default function UserDropdown() {
     navigate("/signin", { replace: true });
   };
 
-  const displayName = user?.fullName || user?.username || "Vũ Hoàng Long";
+  const displayName = user?.fullName || user?.username || "System Administrator";
   const displayEmail = user?.email || "admin@aims.vn";
   const userInitial = displayName.charAt(0).toUpperCase();
 
@@ -54,7 +54,7 @@ export default function UserDropdown() {
             {displayName}
           </span>
           <span className="block text-[10px] text-gray-400 font-mono">
-            {user?.roles?.[0] || "Quản trị viên"}
+            {user?.roles?.[0] || "SUPER_ADMIN"}
           </span>
         </div>
 
@@ -89,7 +89,7 @@ export default function UserDropdown() {
               {displayName}
             </span>
             <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300">
-              {user?.roles?.[0] || "User"}
+              {user?.roles?.[0] || "SUPER_ADMIN"}
             </span>
           </div>
           <span className="block text-theme-xs text-gray-500 dark:text-gray-400 truncate">

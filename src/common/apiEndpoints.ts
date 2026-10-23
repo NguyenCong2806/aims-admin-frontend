@@ -26,43 +26,54 @@ export const API_ENDPOINTS = {
   LOOKUPS: {
     ASSET_CATEGORIES: "/asset-categories",
     ASSET_CATEGORIES_BATCH_IMPORT: "/asset-categories/batch-import",
+    ASSET_CATEGORIES_SELECT_LIST: "/asset-categories/select-list",
+
     ASSET_STATUSES: "/asset-status",
     ASSET_STATUSES_BATCH_IMPORT: "/asset-status/batch-import",
+    ASSET_STATUSES_SELECT_LIST: "/asset-status/select-list",
+
     ASSET_TYPES: "/asset-types",
+    ASSET_TYPES_SELECT_LIST: "/asset-types/select-list",
     ASSET_TYPES_BATCH_IMPORT: "/asset-types/batch-import",
+
     BRANDS: "/brands",
     BRANDS_BATCH_IMPORT: "/brands/batch-import",
+    BRANDS_SELECT_LIST: "/brands/select-list",
+
     COST_CENTERS: "/cost-center",
     COST_CENTERS_BATCH_IMPORT: "/cost-center/batch-import",
+    COST_CENTERS_SELECT_LIST: "/cost-center/select-list",
+
     DEPARTMENTS: "/department",
     DEPARTMENTS_BATCH_IMPORT: "/department/batch-import",
+    DEPARTMENTS_SELECT_LIST: "/department/select-list",
+
     LICENSE_TYPES: "/license-type",
     LICENSE_TYPES_BATCH_IMPORT: "/license-type/batch-import",
+    LICENSE_TYPES_SELECT_LIST: "/license-type/select-list",
+
     LOCATIONS: "/location",
     LOCATIONS_BATCH_IMPORT: "/location/batch-import",
+    LOCATIONS_SELECT_LIST: "/location/select-list",
+
     MAINTENANCE_TYPES: "/maintenance-type",
     MAINTENANCE_TYPES_BATCH_IMPORT: "/maintenance-type/batch-import",
+    MAINTENANCE_TYPES_SELECT_LIST: "/maintenance-type/select-list",
+
     POSITIONS: "/positions",
     POSITIONS_BATCH_IMPORT: "/positions/batch-import",
+    POSITIONS_SELECT_LIST: "/positions/select-list",
+
     SUPPLIERS: "/suppliers",
     SUPPLIERS_BATCH_IMPORT: "/suppliers/batch-import",
+    SUPPLIERS_SELECT_LIST: "/suppliers/select-list",
+
     UNITS: "/units",
     UNITS_BATCH_IMPORT: "/units/batch-import",
+    UNITS_SELECT_LIST: "/units/select-list",
   },
 
-  // Quản lý Nhà cung cấp (Suppliers)
-  SUPPLIERS: {
-    BASE: "/suppliers",
-    BATCH_IMPORT: "/suppliers/batch-import",
-    FULL_BATCH_IMPORT_URL: getFullApiUrl("/suppliers/batch-import"),
-  },
-
-  // Quản lý Đơn vị tính (Units)
-  UNITS: {
-    BASE: "/units",
-    BATCH_IMPORT: "/units/batch-import",
-    FULL_BATCH_IMPORT_URL: getFullApiUrl("/units/batch-import"),
-  },
+  // Quản lý Đơn vị tính (Units
   DEVICE: {
     BASE: "/computer-audit",
     COMPUTER_AUDIT: "/computer-audits",
@@ -94,7 +105,9 @@ export const API_ENDPOINTS = {
   // Quản lý Hợp đồng & Phụ lục (Contracts & Addendums)
   CONTRACTS: {
     BASE: "/contracts",
+    SELECT_LIST: "/contracts/select-list",
     ADDENDUMS: "/contract_addendums",
+    ADDENDUMS_SELECT_LIST: "/contract_addendums/select-list",
   },
 
   // Giám sát máy trạm & Phần mềm cài đặt (Monitoring)

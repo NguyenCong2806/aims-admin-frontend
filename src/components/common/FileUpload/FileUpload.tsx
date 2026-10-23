@@ -5,7 +5,7 @@ import {
   FileAcceptPreset,
   FileUploadResult,
   UploadedFileItem,
-} from "../../../models/File/file";
+} from "../../../modules/System/models/file";
 import {
   formatFileSize,
   resolveAcceptString,

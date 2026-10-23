@@ -5,7 +5,7 @@ import {
   FileUploadResult,
   UploadedFileItem,
   FileValidationRule,
-} from "../models/File/file";
+} from "../modules/System/models/file";
 import { validateFile } from "../helpper/fileHelper";
 
 export interface UseFileUploadOptions {
