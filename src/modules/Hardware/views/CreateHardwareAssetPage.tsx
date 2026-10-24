@@ -39,6 +39,16 @@ import {
   useSupplierSelectList,
 } from "../../Lookups/queries";
 
+// Helper nhận diện nhanh loại thiết bị từ chuỗi danh mục
+const getDeviceTypeIdFromCategory = (catName: string): string => {
+  const lower = (catName || "").toLowerCase();
+  if (lower.includes("server") || lower.includes("máy chủ")) return "server";
+  if (lower.includes("monitor") || lower.includes("màn hình")) return "monitor";
+  if (lower.includes("printer") || lower.includes("máy in") || lower.includes("scan")) return "printer";
+  if (lower.includes("network") || lower.includes("mạng") || lower.includes("an ninh") || lower.includes("switch") || lower.includes("router")) return "network";
+  return "";
+};
+
 export const CreateHardwareAssetPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
@@ -61,6 +71,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
 
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [categoryName, setCategoryName] = useState<string>("Máy chủ & Hạ tầng mạng (Server)");
+  const [selectedDeviceTypeId, setSelectedDeviceTypeId] = useState<string>("server");
 
   const [statusId, setStatusId] = useState<number | null>(null);
   const [statusName, setStatusName] = useState<string>("Sẵn sàng cấp phát");
@@ -92,12 +103,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
     rackLocation: "Rack R03 - U10-U12",
     powerSupply: "Dual 800W Redundant Platinum",
   });
-
-  // Thuộc tính mở rộng không giới hạn (Custom Key-Value Attributes)
-  const [customAttributes, setCustomAttributes] = useState<CustomAttributeItem[]>([]);
-  const [newAttrName, setNewAttrName] = useState<string>("");
-  const [newAttrValue, setNewAttrValue] = useState<string>("");
-
   // Tự động đồng bộ ID ban đầu từ Select-List API nếu tạo mới
   useEffect(() => {
     if (!isEdit && categorySelectList?.length && categoryId === null) {
@@ -109,6 +114,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
       if (match) {
         setCategoryId(Number(match.key));
         setCategoryName(match.value);
+        setSelectedDeviceTypeId("server");
       }
     }
   }, [categorySelectList, categoryId, isEdit]);
@@ -178,6 +184,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
         setBarcode(existing.barcode || "");
         setCategoryId(existing.categoryId ?? null);
         setCategoryName(existing.categoryName || "Máy chủ & Hạ tầng mạng (Server)");
+        setSelectedDeviceTypeId(getDeviceTypeIdFromCategory(existing.categoryName || "") || "server");
         setStatusId(existing.statusId ?? null);
         setStatusName(existing.statusName || "Sẵn sàng cấp phát");
         setBrandId(existing.brandId ?? null);
@@ -194,8 +201,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
         setEffectiveDate(existing.effectiveDate ? new Date(existing.effectiveDate) : new Date());
         setWarrantyMonths(existing.warrantyMonths ?? 36);
         setDescription(existing.description || "");
-        if (existing.specs) setSpecs(existing.specs);
-        if (existing.customAttributes) setCustomAttributes(existing.customAttributes);
       } else {
         toast.error("Không tìm thấy thông tin thiết bị");
         navigate("/thiet-bi-phan-cung");
@@ -220,36 +225,60 @@ export const CreateHardwareAssetPage: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
 
+  // ================= Danh sách Options từ Select-List API ({ key, value }) =================
+  const categoryOptions = useMemo(() => {
+    if (categorySelectList && categorySelectList.length > 0) return categorySelectList;
+    return ALL_CATEGORY_OPTIONS.map((c, i) => ({ key: i + 1, value: c }));
+  }, [categorySelectList]);
+
   // Tự động tạo mã tài sản theo danh mục được chọn
-  const handleAutoGenerateCode = (cat: string) => {
-    const matched = HARDWARE_DEVICE_TYPES.find((d) => d.categoryName === cat);
+  const handleAutoGenerateCode = (cat?: string, deviceId?: string) => {
+    const targetId = deviceId || (cat ? getDeviceTypeIdFromCategory(cat) : selectedDeviceTypeId);
+    const matched =
+      HARDWARE_DEVICE_TYPES.find((d) => d.id === targetId) ||
+      HARDWARE_DEVICE_TYPES.find((d) => d.categoryName === cat);
     const prefix = matched ? matched.prefix : "HW-GEN";
     const year = new Date().getFullYear();
     const rand = Math.floor(100 + Math.random() * 900);
     const newCode = `${prefix}-${year}-${rand}`;
     setAssetCode(newCode);
     setBarcode(`893850100${rand}`);
-    toast.success(`Đã tự động tạo mã: ${newCode}`);
+    return newCode;
   };
 
   // Chọn loại thiết bị nhanh từ 4 thẻ
   const handleSelectCategoryType = (typeItem: HardwareDeviceType) => {
-    // Tìm trong categorySelectList xem có danh mục tương ứng không
-    const matchedInApi = categorySelectList?.find(
+    setSelectedDeviceTypeId(typeItem.id);
+
+    // Tìm trong categoryOptions xem có danh mục tương ứng không
+    const matchedInApi = categoryOptions.find(
       (c) =>
+        c.value.toLowerCase() === typeItem.categoryName.toLowerCase() ||
         c.value.toLowerCase().includes(typeItem.id) ||
-        typeItem.categoryName.toLowerCase().includes(c.value.toLowerCase()) ||
-        c.value.toLowerCase().includes(typeItem.label.toLowerCase())
+        c.value.toLowerCase().includes(typeItem.label.toLowerCase()) ||
+        (typeItem.id === "server" && (c.value.toLowerCase().includes("server") || c.value.toLowerCase().includes("máy chủ"))) ||
+        (typeItem.id === "monitor" && (c.value.toLowerCase().includes("monitor") || c.value.toLowerCase().includes("màn hình"))) ||
+        (typeItem.id === "printer" && (c.value.toLowerCase().includes("printer") || c.value.toLowerCase().includes("máy in"))) ||
+        (typeItem.id === "network" && (c.value.toLowerCase().includes("network") || c.value.toLowerCase().includes("mạng")))
     );
     if (matchedInApi) {
       setCategoryId(Number(matchedInApi.key));
       setCategoryName(matchedInApi.value);
-      handleAutoGenerateCode(matchedInApi.value);
     } else {
       setCategoryId(null);
       setCategoryName(typeItem.categoryName);
-      handleAutoGenerateCode(typeItem.categoryName);
     }
+
+    const year = new Date().getFullYear();
+    const rand = Math.floor(100 + Math.random() * 900);
+    const newCode = `${typeItem.prefix}-${year}-${rand}`;
+    setAssetCode(newCode);
+    setBarcode(`893850100${rand}`);
+
+    // Báo thông báo rõ ràng cho người dùng
+    toast.success(`Đã chọn: ${typeItem.label}`, {
+      description: `Đã áp dụng mẫu thông số kỹ thuật & tạo mã mới: ${newCode}`,
+    });
 
     // Gợi ý cấu hình mặc định tương ứng với loại
     if (typeItem.id === "server") {
@@ -279,34 +308,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
       });
     }
   };
-
-  // Thêm thuộc tính mở rộng tùy chỉnh
-  const handleAddCustomAttribute = () => {
-    if (!newAttrName.trim()) {
-      toast.warning("Vui lòng nhập tên thuộc tính");
-      return;
-    }
-    const item: CustomAttributeItem = {
-      id: `attr-${Date.now()}`,
-      name: newAttrName.trim(),
-      value: newAttrValue.trim() || "Chưa có giá trị",
-    };
-    setCustomAttributes([...customAttributes, item]);
-    setNewAttrName("");
-    setNewAttrValue("");
-    toast.success(`Đã thêm thuộc tính: ${item.name}`);
-  };
-
-  // Xóa thuộc tính mở rộng
-  const handleRemoveCustomAttribute = (attrId: string) => {
-    setCustomAttributes(customAttributes.filter((a) => a.id !== attrId));
-  };
-
-  // ================= Danh sách Options từ Select-List API ({ key, value }) =================
-  const categoryOptions = useMemo(() => {
-    if (categorySelectList && categorySelectList.length > 0) return categorySelectList;
-    return ALL_CATEGORY_OPTIONS.map((c, i) => ({ key: i + 1, value: c }));
-  }, [categorySelectList]);
 
   const brandOptions = useMemo(() => {
     if (brandSelectList && brandSelectList.length > 0) return brandSelectList;
@@ -339,7 +340,19 @@ export const CreateHardwareAssetPage: React.FC = () => {
     const value = opt?.value ? String(opt.value) : (opt?.label || val);
     setCategoryId(key);
     setCategoryName(value);
-    handleAutoGenerateCode(value);
+
+    const matchedType = getDeviceTypeIdFromCategory(value);
+    setSelectedDeviceTypeId(matchedType);
+    const newCode = handleAutoGenerateCode(value, matchedType);
+
+    const typeObj = HARDWARE_DEVICE_TYPES.find((t) => t.id === matchedType);
+    if (typeObj) {
+      toast.info(`Đã đổi danh mục: ${typeObj.label}`, {
+        description: `Mã tài sản: ${newCode}`,
+      });
+    } else {
+      toast.info(`Đã đổi danh mục: ${value}`);
+    }
   };
 
   const handleBrandChange = (val: string, opt?: SelectOption) => {
@@ -431,7 +444,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
       warrantyMonths,
       description: description.trim(),
       specs,
-      customAttributes,
     };
 
     upsertHardwareAsset(payload);
@@ -464,7 +476,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
     warrantyMonths,
     description,
     specs,
-    customAttributes,
     navigate,
   ]);
 
@@ -546,8 +557,8 @@ export const CreateHardwareAssetPage: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  handleAutoGenerateCode(categoryName);
-                  toast.info("Đã làm mới thông tin");
+                  const code = handleAutoGenerateCode(categoryName, selectedDeviceTypeId);
+                  toast.info(`Đã làm mới thông tin & mã: ${code}`);
                 }}
                 className="text-xs font-medium h-8.5 cursor-pointer"
               >
@@ -608,23 +619,25 @@ export const CreateHardwareAssetPage: React.FC = () => {
           {/* 4 Thẻ chọn nhanh - Bố cục thẻ ngang tinh gọn */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {HARDWARE_DEVICE_TYPES.map((type) => {
-              const isSelected = categoryName === type.categoryName;
+              const isSelected =
+                selectedDeviceTypeId === type.id ||
+                categoryName.toLowerCase() === type.categoryName.toLowerCase() ||
+                getDeviceTypeIdFromCategory(categoryName) === type.id;
               return (
                 <button
                   type="button"
                   key={type.id}
                   onClick={() => handleSelectCategoryType(type)}
-                  className={`relative text-left p-2.5 rounded-lg border transition-all duration-200 flex items-center gap-2.5 group cursor-pointer ${
-                    isSelected
-                      ? "border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/50 dark:bg-indigo-950/40 shadow-2xs"
-                      : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60"
-                  }`}
+                  className={`relative text-left p-2.5 rounded-lg border transition-all duration-200 flex items-center gap-2.5 group cursor-pointer ${isSelected
+                    ? "border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/70 dark:bg-brand-950/50 shadow-xs"
+                    : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60"
+                    }`}
                 >
                   <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center transition-transform group-hover:scale-105 ${type.color}`}>
                     {type.icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={`text-xs font-bold truncate ${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-gray-900 dark:text-white"}`}>
+                    <p className={`text-xs font-bold truncate ${isSelected ? "text-brand-600 dark:text-brand-400" : "text-gray-900 dark:text-white"}`}>
                       {type.label}
                     </p>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
@@ -632,8 +645,11 @@ export const CreateHardwareAssetPage: React.FC = () => {
                     </p>
                   </div>
                   {isSelected && (
-                    <span className="w-4 h-4 rounded-full bg-indigo-600 text-white shrink-0 flex items-center justify-center text-[10px]">
-                      ✓
+                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-brand-600 dark:bg-brand-500 text-white text-[10px] font-semibold shrink-0 shadow-2xs">
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Đang chọn
                     </span>
                   )}
                 </button>
@@ -662,13 +678,16 @@ export const CreateHardwareAssetPage: React.FC = () => {
                 {/* Mã tài sản */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0">
                       Mã tài sản quản lý *
                     </Label>
                     <button
                       type="button"
-                      onClick={() => handleAutoGenerateCode(categoryName)}
-                      className="text-[11px] text-brand-600 dark:text-brand-400 font-medium hover:underline flex items-center gap-0.5 cursor-pointer"
+                      onClick={() => {
+                        const code = handleAutoGenerateCode(categoryName, selectedDeviceTypeId);
+                        toast.success(`Đã tự động tạo mã: ${code}`);
+                      }}
+                      className="text-[11px] leading-none text-brand-600 dark:text-brand-400 font-medium hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
                       ⚡ Tạo mã
                     </button>
@@ -784,7 +803,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
               </div>
 
               {/* Form specs cho Máy chủ (Server) */}
-              {categoryName.includes("Server") && (
+              {(selectedDeviceTypeId === "server" || categoryName.toLowerCase().includes("server") || categoryName.toLowerCase().includes("máy chủ")) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -850,7 +869,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
               )}
 
               {/* Form specs cho Màn hình (Monitor) */}
-              {categoryName.includes("Monitor") && (
+              {(selectedDeviceTypeId === "monitor" || categoryName.toLowerCase().includes("monitor") || categoryName.toLowerCase().includes("màn hình")) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -892,7 +911,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
               )}
 
               {/* Form specs cho Máy in (Printer) */}
-              {categoryName.includes("Printer") && (
+              {(selectedDeviceTypeId === "printer" || categoryName.toLowerCase().includes("printer") || categoryName.toLowerCase().includes("máy in") || categoryName.toLowerCase().includes("scan")) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -934,7 +953,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
               )}
 
               {/* Form specs cho Thiết bị mạng (Network) */}
-              {(categoryName.includes("Network") || categoryName.includes("mạng")) && (
+              {(selectedDeviceTypeId === "network" || categoryName.toLowerCase().includes("network") || categoryName.toLowerCase().includes("mạng") || categoryName.toLowerCase().includes("an ninh")) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div>
                     <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -964,11 +983,10 @@ export const CreateHardwareAssetPage: React.FC = () => {
               )}
 
               {/* Fallback cho các loại thiết bị khác */}
-              {!categoryName.includes("Server") &&
-                !categoryName.includes("Monitor") &&
-                !categoryName.includes("Printer") &&
-                !categoryName.includes("Network") &&
-                !categoryName.includes("mạng") && (
+              {!(selectedDeviceTypeId === "server" || categoryName.toLowerCase().includes("server") || categoryName.toLowerCase().includes("máy chủ")) &&
+                !(selectedDeviceTypeId === "monitor" || categoryName.toLowerCase().includes("monitor") || categoryName.toLowerCase().includes("màn hình")) &&
+                !(selectedDeviceTypeId === "printer" || categoryName.toLowerCase().includes("printer") || categoryName.toLowerCase().includes("máy in") || categoryName.toLowerCase().includes("scan")) &&
+                !(selectedDeviceTypeId === "network" || categoryName.toLowerCase().includes("network") || categoryName.toLowerCase().includes("mạng") || categoryName.toLowerCase().includes("an ninh")) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div>
                       <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1009,85 +1027,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
                   </div>
                 )}
             </div>
-
-            {/* CARD: THUỘC TÍNH MỞ RỘNG TÙY CHỈNH KHÔNG GIỚI HẠN */}
-            <div className="rounded-xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900/90 p-4 sm:p-5 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2.5 border-b border-gray-100 dark:border-gray-800">
-                <div>
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 flex items-center justify-center text-xs">✨</span>
-                    Thuộc tính mở rộng linh hoạt (Custom Attributes)
-                  </h3>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                    Thêm bất kỳ thông số đặc thù nào (Địa chỉ MAC, IP tĩnh, tem kiểm định...)
-                  </p>
-                </div>
-                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  {customAttributes.length} thuộc tính
-                </span>
-              </div>
-
-              {/* Danh sách thuộc tính đã thêm - 2 cột tinh gọn */}
-              {customAttributes.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {customAttributes.map((attr) => (
-                    <div
-                      key={attr.id}
-                      className="flex items-center justify-between p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 text-xs gap-2"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <span className="font-semibold text-gray-700 dark:text-gray-300 block truncate text-[11px]">
-                          {attr.name}
-                        </span>
-                        <span className="text-gray-900 dark:text-white font-mono truncate block text-xs">
-                          {attr.value}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCustomAttribute(attr.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 p-1 rounded transition shrink-0 cursor-pointer"
-                        title="Xóa thuộc tính"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[11px] text-gray-400 italic">
-                  Chưa có thuộc tính mở rộng nào. Bạn có thể thêm địa chỉ MAC, IP tĩnh, phụ kiện đi kèm...
-                </p>
-              )}
-
-              {/* Thanh nhập thêm thuộc tính mới */}
-              <div className="pt-2 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  value={newAttrName}
-                  onChange={(e) => setNewAttrName(e.target.value)}
-                  placeholder="Tên thuộc tính (VD: MAC, IP tĩnh...)"
-                  className="flex-1 h-8.5 px-2.5 text-xs border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white border-gray-300"
-                />
-                <input
-                  type="text"
-                  value={newAttrValue}
-                  onChange={(e) => setNewAttrValue(e.target.value)}
-                  placeholder="Giá trị (VD: 00:1A:2B:3C:4D:5E)"
-                  className="flex-1 h-8.5 px-2.5 text-xs border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white border-gray-300"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCustomAttribute}
-                  className="h-8.5 px-3 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 transition cursor-pointer"
-                >
-                  + Thêm mục
-                </button>
-              </div>
-            </div>
-
             {/* CARD: PHÂN BỔ, VỊ TRÍ & TÀI CHÍNH */}
             <div className="rounded-xl border border-gray-200/90 dark:border-gray-800 bg-white dark:bg-gray-900/90 p-4 sm:p-5 shadow-xs space-y-3.5">
               <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2 pb-2.5 border-b border-gray-100 dark:border-gray-800">
@@ -1151,7 +1090,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0">
                       Bảo hành (tháng)
                     </Label>
                     <div className="flex gap-1">
@@ -1160,11 +1099,10 @@ export const CreateHardwareAssetPage: React.FC = () => {
                           type="button"
                           key={m}
                           onClick={() => setWarrantyMonths(m)}
-                          className={`text-[10px] px-1.5 py-0.5 rounded border cursor-pointer ${
-                            warrantyMonths === m
-                              ? "bg-indigo-600 text-white border-indigo-600"
-                              : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700"
-                          }`}
+                          className={`text-[10px] px-1.5 py-0.5 leading-none rounded border cursor-pointer ${warrantyMonths === m
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                            }`}
                         >
                           {m}T
                         </button>
@@ -1324,9 +1262,8 @@ export const CreateHardwareAssetPage: React.FC = () => {
 
                 <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-300 ${
-                      checklist.percent === 100 ? "bg-emerald-500" : "bg-indigo-600"
-                    }`}
+                    className={`h-full transition-all duration-300 ${checklist.percent === 100 ? "bg-emerald-500" : "bg-indigo-600"
+                      }`}
                     style={{ width: `${checklist.percent}%` }}
                   />
                 </div>
@@ -1335,11 +1272,10 @@ export const CreateHardwareAssetPage: React.FC = () => {
                   {checklist.items.map((item) => (
                     <div
                       key={item.label}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition ${
-                        item.valid
-                          ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
-                          : "bg-gray-50 dark:bg-gray-800/60 text-gray-400"
-                      }`}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium transition ${item.valid
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+                        : "bg-gray-50 dark:bg-gray-800/60 text-gray-400"
+                        }`}
                     >
                       <span>{item.valid ? "✓" : "○"}</span>
                       <span className="truncate">{item.label}</span>
