@@ -1,13 +1,12 @@
 import { API_ENDPOINTS } from "../../../common/ApiEndpoints";
 import { Service } from "../../base/Service";
-import { HardwareAsset, HardwareTechnicalSpecs } from "../models/hardwareAsset";
 import { IHardwareService } from "./IHardwareService";
 import { HARDWARE_DEVICE_TYPES } from "../../../common/HardwareDeviceType";
+import { hardwareassetobject, hardwareassetviewdto } from "../models/hardwareAsset";
 
 export class HardwareService
-  extends Service<HardwareAsset, Partial<HardwareAsset>, Partial<HardwareAsset>, string>
-  implements IHardwareService
-{
+  extends Service<hardwareassetviewdto, hardwareassetobject, hardwareassetobject, string>
+  implements IHardwareService {
   constructor(endpoint: string = API_ENDPOINTS.HARDWARE.BASE) {
     super(endpoint);
   }
@@ -19,38 +18,4 @@ export class HardwareService
     const rand = Math.floor(100 + Math.random() * 900);
     return `${prefix}-${year}-${rand}`;
   }
-
-  getDefaultSpecs(deviceTypeId: string): Partial<HardwareTechnicalSpecs> {
-    switch (deviceTypeId) {
-      case "server":
-        return {
-          cpu: "Dual Intel Xeon Silver 4314 (32 Cores)",
-          ram: "128GB ECC Registered DDR4",
-          storage: "8x 1.92TB SAS SSD (RAID-10)",
-          rackLocation: "Rack R03 - U10-U12",
-          powerSupply: "Dual 800W Redundant Platinum",
-        };
-      case "monitor":
-        return {
-          screenSize: "27 inch",
-          resolution: "4K UHD (3840 x 2160)",
-          refreshRate: "60Hz IPS Black",
-        };
-      case "printer":
-        return {
-          printTechnology: "Laser đơn sắc đa năng",
-          paperSizes: "A4, A5, Letter",
-          duplex: true,
-        };
-      case "network":
-        return {
-          portCount: "24 Port Gigabit PoE+ & 4 Port 10G SFP+",
-          networkSpeed: "Layer 3 Managed Gigabit Switch",
-        };
-      default:
-        return {};
-    }
-  }
 }
-
-export const hardwareService = new HardwareService();

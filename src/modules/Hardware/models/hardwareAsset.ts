@@ -1,69 +1,124 @@
-// Interface phản chiếu thực thể C# HardwareAsset (Thiết bị phần cứng)
-
-export interface HardwareTechnicalSpecs {
-  cpu?: string;
-  ram?: string;
-  storage?: string;
-  gpu?: string;
-  os?: string;
-  screenSize?: string;
-  resolution?: string;
-  refreshRate?: string;
-  printTechnology?: string;
-  paperSizes?: string;
-  duplex?: boolean;
-  portCount?: string;
-  networkSpeed?: string;
-  rackLocation?: string;
-  powerSupply?: string;
-}
-
-export interface CustomAttributeItem {
+export interface hardwareassetdto {
   id: string;
+  assetcode: string;
+  assetsubtype: string;
   name: string;
-  value: string;
+  model: string;
+  serialnumber: string;
+  barcode: string;
+  categoryid: string;
+  statusid: string;
+  brandid: string;
+  supplierid: string;
+  locationid: string;
+  departmentid: string;
+  purchaseprice: string;
+  purchasedate: Date;
+  effectivedate: Date;
+  warrantymonths: number;
+  description: string;
+  createdate: Date;
+  updatedate: Date;
 }
 
-export interface HardwareAsset {
-  id: string; // Guid
-  assetCode: string; // Mã tài sản quản lý nội bộ (VD: HW-CAM-001, HW-PC-012)
-  name: string; // Tên thiết bị
-  model?: string | null; // Mã Model
-  serialNumber?: string | null; // Số Serial / Service Tag
-  barcode?: string | null; // Mã vạch / QR Code quản lý kho
+export interface assetSpecnasstoragedto {
+  id: string;
+  hardwareassetid: string;
+  devicetype: string;
+  cpuprocessor: string;
+  installedramgb: number;
+  maxramsupportedgb: number;
+  drivebayscount: number;
+  installedcapacitytb: number;
+  maxsinglevolumetb: number;
+  cacheslots: string;
+  powerratingva: number;
+}
+export interface assetspecdisplayprojectordto {
+  id: string;
+  hardwareassetid: string;
+  devicetype: string;
+  displaytype: string;
+  screensizeinches: number;
+  resolution: string;
+  refreshratehz: number;
+  operatingsystem: string;
+  brightnessansilumens: number;
+  contrastratio: string;
+  lampLifehours: number;
+  supportedports: string;
+}
+export interface assetspecnetworkdevicedto {
+  id: string;
+  hardwareassetid: string;
+  devicetype: string;
+  firewallthroughput: string;
+  ipsthroughput: number;
+  vpnthroughput: string;
+  concurrentsessions: number;
+  portcount: string;
+  portspeed: number;
+  uplinkports: string;
+  antennaspec: number;
+  concurrentuserslimit: string;
+  maxvlans: number;
+  ispoesupported: boolean;
+  powerconsumptionw: number;
+}
+export interface assetspeccameranvrdto {
+  id: string;
+  hardwareassetid: string;
+  devicetype: string;
+  resolution: string;
+  sensorsize: number;
+  lenssize: string;
+  irdistancemeters: number;
+  compressionstandard: string;
+  hastwowayaudio: boolean;
+  haswdr: boolean;
+  channelcount: number;
+  maxstoragetb: number;
+  inputbandwidthmbps: number;
+  outputbandwidthmbps: number;
+}
+export interface assetspecprintercopierdto {
+  id: string;
+  hardwareassetid: string;
+  devicetype: string;
+  ipsetup: string;
+  maxpapersize: number;
+  printspeedppm: string;
+  printresolution: number;
+  inkcartridgetype: string;
+  drumlifepages: number;
+  lastinkrefilldate: Date;
+  lastcleaningdate: Date;
+  shredstyle: string;
+  shredcapacitysheets: number;
+  bincapacityliters: number;
+}
 
-  // Foreign Keys & Relations
-  categoryId?: number | null;
-  categoryName?: string | null;
+export interface hardwareassetobject {
+  hardwareassetdto: hardwareassetdto;
+  assetSpecnasstoragedto: assetSpecnasstoragedto;
+  assetspecdisplayprojectordto: assetspecdisplayprojectordto;
+  assetspecnetworkdevicedto: assetspecnetworkdevicedto;
+  assetspeccameranvrdto: assetspeccameranvrdto;
+  assetspecprintercopierdto: assetspecprintercopierdto;
+}
 
-  statusId?: number | null;
-  statusName?: string | null;
-
-  brandId?: number | null;
-  brandName?: string | null;
-
-  supplierId?: number | null;
-  supplierName?: string | null;
-
-  locationId?: number | null;
-  locationName?: string | null;
-
-  departmentId?: number | null;
-  departmentName?: string | null;
-
-  // Financial & Warranty
-  purchasePrice?: number | null; // Giá vốn (VND)
-  purchaseDate?: string | null; // Ngày mua
-  effectiveDate?: string | null; // Ngày hiệu lực
-  warrantyMonths?: number | null; // Thời gian bảo hành (tháng)
-
-  // Description & Audit
-  description?: string | null;
-  createdAt: string;
-  updatedAt: string;
-
-  // Extensible Specs & Custom Attributes
-  assignedToUser?: string | null;
-  specs?: HardwareTechnicalSpecs | null;
-  customAttributes?: CustomAttributeItem[] | null;
+export interface hardwareassetviewdto {
+  id: string;
+  assetcode: string;
+  assetsubtype: string;
+  name: string;
+  model: string;
+  serialnumber: string;
+  barcode: string;
+  categoryname: string;
+  statusname: string;
+  suppliername: string;
+  locationname: string;
+  departmentname: string;
+  totalcount: number;
 }

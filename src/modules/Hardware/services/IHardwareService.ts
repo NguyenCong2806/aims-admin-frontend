@@ -1,8 +1,7 @@
-import { HardwareAsset, HardwareTechnicalSpecs } from "../models/hardwareAsset";
 import { IService } from "../../base/IService";
+import { hardwareassetobject, hardwareassetviewdto } from "../models/hardwareAsset";
 
 export interface IHardwareService
-  extends IService<HardwareAsset, Partial<HardwareAsset>, Partial<HardwareAsset>, string> {
+  extends IService<hardwareassetviewdto, hardwareassetobject, hardwareassetobject, string> {
   generateAssetCode(categoryName: string): string;
-  getDefaultSpecs(deviceTypeId: string): Partial<HardwareTechnicalSpecs>;
 }

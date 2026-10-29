@@ -1,5 +1,4 @@
 import {
-
   useMutation,
   useQuery,
   useQueryClient,
@@ -7,46 +6,49 @@ import {
 } from "@tanstack/react-query";
 import type { PaginationFilter } from "../../base/models/PaginationFilter";
 import { services } from "../../../di/ServiceContainer";
+import { hardwareassetobject } from "../models/hardwareAsset";
 
 export const hardwareKeys = {
   all: ["hardwareAssets"] as const,
   lists: () => [...hardwareKeys.all, "list"] as const,
   list: (params?: PaginationFilter) => [...hardwareKeys.lists(), params] as const,
   details: () => [...hardwareKeys.all, "detail"] as const,
-  detail: (id: number | null) => [...hardwareKeys.details(), id] as const,
+  detail: (id: string | null) => [...hardwareKeys.details(), id] as const,
 };
+
 export function useAddHardware() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (params: CreateHardware) => services.digitalAsset.adddigitalasset(params),
+    mutationFn: (params: hardwareassetobject) => services.hardware.create(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: hardwareKeys.all });
     },
   });
 }
+
 export function useHardwareAll() {
   return useQuery({
     queryKey: hardwareKeys.all,
-    queryFn: () => services.digitalAsset.getAll(),
+    queryFn: () => services.hardware.getAll(),
   });
 }
 
 export function useHardwareParams(params?: PaginationFilter) {
   return useQuery({
     queryKey: hardwareKeys.list(params),
-    queryFn: () => services.digitalAsset.getByParams(params),
+    queryFn: () => services.hardware.getByParams(params),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 3,
   });
 }
 
-export function useHardwareById(id: number | null) {
+export function useHardwareById(id: string | null) {
   return useQuery({
     queryKey: hardwareKeys.detail(id),
     queryFn: () => {
       if (id === null) throw new Error("Hardware ID is required");
-      return services.digitalAsset.getById(id);
+      return services.hardware.getById(id);
     },
     enabled: id !== null,
   });
@@ -63,43 +65,32 @@ export function usePrefetchHardwarePage() {
 
     queryClient.prefetchQuery({
       queryKey: hardwareKeys.list(filter),
-      queryFn: () => services.digitalAsset.getByParams(filter),
+      queryFn: () => services.hardware.getByParams(filter),
       staleTime: 1000 * 60 * 3,
     });
   };
-}
-
-export function useCreateHardware() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (params: CreateHardware) => services.digitalAsset.create(params),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: hardwareKeys.all });
-    },
-  });
 }
 
 export function useUpdateHardware() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, params }: { id: number; params: UpdateDigitalAsset }) =>
-      services.digitalAsset.update(id, params),
+    mutationFn: ({ id, params }: { id: string; params: hardwareassetobject }) =>
+      services.hardware.update(id, params),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: digitalAssetKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: digitalAssetKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: hardwareKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: hardwareKeys.detail(id) });
     },
   });
 }
 
-export function useRemoveDigitalAsset() {
+export function useRemoveHardware() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => services.digitalAsset.delete(id),
+    mutationFn: (id: string) => services.hardware.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: digitalAssetKeys.all });
+      queryClient.invalidateQueries({ queryKey: hardwareKeys.all });
     },
   });
 }
