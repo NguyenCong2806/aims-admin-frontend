@@ -27,17 +27,12 @@ export function useAddHardware() {
   });
 }
 
-export function useHardwareAll() {
-  return useQuery({
-    queryKey: hardwareKeys.all,
-    queryFn: () => services.hardware.getAll(),
-  });
-}
+/// get dữ liệu dự vào filter ///
 
 export function useHardwareParams(params?: PaginationFilter) {
   return useQuery({
     queryKey: hardwareKeys.list(params),
-    queryFn: () => services.hardware.getByParams(params),
+    queryFn: () => services.hardware.getHardwareAssetsByParams(params),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 3,
   });

@@ -1,68 +1,99 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
 import PageMeta from "../../../components/common/PageMeta";
+import { PaginationFilter } from "../../base/models/PaginationFilter";
+import { useHardwareParams, useRemoveHardware } from "../queries/hardwareQuery";
+import { formatCurrency, getWarrantyInfo, getStatusBadge } from "../../../helpper";
+import { HardwareAsset } from "../models/hardwareAsset";
+import {
+  useAssetCategorySelectList,
+  useAssetStatusSelectList,
+  useBrandSelectList,
+  useDepartmentSelectList,
+  useLocationSelectList,
+  useSupplierSelectList,
+} from "../../Lookups/queries";
 
 export const HardwareAssetsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [items, setItems] = useState<HardwareAsset[]>(() => getStoredHardwareAssets());
   const [keyword, setKeyword] = useState<string>("");
   const [pageIndex, setPageIndex] = useState<number>(1);
   const [pageSize] = useState<number>(10);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedFilter, setSelectedFilter] = useState<string | number | null>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // Modal xem chi tiết thiết bị
   const [selectedItemForDetail, setSelectedItemForDetail] = useState<HardwareAsset | null>(null);
 
-  // Lắng nghe cập nhật khi thiết bị được tạo mới hoặc chỉnh sửa từ trang chuyên biệt
-  useEffect(() => {
-    const handleUpdate = () => {
-      setItems(getStoredHardwareAssets());
-    };
-    return () => window.removeEventListener("aims_hardware_assets_updated", handleUpdate);
-  }, []);
-
-  // Helper định dạng tiền tệ VNĐ
-  const formatCurrency = (amount?: number | null) => {
-    if (amount === undefined || amount === null) return "Chưa cập nhật";
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+  const filter: PaginationFilter = {
+    MaxPageSize: 100,
+    PageIndex: pageIndex,
+    PageSize: pageSize,
+    Keyword: keyword,
   };
 
-  // Helper tính thời hạn bảo hành
-  const getWarrantyInfo = (purchaseDateStr?: string | null, warrantyMonths?: number | null) => {
-    if (!purchaseDateStr || !warrantyMonths) return { text: "Không có BH", isExpired: true, labelColor: "text-gray-400" };
-    const pDate = new Date(purchaseDateStr);
-    const expDate = new Date(pDate.setMonth(pDate.getMonth() + warrantyMonths));
-    const now = new Date();
-    const diffMonths = Math.round((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30));
+  const { data, isPending, isFetching, isError, error } = useHardwareParams(filter);
+  const deleteMutation = useRemoveHardware();
 
-    if (expDate < now) {
-      return { text: "Đã hết hạn BH", isExpired: true, labelColor: "text-rose-600 dark:text-rose-400 font-semibold" };
-    }
-    return {
-      text: `Còn ${diffMonths} tháng (${expDate.toLocaleDateString("vi-VN")})`,
-      isExpired: false,
-      labelColor: "text-emerald-600 dark:text-emerald-400 font-medium",
-    };
-  };
+  // Load danh mục lookups để hiển thị tên nếu API chỉ trả ID số
+  const { data: categorySelectList } = useAssetCategorySelectList();
+  const { data: brandSelectList } = useBrandSelectList();
+  const { data: statusSelectList } = useAssetStatusSelectList();
+  const { data: departmentSelectList } = useDepartmentSelectList();
+  const { data: locationSelectList } = useLocationSelectList();
+  const { data: supplierSelectList } = useSupplierSelectList();
 
-  // Helper màu sắc trạng thái
-  const getStatusBadge = (statusName?: string | null) => {
-    const s = statusName || "Chưa xác định";
-    if (s.includes("Đang sử dụng")) {
-      return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200/60";
-    }
-    if (s.includes("Sẵn sàng")) {
-      return "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border-blue-200/60";
-    }
-    if (s.includes("bảo trì") || s.includes("Sửa chữa")) {
-      return "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200/60";
-    }
-    return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-gray-200/60";
-  };
+  const categoryMap = useMemo(() => new Map(categorySelectList?.map((i) => [String(i.key), i.value])), [categorySelectList]);
+  const brandMap = useMemo(() => new Map(brandSelectList?.map((i) => [String(i.key), i.value])), [brandSelectList]);
+  const statusMap = useMemo(() => new Map(statusSelectList?.map((i) => [String(i.key), i.value])), [statusSelectList]);
+  const departmentMap = useMemo(() => new Map(departmentSelectList?.map((i) => [String(i.key), i.value])), [departmentSelectList]);
+  const locationMap = useMemo(() => new Map(locationSelectList?.map((i) => [String(i.key), i.value])), [locationSelectList]);
+  const supplierMap = useMemo(() => new Map(supplierSelectList?.map((i) => [String(i.key), i.value])), [supplierSelectList]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawItems = (data?.items ?? []) as Array<any>;
+  const totalRecords = data?.pagination?.totalRecords ?? rawItems.length;
+
+  const items: HardwareAsset[] = useMemo(() => {
+    return rawItems.map((it) => {
+      const catId = it.categoryId !== undefined ? String(it.categoryId) : "";
+      const brId = it.brandId !== undefined ? String(it.brandId) : "";
+      const stId = it.statusId !== undefined ? String(it.statusId) : "";
+      const depId = it.departmentId !== undefined ? String(it.departmentId) : "";
+      const locId = it.locationId !== undefined ? String(it.locationId) : "";
+      const supId = it.supplierId !== undefined ? String(it.supplierId) : "";
+
+      return {
+        id: it.id,
+        assetCode: it.assetCode || it.assetcode || "",
+        assetSubType: it.assetSubType || it.assetsubtype || "",
+        name: it.name || "",
+        model: it.model || "",
+        serialNumber: it.serialNumber || it.serialnumber || "",
+        barcode: it.barcode || "",
+        categoryId: it.categoryId,
+        categoryName: it.categoryName || categoryMap.get(catId) || "Khác",
+        statusId: it.statusId,
+        statusName: it.statusName || statusMap.get(stId) || "Sẵn sàng sử dụng",
+        brandId: it.brandId,
+        brandName: it.brandName || brandMap.get(brId) || "N/A",
+        supplierId: it.supplierId,
+        supplierName: it.supplierName || supplierMap.get(supId) || "Chưa cập nhật",
+        locationId: it.locationId,
+        locationName: it.locationName || locationMap.get(locId) || "Chưa xác định",
+        departmentId: it.departmentId,
+        departmentName: it.departmentName || departmentMap.get(depId) || "Chưa phân bổ",
+        purchasePrice: it.purchasePrice !== undefined ? Number(it.purchasePrice) : 0,
+        purchaseDate: it.purchaseDate || it.purchasedate,
+        effectiveDate: it.effectiveDate || it.effectivedate,
+        warrantyMonths: it.warrantyMonths !== undefined ? Number(it.warrantyMonths) : 0,
+        description: it.description || "",
+        specs: it.specs,
+        customAttributes: it.customAttributes,
+      };
+    });
+  }, [rawItems, categoryMap, brandMap, statusMap, departmentMap, locationMap, supplierMap]);
 
   // Cấu hình Cây phân cấp bộ lọc (AimsTreeFilter)
   const treeGroups: TreeFilterGroup[] = useMemo(() => {
@@ -121,50 +152,24 @@ export const HardwareAssetsPage: React.FC = () => {
     ];
   }, [items]);
 
-  // Lọc danh sách theo từ khóa và cây phân cấp
   const filteredItems = useMemo(() => {
-    return items.filter((it) => {
-      // Tìm kiếm từ khóa
-      if (keyword.trim()) {
-        const q = keyword.toLowerCase().trim();
-        const matchCode = it.assetCode.toLowerCase().includes(q);
-        const matchName = it.name.toLowerCase().includes(q);
-        const matchModel = it.model ? it.model.toLowerCase().includes(q) : false;
-        const matchSerial = it.serialNumber ? it.serialNumber.toLowerCase().includes(q) : false;
-        const matchBarcode = it.barcode ? it.barcode.toLowerCase().includes(q) : false;
-        const matchBrand = it.brandName ? it.brandName.toLowerCase().includes(q) : false;
-        const matchDept = it.departmentName ? it.departmentName.toLowerCase().includes(q) : false;
-        if (!matchCode && !matchName && !matchModel && !matchSerial && !matchBarcode && !matchBrand && !matchDept) {
-          return false;
-        }
-      }
+    if (!selectedFilter || selectedFilter === "all") return items;
 
-      // Lọc theo cây phân cấp
-      if (selectedFilter && selectedFilter !== "all") {
-        const filterStr = String(selectedFilter);
-        if (filterStr.startsWith("status_")) {
-          const targetStatus = filterStr.replace("status_", "");
-          return it.statusName === targetStatus;
-        }
-        if (filterStr.startsWith("cat_")) {
-          const targetCat = filterStr.replace("cat_", "");
-          return it.categoryName === targetCat;
-        }
-        if (filterStr.startsWith("dept_")) {
-          const targetDept = filterStr.replace("dept_", "");
-          return (it.departmentName || "Chưa phân bổ") === targetDept;
-        }
-      }
-
-      return true;
-    });
-  }, [items, keyword, selectedFilter]);
-
-  // Phân trang
-  const paginatedItems = useMemo(() => {
-    const start = (pageIndex - 1) * pageSize;
-    return filteredItems.slice(start, start + pageSize);
-  }, [filteredItems, pageIndex, pageSize]);
+    const filterStr = String(selectedFilter);
+    if (filterStr.startsWith("status_")) {
+      const target = filterStr.replace("status_", "");
+      return items.filter((it) => (it.statusName || "Khác") === target);
+    }
+    if (filterStr.startsWith("cat_")) {
+      const target = filterStr.replace("cat_", "");
+      return items.filter((it) => (it.categoryName || "Khác") === target);
+    }
+    if (filterStr.startsWith("dept_")) {
+      const target = filterStr.replace("dept_", "");
+      return items.filter((it) => (it.departmentName || "Chưa phân bổ") === target);
+    }
+    return items;
+  }, [items, selectedFilter]);
 
   // Thao tác điều hướng và CRUD
   const handleAddNew = () => {
@@ -176,20 +181,29 @@ export const HardwareAssetsPage: React.FC = () => {
   };
 
   const handleDelete = (id: string, code: string) => {
-    deleteHardwareAssetById(id);
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        toast.success(`Đã xóa thiết bị [${code}] thành công`);
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      onError: (err: any) => {
+        toast.error(err?.message || "Không thể xóa thiết bị");
+      },
     });
-    toast.success(`Đã xóa thiết bị [${code}] thành công`);
   };
 
-  const handleBatchDelete = () => {
+  const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return;
-    selectedIds.forEach((id) => deleteHardwareAssetById(id));
+    for (const id of Array.from(selectedIds)) {
+      await deleteMutation.mutateAsync(id);
+    }
     setSelectedIds(new Set());
-    toast.success("Đã xóa các thiết bị đã chọn thành công!");
+    toast.success("Đã hoàn tất xử lý xóa các thiết bị đã chọn!");
   };
 
   return (
@@ -207,14 +221,14 @@ export const HardwareAssetsPage: React.FC = () => {
           </svg>
         }
         moduleTabs={[
-          { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", badge: items.length },
+          { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", badge: totalRecords },
           { name: "Thêm mới thiết bị", path: "/thiet-bi-phan-cung/tao-moi" },
           { name: "Giám sát máy trạm", path: "/giam-sat-may-tram" },
           { name: "Tài nguyên số", path: "/tai-nguyen-so" },
         ]}
         title="Thiết bị phần cứng"
         subtitle="Hồ sơ thiết bị phần cứng: Máy tính, Laptop, Máy chủ, Màn hình, Serial, Barcode & Bảo hành"
-        totalRecords={filteredItems.length}
+        totalRecords={totalRecords}
         pageIndex={pageIndex}
         pageSize={pageSize}
         onPageChange={setPageIndex}
@@ -234,9 +248,32 @@ export const HardwareAssetsPage: React.FC = () => {
         treeGroups={treeGroups}
         selectedTreeFilter={selectedFilter}
         onSelectTreeFilter={setSelectedFilter}
+        isFetching={isFetching}
       >
-        {(currentViewMode) =>
-          currentViewMode === "list" ? (
+        {(currentViewMode) => {
+          if (isError) {
+            return (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-gray-900">
+                <span className="text-4xl mb-2">⚠️</span>
+                <p className="text-base font-semibold text-rose-600 dark:text-rose-400">
+                  Không thể tải danh sách thiết bị phần cứng
+                </p>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <p className="text-xs text-gray-500 mt-1">{(error as any)?.message || "Vui lòng kiểm tra lại kết nối"}</p>
+              </div>
+            );
+          }
+
+          if (isPending) {
+            return (
+              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-gray-900">
+                <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Đang tải dữ liệu thiết bị...</p>
+              </div>
+            );
+          }
+
+          return currentViewMode === "list" ? (
             /* ==================== 1. LIST VIEW (DATA TABLE) ==================== */
             <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
               <table className="w-full text-left border-collapse">
@@ -245,10 +282,10 @@ export const HardwareAssetsPage: React.FC = () => {
                     <th className="w-10 px-4 py-3 text-center">
                       <input
                         type="checkbox"
-                        checked={selectedIds.size > 0 && selectedIds.size === paginatedItems.length}
+                        checked={selectedIds.size > 0 && selectedIds.size === filteredItems.length}
                         onChange={() => {
-                          if (selectedIds.size === paginatedItems.length) setSelectedIds(new Set());
-                          else setSelectedIds(new Set(paginatedItems.map((r) => r.id)));
+                          if (selectedIds.size === filteredItems.length) setSelectedIds(new Set());
+                          else setSelectedIds(new Set(filteredItems.map((r) => r.id)));
                         }}
                         className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 cursor-pointer"
                         title="Chọn tất cả"
@@ -265,8 +302,8 @@ export const HardwareAssetsPage: React.FC = () => {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs sm:text-sm">
-                  {paginatedItems.length > 0 ? (
-                    paginatedItems.map((item) => {
+                  {filteredItems.length > 0 ? (
+                    filteredItems.map((item) => {
                       const isSelected = selectedIds.has(item.id);
                       const warranty = getWarrantyInfo(item.purchaseDate, item.warrantyMonths);
 
@@ -274,10 +311,11 @@ export const HardwareAssetsPage: React.FC = () => {
                         <tr
                           key={item.id}
                           onClick={() => setSelectedItemForDetail(item)}
-                          className={`transition-colors group cursor-pointer ${isSelected
-                            ? "bg-indigo-50/80 dark:bg-indigo-950/40 font-medium text-indigo-950 dark:text-indigo-100"
-                            : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300"
-                            }`}
+                          className={`transition-colors group cursor-pointer ${
+                            isSelected
+                              ? "bg-indigo-50/80 dark:bg-indigo-950/40 font-medium text-indigo-950 dark:text-indigo-100"
+                              : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300"
+                          }`}
                         >
                           {/* Checkbox */}
                           <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -377,6 +415,7 @@ export const HardwareAssetsPage: React.FC = () => {
                                 ✏️
                               </button>
                               <button
+                                disabled={deleteMutation.isPending}
                                 onClick={() => handleDelete(item.id, item.assetCode)}
                                 className="p-1 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                                 title="Xóa thiết bị"
@@ -405,7 +444,7 @@ export const HardwareAssetsPage: React.FC = () => {
             /* ==================== 2. KANBAN / CARD VIEW ==================== */
             <div className="flex-1 overflow-auto p-4 bg-gray-50/50 dark:bg-gray-900">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {paginatedItems.map((item) => {
+                {filteredItems.map((item) => {
                   const isSelected = selectedIds.has(item.id);
                   const warranty = getWarrantyInfo(item.purchaseDate, item.warrantyMonths);
 
@@ -413,8 +452,9 @@ export const HardwareAssetsPage: React.FC = () => {
                     <div
                       key={item.id}
                       onClick={() => setSelectedItemForDetail(item)}
-                      className={`p-4 rounded-xl border bg-white dark:bg-gray-800 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between ${isSelected ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-gray-200 dark:border-gray-700/80"
-                        }`}
+                      className={`p-4 rounded-xl border bg-white dark:bg-gray-800 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between ${
+                        isSelected ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-gray-200 dark:border-gray-700/80"
+                      }`}
                     >
                       <div>
                         {/* Header */}
@@ -443,7 +483,9 @@ export const HardwareAssetsPage: React.FC = () => {
                           </div>
                           <div className="flex justify-between text-gray-500">
                             <span>Phòng ban:</span>
-                            <span className="font-medium text-gray-800 dark:text-gray-200 truncate max-w-[150px]">{item.departmentName || "Chưa phân bổ"}</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200 truncate max-w-[150px]">
+                              {item.departmentName || "Chưa phân bổ"}
+                            </span>
                           </div>
                           <div className="flex justify-between text-gray-500">
                             <span>Giá vốn:</span>
@@ -458,7 +500,7 @@ export const HardwareAssetsPage: React.FC = () => {
 
                       {/* Footer */}
                       <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between text-[11px]">
-                        <span className="text-gray-400">📍 {item.locationName || "Chưa có vị trí"}</span>
+                        <span className="text-gray-400 truncate max-w-[150px]">📍 {item.locationName || "Chưa có vị trí"}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -474,8 +516,8 @@ export const HardwareAssetsPage: React.FC = () => {
                 })}
               </div>
             </div>
-          )
-        }
+          );
+        }}
       </AimsBasePageLayout>
 
       {/* ==================== 3. MODAL CHI TIẾT THIẾT BỊ PHẦN CỨNG ==================== */}

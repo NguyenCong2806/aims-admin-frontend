@@ -90,7 +90,7 @@ export const API_ENDPOINTS = {
 
   // Quản lý Thiết bị phần cứng (Hardware Assets)
   HARDWARE: {
-    BASE: "/hardware-assets",
+    BASE: "/hardware_assets",
   },
 
   // Quản lý Tập tin & Đính kèm (Files & Attachments)

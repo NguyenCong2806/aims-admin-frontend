@@ -1,2 +1,2 @@
 export { HardwareAssetsPage } from "./HardwareAssetsPage";
-export { CreateHardwareAssetPage } from "./CreateHardwareAssetPage";
+export { default as CreateHardwareAssetPage } from "./CreateHardwareAssetPage";

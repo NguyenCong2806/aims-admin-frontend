@@ -53,13 +53,13 @@ export interface assetspecnetworkdevicedto {
   hardwareassetid: string;
   devicetype: string;
   firewallthroughput: string;
-  ipsthroughput: number;
+  ipsthroughput: string;
   vpnthroughput: string;
   concurrentsessions: number;
-  portcount: string;
-  portspeed: number;
+  portcount: number;
+  portspeed: string;
   uplinkports: string;
-  antennaspec: number;
+  antennaspec: string;
   concurrentuserslimit: string;
   maxvlans: number;
   ispoesupported: boolean;
@@ -70,7 +70,7 @@ export interface assetspeccameranvrdto {
   hardwareassetid: string;
   devicetype: string;
   resolution: string;
-  sensorsize: number;
+  sensorsize: string;
   lenssize: string;
   irdistancemeters: number;
   compressionstandard: string;
@@ -86,9 +86,9 @@ export interface assetspecprintercopierdto {
   hardwareassetid: string;
   devicetype: string;
   ipsetup: string;
-  maxpapersize: number;
-  printspeedppm: string;
-  printresolution: number;
+  maxpapersize: string;
+  printspeedppm: number;
+  printresolution: string;
   inkcartridgetype: string;
   drumlifepages: number;
   lastinkrefilldate: Date;
@@ -100,11 +100,11 @@ export interface assetspecprintercopierdto {
 
 export interface hardwareassetobject {
   hardwareassetdto: hardwareassetdto;
-  assetSpecnasstoragedto: assetSpecnasstoragedto;
-  assetspecdisplayprojectordto: assetspecdisplayprojectordto;
-  assetspecnetworkdevicedto: assetspecnetworkdevicedto;
-  assetspeccameranvrdto: assetspeccameranvrdto;
-  assetspecprintercopierdto: assetspecprintercopierdto;
+  assetSpecnasstoragedto?: assetSpecnasstoragedto | null;
+  assetspecdisplayprojectordto?: assetspecdisplayprojectordto | null;
+  assetspecnetworkdevicedto?: assetspecnetworkdevicedto | null;
+  assetspeccameranvrdto?: assetspeccameranvrdto | null;
+  assetspecprintercopierdto?: assetspecprintercopierdto | null;
 }
 
 export interface hardwareassetviewdto {
@@ -121,4 +121,61 @@ export interface hardwareassetviewdto {
   locationname: string;
   departmentname: string;
   totalcount: number;
+}
+
+export interface HardwareAsset {
+  id: string;
+  assetCode: string;
+  assetSubType?: string;
+  name: string;
+  model?: string;
+  serialNumber?: string;
+  barcode?: string;
+  categoryId?: number | null;
+  categoryName?: string;
+  statusId?: number | null;
+  statusName?: string;
+  brandId?: number | null;
+  brandName?: string;
+  supplierId?: number | null;
+  supplierName?: string;
+  locationId?: number | null;
+  locationName?: string;
+  departmentId?: number | null;
+  departmentName?: string;
+  assignedToUser?: string | null;
+  purchasePrice?: number;
+  purchaseDate?: string;
+  effectiveDate?: string;
+  warrantyMonths?: number;
+  description?: string;
+  specs?: Record<string, any>;
+  customAttributes?: Array<{ name: string; value: string }>;
+}
+
+export interface HardwareTechnicalSpecs {
+  cpu?: string;
+  ram?: string;
+  storage?: string;
+  gpu?: string;
+  os?: string;
+  screenSize?: string;
+  resolution?: string;
+  refreshRate?: string;
+  displayType?: string;
+  printTechnology?: string;
+  portCount?: string;
+  networkSpeed?: string;
+  rackLocation?: string;
+  powerSupply?: string;
+  duplex?: boolean | string;
+  paperSizes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+export interface CustomAttributeItem {
+  id?: string;
+  name: string;
+  value: string;
 }

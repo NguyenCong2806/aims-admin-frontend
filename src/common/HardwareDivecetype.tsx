@@ -7,6 +7,7 @@ export type HardwareDeviceId =
   | "monitor"
   | "printer"
   | "network"
+  | "camera"
   | string;
 
 export interface HardwareDeviceType {
@@ -76,5 +77,18 @@ export const HARDWARE_DEVICE_TYPES: HardwareDeviceType[] = [
       </svg>
     ),
     color: "text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/50 border-cyan-200 dark:border-cyan-900/60",
+  },
+  {
+    id: "camera",
+    categoryName: "Camera giám sát & Đầu ghi (NVR)",
+    label: "Camera & Đầu ghi",
+    sublabel: "IP Camera, NVR, AI Camera",
+    prefix: "HW-CAM",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+    ),
+    color: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900/60",
   },
 ];

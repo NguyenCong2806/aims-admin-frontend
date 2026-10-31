@@ -20,6 +20,9 @@ export interface SelectProps {
   defaultValue?: string | number;
   value?: string | number; // Nhận value hoặc id từ Controller / Form State
   size?: "sm" | "md";
+  disabled?: boolean;
+  error?: boolean;
+  hint?: string;
 }
 
 /**
@@ -76,6 +79,9 @@ const Select: React.FC<SelectProps> = ({
   defaultValue = "",
   value,
   size = "md",
+  disabled = false,
+  error = false,
+  hint,
 }) => {
   const [selectedValue, setSelectedValue] = useState<string>(
     String(value ?? defaultValue ?? "")
@@ -125,18 +131,20 @@ const Select: React.FC<SelectProps> = ({
 
   const isSmall = size === "sm";
   const baseClasses = isSmall
-    ? "h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:placeholder:text-white/30 dark:focus:border-brand-800 cursor-pointer"
-    : "h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:placeholder:text-white/30 dark:focus:border-brand-800 cursor-pointer";
+    ? "h-9 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-3 py-1.5 pr-8 text-xs shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:placeholder:text-white/30 dark:focus:border-brand-800 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-400 cursor-pointer"
+    : "h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:placeholder:text-white/30 dark:focus:border-brand-800 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-400 cursor-pointer";
 
   return (
     <div className="relative w-full">
       <select
+        disabled={disabled}
         className={twMerge(
           clsx(
             baseClasses,
             selectedValue
               ? "text-gray-800 dark:text-white/90"
               : "text-gray-400 dark:text-gray-400",
+            error && "border-error-500 focus:border-error-300 focus:ring-error-500/20 dark:border-error-500",
             className
           )
         )}
@@ -181,6 +189,11 @@ const Select: React.FC<SelectProps> = ({
           />
         </svg>
       </span>
+      {hint && (
+        <p className={clsx("mt-1 text-xs", error ? "text-error-500" : "text-gray-500")}>
+          {hint}
+        </p>
+      )}
     </div>
   );
 };
