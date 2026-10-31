@@ -152,30 +152,3 @@ export interface HardwareAsset {
   specs?: Record<string, any>;
   customAttributes?: Array<{ name: string; value: string }>;
 }
-
-export interface HardwareTechnicalSpecs {
-  cpu?: string;
-  ram?: string;
-  storage?: string;
-  gpu?: string;
-  os?: string;
-  screenSize?: string;
-  resolution?: string;
-  refreshRate?: string;
-  displayType?: string;
-  printTechnology?: string;
-  portCount?: string;
-  networkSpeed?: string;
-  rackLocation?: string;
-  powerSupply?: string;
-  duplex?: boolean | string;
-  paperSizes?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
-
-export interface CustomAttributeItem {
-  id?: string;
-  name: string;
-  value: string;
-}

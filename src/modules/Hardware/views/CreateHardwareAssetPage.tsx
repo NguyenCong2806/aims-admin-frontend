@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate, useParams, Link } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 import PageMeta from "../../../components/common/PageMeta";
@@ -60,18 +60,35 @@ const getDeviceTypeIdFromCategory = (catName: string): string => {
 const getAssetSubType = (deviceTypeId: string): string => {
   switch (deviceTypeId) {
     case "server":
-      return "NAS";
+      return "NAS_STORAGE";
     case "monitor":
-      return "PC_MONITOR";
+      return "DISPLAY";
     case "network":
-      return "FIREWALL";
+      return "NETWORK_DEVICE";
     case "camera":
-      return "CAMERA";
+      return "CAMERA_NVR";
     case "printer":
       return "PRINTER";
     default:
       return deviceTypeId.toUpperCase();
   }
+};
+
+// Helper định dạng ngày an toàn cho input type="date"
+const formatDateInputValue = (date?: Date | string | null): string => {
+  if (!date) return "";
+  try {
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (d instanceof Date && !isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    return "";
+  }
+  return "";
 };
 
 export const CreateHardwareAssetPage: React.FC = () => {
@@ -669,11 +686,9 @@ export const CreateHardwareAssetPage: React.FC = () => {
       }
     }
 
-    // Nếu có lỗi ở bất kỳ trường nào -> setErrors hiển thị chữ đỏ dưới từng ô và dừng submit
+    // Nếu có lỗi ở bất kỳ trường nào -> setErrors hiển thị chữ đỏ dưới từng ô và dừng submit (không hiển thị toast vì đã có thông báo label)
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      const firstMsg = Object.values(newErrors)[0];
-      toast.error(firstMsg || "Vui lòng kiểm tra lại các trường còn thiếu");
       setTimeout(() => {
         const firstErrorEl = document.querySelector(".border-error-500");
         if (firstErrorEl) {
@@ -778,14 +793,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
         {/* HEADER CONTROLS */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-200 dark:border-gray-800">
           <div>
-            <div className="flex items-center gap-2">
-              <Link
-                to="/thiet-bi-phan-cung"
-                className="text-xs text-gray-500 hover:text-brand-600 dark:hover:text-brand-400 flex items-center gap-1 font-medium"
-              >
-                &larr; Quay lại danh sách
-              </Link>
-            </div>
             <h1 className="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
               {isEdit ? "Chỉnh sửa hồ sơ thiết bị phần cứng" : "Thêm mới thiết bị phần cứng"}
             </h1>
@@ -800,22 +807,12 @@ export const CreateHardwareAssetPage: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => navigate("/thiet-bi-phan-cung")}
-              className="text-xs font-semibold h-8.5 cursor-pointer"
+              className="text-xs font-semibold h-8.5 cursor-pointer flex items-center gap-1.5"
             >
-              Hủy bỏ
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={addMutation.isPending || updateMutation.isPending || isLoadingDetail}
-              onClick={handleSave}
-              className="text-xs font-semibold shadow-xs h-8.5 cursor-pointer"
-            >
-              <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              {isEdit ? "Lưu cập nhật" : "Lưu thiết bị"}
-              <kbd className="hidden lg:inline-block ml-1.5 px-1 py-0.2 text-[9px] bg-white/20 rounded font-mono">Ctrl+S</kbd>
+              Quay lại danh sách
             </Button>
           </div>
         </div>
@@ -1813,9 +1810,15 @@ export const CreateHardwareAssetPage: React.FC = () => {
                   <Input
                     size="sm"
                     type="date"
-                    value={purchaseDate ? purchaseDate.toISOString().split("T")[0] : ""}
+                    value={formatDateInputValue(purchaseDate)}
                     onChange={(e) => {
-                      setPurchaseDate(e.target.value ? new Date(e.target.value) : undefined);
+                      const val = e.target.value;
+                      if (!val) {
+                        setPurchaseDate(undefined);
+                      } else {
+                        const parsed = new Date(val);
+                        setPurchaseDate(!isNaN(parsed.getTime()) ? parsed : undefined);
+                      }
                       clearError("purchasedate");
                     }}
                     error={!!errors.purchasedate}
@@ -1830,9 +1833,15 @@ export const CreateHardwareAssetPage: React.FC = () => {
                   <Input
                     size="sm"
                     type="date"
-                    value={effectiveDate ? effectiveDate.toISOString().split("T")[0] : ""}
+                    value={formatDateInputValue(effectiveDate)}
                     onChange={(e) => {
-                      setEffectiveDate(e.target.value ? new Date(e.target.value) : undefined);
+                      const val = e.target.value;
+                      if (!val) {
+                        setEffectiveDate(undefined);
+                      } else {
+                        const parsed = new Date(val);
+                        setEffectiveDate(!isNaN(parsed.getTime()) ? parsed : undefined);
+                      }
                       clearError("effectivedate");
                     }}
                     error={!!errors.effectivedate}
@@ -2026,6 +2035,7 @@ export const CreateHardwareAssetPage: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
                   {isEdit ? "Lưu cập nhật thiết bị" : "Lưu thiết bị phần cứng"}
+                  <kbd className="hidden lg:inline-block ml-1.5 px-1 py-0.2 text-[9px] bg-white/20 rounded font-mono">Ctrl+S</kbd>
                 </Button>
               </div>
             </div>

@@ -311,11 +311,10 @@ export const HardwareAssetsPage: React.FC = () => {
                         <tr
                           key={item.id}
                           onClick={() => setSelectedItemForDetail(item)}
-                          className={`transition-colors group cursor-pointer ${
-                            isSelected
+                          className={`transition-colors group cursor-pointer ${isSelected
                               ? "bg-indigo-50/80 dark:bg-indigo-950/40 font-medium text-indigo-950 dark:text-indigo-100"
                               : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300"
-                          }`}
+                            }`}
                         >
                           {/* Checkbox */}
                           <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -452,9 +451,8 @@ export const HardwareAssetsPage: React.FC = () => {
                     <div
                       key={item.id}
                       onClick={() => setSelectedItemForDetail(item)}
-                      className={`p-4 rounded-xl border bg-white dark:bg-gray-800 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-gray-200 dark:border-gray-700/80"
-                      }`}
+                      className={`p-4 rounded-xl border bg-white dark:bg-gray-800 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between ${isSelected ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-gray-200 dark:border-gray-700/80"
+                        }`}
                     >
                       <div>
                         {/* Header */}

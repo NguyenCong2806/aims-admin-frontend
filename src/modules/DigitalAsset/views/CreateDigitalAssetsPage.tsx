@@ -24,16 +24,23 @@ import {
     useUpdateDigitalAsset,
     useDigitalAssetById,
 } from "../queries/digitalassetQuery";
+import { digitalAssetService } from "../services";
 
 import { currencyTypeList } from "../../../common/Currencytypelist";
 import { billingCycleList } from "../../../common/BillingCycleList";
 import { assetSubTypeList } from "../../../common/AssetSubTypeList";
 import { checkDateValidity } from "../../../helpper/checkDateValidity";
 
-import DigitalDomainSslPage from "./DigitalDomainSslPage";
-import DigitalInternetLinePage from "./DigitalInternetLinePage";
-import DigitalSoftwareLicensePage from "./DigitalSoftwareLicensePage";
-import DigitalSaaSAccountPage from "./DigitalSaaSAccountPage";
+import Checkbox from "../../../components/form/input/Checkbox";
+import {
+    domainsslList,
+    domainSslPurposeList,
+    domainsslTypeList,
+    functionalScopeList,
+    relatedProgramList,
+} from "../../../common/DomainSSLTypeList";
+import { internetLineTypeList, ipTypeList } from "../../../common/InternetLineTypeList";
+import { defaultPlanTierList, serviceBrandList } from "../../../common/DefaultSaasList";
 
 // Schema Zod
 import {
@@ -182,7 +189,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id?: string }>();
     const isEdit = !!id;
-    const numericId = id ? Number(id) : null;
+    const assetId = id || null;
 
     // Local key để force re-render flatpickr DatePicker khi gán preset +1/+2 năm
     const [expiryPickerKey, setExpiryPickerKey] = useState(0);
@@ -196,7 +203,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
     const addMutation = useAddDigitalAsset();
     const createMutation = useCreateDigitalAsset();
     const updateMutation = useUpdateDigitalAsset();
-    const { data: assetDetail } = useDigitalAssetById(numericId);
+    const { data: assetDetail } = useDigitalAssetById(assetId);
 
     // ================= React Hook Form + Zod =================
     const {
@@ -211,7 +218,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
         getValues,
         formState: { errors, isSubmitting },
     } = useForm<DigitalAssetFormData>({
-        resolver: zodResolver(digitalassetSchema),
+        resolver: zodResolver(digitalassetSchema) as any,
         mode: "onChange",
         defaultValues,
         shouldUnregister: false,
@@ -252,6 +259,12 @@ export const CreateDigitalAssetsPage: React.FC = () => {
         const diffTime = expiry.getTime() - now.getTime();
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }, [watchedValues.expirydate]);
+
+    // Lấy thông báo lỗi cho các trường con theo loại tài nguyên
+    const domainErrors = (errors?.domaindetail as any) || {};
+    const internetErrors = (errors?.internetlinedetail as any) || {};
+    const licenseErrors = (errors?.softwarelicensedetail as any) || {};
+    const saasErrors = (errors?.saasdetail as any) || {};
 
     // Pre-flight checklist: kiểm tra tiến độ điền form
     const checklist = useMemo(() => {
@@ -329,12 +342,12 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                 },
                 digitalDomainSslDto: isDomainOrSsl
                     ? {
-                          ...data.domaindetail,
-                          recordtype:
-                              data.domaindetail?.recordtype ||
-                              (data.assetsubtype === "DOMAIN" ? "DOMAIN" : "SSL_CERTIFICATE"),
-                          domainname: data.domaindetail?.domainname?.trim() || data.name?.trim(),
-                      }
+                        ...data.domaindetail,
+                        recordtype:
+                            data.domaindetail?.recordtype ||
+                            (data.assetsubtype === "DOMAIN" ? "DOMAIN" : "SSL_CERTIFICATE"),
+                        domainname: data.domaindetail?.domainname?.trim() || data.name?.trim(),
+                    }
                     : null,
                 digitalCloudServerDto:
                     data.assetsubtype === "CLOUD_SERVER" ? (data as any).cloudserverdetail || null : null,
@@ -349,9 +362,9 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                 digitalSaasAllocationDto: null,
             };
 
-            if (isEdit && numericId !== null) {
+            if (isEdit && assetId) {
                 await updateMutation.mutateAsync({
-                    id: numericId,
+                    id: assetId,
                     params: payload,
                 });
             } else {
@@ -364,7 +377,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
             const error = err instanceof Error ? err : new Error(String(err));
             toast.error(error.message || "Có lỗi xảy ra khi lưu tài sản số");
         }
-    }, [setError, clearErrors, isEdit, numericId, updateMutation, addMutation, navigate]);
+    }, [setError, clearErrors, isEdit, assetId, updateMutation, addMutation, navigate]);
 
     // Phím tắt Ctrl+S / Cmd+S để lưu nhanh
     useEffect(() => {
@@ -380,25 +393,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
     // Hàm tạo mã tài sản tự động theo loại tài nguyên số
     const handleGenerateCode = () => {
-        const prefixMap: Record<string, string> = {
-            DOMAIN: "DOM",
-            SSL: "SSL",
-            CLOUD_SERVER: "SRV",
-            SOFTWARE_LICENSE: "LIC",
-            SAAS_SUBSCRIPTION: "SAAS",
-            INTERNET_LINE: "NET",
-            DNS: "DNS",
-            VPS: "VPS",
-            DATABASE: "DB",
-            STORAGE: "STR",
-            HOSTING: "HST",
-            VPN: "VPN",
-            FIREWALL: "FW",
-        };
-        const prefix = prefixMap[currentSubtype] || "DIG";
-        const year = new Date().getFullYear();
-        const rand = Math.floor(1000 + Math.random() * 9000);
-        const newCode = `${prefix}-${year}-${rand}`;
+        const newCode = digitalAssetService.generateAssetCode(currentSubtype);
         setValue("assetcode", newCode, { shouldValidate: true, shouldDirty: true });
         toast.success(`Đã tự động tạo mã: ${newCode}`);
     };
@@ -590,11 +585,10 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                         type="button"
                                         key={type.value}
                                         onClick={() => setValue("assetsubtype", type.value, { shouldValidate: true })}
-                                        className={`relative text-left p-3.5 rounded-xl border transition-all duration-200 flex flex-col justify-between group ${
-                                            isSelected
+                                        className={`relative text-left p-3.5 rounded-xl border transition-all duration-200 flex flex-col justify-between group ${isSelected
                                                 ? "border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/50 dark:bg-brand-950/40 shadow-xs"
                                                 : "border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 hover:border-gray-300 dark:hover:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60"
-                                        }`}
+                                            }`}
                                     >
                                         {/* Checkmark icon khi được chọn */}
                                         {isSelected && (
@@ -677,12 +671,12 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                                 currentSubtype === "DOMAIN"
                                                     ? "VD: aum.edu.vn, tuyensinh.aum.edu.vn"
                                                     : currentSubtype === "SSL"
-                                                    ? "VD: Sectigo Wildcard SSL (*.aum.edu.vn)"
-                                                    : currentSubtype === "SAAS_SUBSCRIPTION"
-                                                    ? "VD: Microsoft 365 E5 Enterprise (Khối Văn Phòng)"
-                                                    : currentSubtype === "CLOUD_SERVER"
-                                                    ? "VD: Cụm máy chủ Database Master (Viettel IDC)"
-                                                    : "VD: Nhập tên tài sản hoặc dịch vụ số..."
+                                                        ? "VD: Sectigo Wildcard SSL (*.aum.edu.vn)"
+                                                        : currentSubtype === "SAAS_SUBSCRIPTION"
+                                                            ? "VD: Microsoft 365 E5 Enterprise (Khối Văn Phòng)"
+                                                            : currentSubtype === "CLOUD_SERVER"
+                                                                ? "VD: Cụm máy chủ Database Master (Viettel IDC)"
+                                                                : "VD: Nhập tên tài sản hoặc dịch vụ số..."
                                             }
                                             {...register("name")}
                                             error={!!errors.name}
@@ -1041,35 +1035,602 @@ export const CreateDigitalAssetsPage: React.FC = () => {
 
                                 {/* Form con tương ứng theo subtype */}
                                 {(currentSubtype === "DOMAIN" || currentSubtype === "SSL") && (
-                                    <DigitalDomainSslPage
-                                        register={register as any}
-                                        control={control as any}
-                                        errors={errors as any}
-                                    />
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* 1. Loại bản ghi */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Loại bản ghi
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="domaindetail.recordtype"
+                                                    defaultValue="DOMAIN"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={domainsslList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                            }))}
+                                                            placeholder="Chọn loại bản ghi"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {domainErrors?.recordtype && (
+                                                    <p className="text-red-500 text-xs mt-1">{domainErrors.recordtype.message}</p>
+                                                )}
+                                            </div>
+
+                                            {/* 2. Tên miền kỹ thuật */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Tên miền kỹ thuật (FQDN)
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="VD: aum.edu.vn, api.aum.edu.vn"
+                                                    {...register("domaindetail.domainname")}
+                                                    error={!!domainErrors?.domainname}
+                                                    hint={domainErrors?.domainname?.message}
+                                                />
+                                            </div>
+
+                                            {/* 3. Chương trình / hệ thống liên quan */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Chương trình / Hệ thống phục vụ
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="domaindetail.programtag"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={relatedProgramList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                                title: item.title,
+                                                            }))}
+                                                            placeholder="Chọn chương trình / hệ thống"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {domainErrors?.programtag && (
+                                                    <p className="text-red-500 text-xs mt-1">{domainErrors.programtag.message}</p>
+                                                )}
+                                            </div>
+
+                                            {/* 4. Phạm vi chức năng */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Phạm vi chức năng
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="domaindetail.functionalscope"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={functionalScopeList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                            }))}
+                                                            placeholder="Chọn phạm vi chức năng"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {domainErrors?.functionalscope && (
+                                                    <p className="text-red-500 text-xs mt-1">{domainErrors.functionalscope.message}</p>
+                                                )}
+                                            </div>
+
+                                            {/* 5. Mục tiêu / chức năng Marketing */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Mục tiêu Marketing / SEO
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="domaindetail.marketingtarget"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={domainSslPurposeList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                                title: item.title,
+                                                            }))}
+                                                            placeholder="Chọn mục tiêu / chiến dịch"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {domainErrors?.marketingtarget && (
+                                                    <p className="text-red-500 text-xs mt-1">{domainErrors.marketingtarget.message}</p>
+                                                )}
+                                            </div>
+
+                                            {/* 6. Loại SSL */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Loại chứng thư SSL
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="domaindetail.ssltype"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={domainsslTypeList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                                title: item.title,
+                                                            }))}
+                                                            placeholder="Chọn loại SSL"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {domainErrors?.ssltype && (
+                                                    <p className="text-red-500 text-xs mt-1">{domainErrors.ssltype.message}</p>
+                                                )}
+                                            </div>
+
+                                            {/* 7. Danh sách Domain được SSL trỏ tới / SAN List */}
+                                            <div className="col-span-1 md:col-span-2">
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Danh sách SAN Domains (Subject Alternative Names)
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="VD: *.aum.edu.vn, aum.edu.vn, portal.aum.edu.vn"
+                                                    {...register("domaindetail.bounddomainlist")}
+                                                    error={!!domainErrors?.bounddomainlist}
+                                                    hint={domainErrors?.bounddomainlist?.message || "Cách nhau bằng dấu phẩy nếu bảo vệ nhiều tên miền"}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* 8. Checkbox Tự động gia hạn */}
+                                        <div className="mt-3 p-3.5 rounded-xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/50 flex items-start gap-3 transition-colors">
+                                            <Controller
+                                                control={control}
+                                                name="domaindetail.autorenew"
+                                                defaultValue={false}
+                                                render={({ field }) => (
+                                                    <div className="pt-0.5">
+                                                        <Checkbox
+                                                            checked={Boolean(field.value)}
+                                                            onChange={(checked: boolean) => field.onChange(checked)}
+                                                        />
+                                                    </div>
+                                                )}
+                                            />
+                                            <div className="text-sm">
+                                                <span className="font-semibold text-gray-800 dark:text-gray-200">
+                                                    Tự động kích hoạt quy trình gia hạn khi đến hạn
+                                                </span>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                    Hệ thống sẽ gửi cảnh báo tới quản trị viên trước 30 ngày và chuẩn bị yêu cầu thanh toán gia hạn.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
 
                                 {currentSubtype === "INTERNET_LINE" && (
-                                    <DigitalInternetLinePage
-                                        register={register as any}
-                                        control={control as any}
-                                        errors={errors as any}
-                                    />
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Loại đường truyền */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Loại đường truyền
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="internetlinedetail.linetype"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={internetLineTypeList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                                title: item.title,
+                                                            }))}
+                                                            placeholder="Chọn loại đường truyền"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {internetErrors?.linetype && (
+                                                    <p className="text-red-500 text-xs mt-1">{internetErrors.linetype.message}</p>
+                                                )}
+                                            </div>
+
+                                            {/* Loại IP cung cấp */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Loại địa chỉ IP
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="internetlinedetail.iptype"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={ipTypeList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                                title: item.title,
+                                                            }))}
+                                                            placeholder="Chọn loại IP"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {internetErrors?.iptype && (
+                                                    <p className="text-red-500 text-xs mt-1">{internetErrors.iptype.message}</p>
+                                                )}
+                                            </div>
+
+                                            {/* Băng thông trong nước */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Băng thông trong nước (Mbps)
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="internetlinedetail.domesticbandwidthmbps"
+                                                    render={({ field }) => (
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="VD: 300"
+                                                            value={field.value ?? 0}
+                                                            onChange={(e) =>
+                                                                field.onChange(e.target.value === "" ? 0 : Number(e.target.value))
+                                                            }
+                                                            error={!!internetErrors?.domesticbandwidthmbps}
+                                                            hint={internetErrors?.domesticbandwidthmbps?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+
+                                            {/* Băng thông quốc tế tối thiểu */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Băng thông quốc tế tối thiểu
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="VD: 10 Mbps (Cam kết)"
+                                                    {...register("internetlinedetail.internationalminbandwidthmbps")}
+                                                    error={!!internetErrors?.internationalminbandwidthmbps}
+                                                    hint={internetErrors?.internationalminbandwidthmbps?.message}
+                                                />
+                                            </div>
+
+                                            {/* Cước phí hàng tháng */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Cước phí hàng tháng (VNĐ)
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="internetlinedetail.monthlyfee"
+                                                    render={({ field }) => (
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="VD: 1500000"
+                                                            value={field.value ?? 0}
+                                                            onChange={(e) =>
+                                                                field.onChange(e.target.value === "" ? 0 : Number(e.target.value))
+                                                            }
+                                                            error={!!internetErrors?.monthlyfee}
+                                                            hint={internetErrors?.monthlyfee?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+
+                                            {/* Cước phí hàng năm */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Cước phí hàng năm (VNĐ)
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="internetlinedetail.annualfee"
+                                                    render={({ field }) => (
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="VD: 18000000"
+                                                            value={field.value ?? 0}
+                                                            onChange={(e) =>
+                                                                field.onChange(e.target.value === "" ? 0 : Number(e.target.value))
+                                                            }
+                                                            error={!!internetErrors?.annualfee}
+                                                            hint={internetErrors?.annualfee?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+
+                                            {/* Địa chỉ IP tĩnh / Dải IP được cấp */}
+                                            <div className="col-span-1 md:col-span-2">
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Địa chỉ IP tĩnh / Dải IP cấp kèm
+                                                </Label>
+                                                <textarea
+                                                    rows={2}
+                                                    placeholder="VD: 118.70.124.25/29 (Gồm các IP khả dụng: 118.70.124.26 - 118.70.124.30)"
+                                                    {...register("internetlinedetail.staticipaddress")}
+                                                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2.5 text-sm dark:bg-gray-900 dark:text-white/90 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                                                />
+                                                {internetErrors?.staticipaddress && (
+                                                    <p className="text-red-500 text-xs mt-1">{internetErrors.staticipaddress.message}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
 
                                 {(currentSubtype === "SOFTWARE_LICENSE" || currentSubtype === "SOFTWARE") && (
-                                    <DigitalSoftwareLicensePage
-                                        register={register as any}
-                                        control={control as any}
-                                        errors={errors as any}
-                                    />
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Tên phần mềm */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Tên phần mềm <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="VD: Microsoft Office 365, Adobe Creative Cloud..."
+                                                    {...register("softwarelicensedetail.softwarename")}
+                                                    error={!!licenseErrors?.softwarename}
+                                                    hint={licenseErrors?.softwarename?.message}
+                                                />
+                                            </div>
+
+                                            {/* License Key / Khóa kích hoạt */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Khóa kích hoạt (License / Product Key)
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="VD: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                                                    {...register("softwarelicensedetail.licensekey")}
+                                                    error={!!licenseErrors?.licensekey}
+                                                    hint={licenseErrors?.licensekey?.message}
+                                                />
+                                            </div>
+
+                                            {/* Serial phần cứng gán kèm */}
+                                            <div className="col-span-1 md:col-span-2">
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Serial phần cứng gán kèm (Hardware Serial / MAC)
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="VD: DELL-SN-998811 hoặc để trống nếu dùng dạng Cloud Floating License"
+                                                    {...register("softwarelicensedetail.boundhardwareserial")}
+                                                    error={!!licenseErrors?.boundhardwareserial}
+                                                    hint={licenseErrors?.boundhardwareserial?.message}
+                                                />
+                                            </div>
+
+                                            {/* Tổng số seat/user */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Tổng số lượng (Total Seats / Devices)
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="softwarelicensedetail.totalseats"
+                                                    render={({ field }) => (
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="VD: 5"
+                                                            value={field.value ?? 1}
+                                                            onChange={(e) =>
+                                                                field.onChange(e.target.value === "" ? 0 : Number(e.target.value))
+                                                            }
+                                                            error={!!licenseErrors?.totalseats}
+                                                            hint={licenseErrors?.totalseats?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+
+                                            {/* Số lượng đã cấp phát */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Đã cấp phát (Allocated Seats)
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="softwarelicensedetail.allocatedseats"
+                                                    render={({ field }) => (
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="VD: 2"
+                                                            value={field.value ?? 0}
+                                                            onChange={(e) =>
+                                                                field.onChange(e.target.value === "" ? 0 : Number(e.target.value))
+                                                            }
+                                                            error={!!licenseErrors?.allocatedseats}
+                                                            hint={licenseErrors?.allocatedseats?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Bản quyền vĩnh viễn */}
+                                        <div className="mt-3 p-3.5 rounded-xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/50 flex items-start gap-3 transition-colors">
+                                            <Controller
+                                                control={control}
+                                                name="softwarelicensedetail.isperpetual"
+                                                defaultValue={false}
+                                                render={({ field }) => (
+                                                    <div className="pt-0.5">
+                                                        <Checkbox
+                                                            checked={Boolean(field.value)}
+                                                            onChange={(checked: boolean) => field.onChange(checked)}
+                                                        />
+                                                    </div>
+                                                )}
+                                            />
+                                            <div className="text-sm">
+                                                <span className="font-semibold text-gray-800 dark:text-gray-200">
+                                                    Bản quyền vĩnh viễn (Perpetual License)
+                                                </span>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                    Tích chọn nếu giấy phép sử dụng trọn đời, không phụ thuộc vào chu kỳ gia hạn định kỳ.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
 
                                 {currentSubtype === "SAAS_SUBSCRIPTION" && (
-                                    <DigitalSaaSAccountPage
-                                        register={register as any}
-                                        control={control as any}
-                                        errors={errors as any}
-                                    />
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Tên tài khoản / Không gian SaaS */}
+                                            <div className="col-span-1 md:col-span-2">
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Tên tài khoản / Workspace SaaS <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="VD: AUM Organization Workspace, TechTeam Slack..."
+                                                    {...register("saasdetail.saasaccountname")}
+                                                    error={!!saasErrors?.saasaccountname}
+                                                    hint={saasErrors?.saasaccountname?.message}
+                                                />
+                                            </div>
+
+                                            {/* Dịch vụ / Thương hiệu SaaS */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Dịch vụ / Nền tảng SaaS <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="saasdetail.servicebrand"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={serviceBrandList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                                title: item.title,
+                                                            }))}
+                                                            placeholder="Chọn thương hiệu SaaS (VD: GITHUB, ZOOM, M365...)"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {saasErrors?.servicebrand && (
+                                                    <p className="text-red-500 text-xs mt-1">
+                                                        {saasErrors.servicebrand.message}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Gói dịch vụ (Plan Tier) */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Gói dịch vụ (Plan Tier)
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="saasdetail.plantier"
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            options={defaultPlanTierList.map((item) => ({
+                                                                value: item.value,
+                                                                label: item.label,
+                                                                title: item.title,
+                                                            }))}
+                                                            placeholder="Chọn gói dịch vụ"
+                                                            value={field.value}
+                                                            onChange={(val) => field.onChange(val)}
+                                                            className="dark:bg-gray-900 border-gray-300 dark:border-gray-700"
+                                                        />
+                                                    )}
+                                                />
+                                                {saasErrors?.plantier && (
+                                                    <p className="text-red-500 text-xs mt-1">{saasErrors.plantier.message}</p>
+                                                )}
+                                            </div>
+
+                                            {/* Email tài khoản quản trị (Admin Email) */}
+                                            <div className="col-span-1 md:col-span-2">
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Email tài khoản quản trị (Admin Account) <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    type="email"
+                                                    placeholder="VD: it-admin@aum.edu.vn, superadmin@domain.com"
+                                                    {...register("saasdetail.adminaccountemail")}
+                                                    error={!!saasErrors?.adminaccountemail}
+                                                    hint={saasErrors?.adminaccountemail?.message}
+                                                />
+                                            </div>
+
+                                            {/* Tổng số license/user đã mua */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Số lượng license đã mua (Seats) <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Controller
+                                                    control={control}
+                                                    name="saasdetail.totallicensesbought"
+                                                    render={({ field }) => (
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="VD: 50"
+                                                            value={field.value === undefined || field.value === null ? "" : field.value}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                field.onChange(val === "" ? undefined : Number(val));
+                                                            }}
+                                                            error={!!saasErrors?.totallicensesbought}
+                                                            hint={saasErrors?.totallicensesbought?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+
+                                            {/* Dung lượng lưu trữ cấp kèm */}
+                                            <div>
+                                                <Label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                                                    Dung lượng lưu trữ (Storage Quota)
+                                                </Label>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="VD: 30 GB/User, 2 TB Pooled Cloud Storage..."
+                                                    {...register("saasdetail.storagequota")}
+                                                    error={!!saasErrors?.storagequota}
+                                                    hint={saasErrors?.storagequota?.message}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
 
                                 {currentSubtype === "CLOUD_SERVER" && (
@@ -1236,9 +1797,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                     {/* Progress bar */}
                                     <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                         <div
-                                            className={`h-full transition-all duration-300 ${
-                                                checklist.percent === 100 ? "bg-emerald-500" : "bg-brand-500"
-                                            }`}
+                                            className={`h-full transition-all duration-300 ${checklist.percent === 100 ? "bg-emerald-500" : "bg-brand-500"
+                                                }`}
                                             style={{ width: `${checklist.percent}%` }}
                                         />
                                     </div>
@@ -1248,11 +1808,10 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                                         {checklist.items.map((item) => (
                                             <div
                                                 key={item.label}
-                                                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition ${
-                                                    item.valid
+                                                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition ${item.valid
                                                         ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
                                                         : "bg-gray-50 dark:bg-gray-800/60 text-gray-400"
-                                                }`}
+                                                    }`}
                                             >
                                                 <span>{item.valid ? "✓" : "○"}</span>
                                                 <span className="truncate">{item.label}</span>

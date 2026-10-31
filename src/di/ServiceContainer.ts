@@ -15,10 +15,6 @@ import {
 
 import {
   DigitalAssetService,
-  DigitalDomainSSLService,
-  DigitalCloudServerService,
-  DigitalSoftwareLicenseService,
-  DigitalInternetLineService,
 } from "../modules/DigitalAsset/services";
 
 import { ComputerAuditService } from "../modules/Monitoring/services";
@@ -50,10 +46,6 @@ export class ServiceContainer {
   public readonly supplier: SupplierService;
   public readonly unit: UnitService;
   public readonly digitalAsset: DigitalAssetService;
-  public readonly digitalDomainSSL: DigitalDomainSSLService;
-  public readonly digitalCloudServer: DigitalCloudServerService;
-  public readonly digitalSoftwareLicense: DigitalSoftwareLicenseService;
-  public readonly digitalInternetLine: DigitalInternetLineService;
   public readonly computerAudit: ComputerAuditService;
   public readonly contract: ContractService;
   public readonly contractAddendum: ContractAddendumService;
@@ -76,10 +68,6 @@ export class ServiceContainer {
     this.supplier = new SupplierService();
     this.unit = new UnitService();
     this.digitalAsset = new DigitalAssetService();
-    this.digitalDomainSSL = new DigitalDomainSSLService();
-    this.digitalCloudServer = new DigitalCloudServerService();
-    this.digitalSoftwareLicense = new DigitalSoftwareLicenseService();
-    this.digitalInternetLine = new DigitalInternetLineService();
     this.computerAudit = new ComputerAuditService();
     this.contract = new ContractService();
     this.contractAddendum = new ContractAddendumService();

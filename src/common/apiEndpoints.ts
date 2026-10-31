@@ -82,10 +82,6 @@ export const API_ENDPOINTS = {
   DIGITAL_ASSETS: {
     BASE: "/digital-assets",
     ADD: "/digital-assets/add-digital-assets",
-    CLOUD_SERVERS: "/digitalcloudservers",
-    DOMAINS_SSL: "/digitaldomainsssls",
-    INTERNET_LINES: "/digitalinternetlines",
-    SOFTWARE_LICENSES: "/digitalsoftwarelicenses",
   },
 
   // Quản lý Thiết bị phần cứng (Hardware Assets)
