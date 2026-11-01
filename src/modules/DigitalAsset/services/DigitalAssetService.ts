@@ -96,7 +96,7 @@ export class DigitalAssetService
   }
   override async create(request: DigitalAssetObject): Promise<Result<DigitalAssetViewdDto>> {
     const response = await api.post<Result<DigitalAssetViewdDto>>(
-      `${this.endpoint}/add-digital-asset`,
+      `${this.endpoint}/add-digital-assets`,
       request
     );
     toast.success(APP_MESSAGES.COMMON.CREATE_SUCCESS);
@@ -105,7 +105,7 @@ export class DigitalAssetService
 
   override async update(_id: string, request: DigitalAssetObject): Promise<Result<DigitalAssetViewdDto>> {
     const response = await api.post<Result<DigitalAssetViewdDto>>(
-      `${this.endpoint}/add-digital-asset`,
+      `${this.endpoint}/add-digital-assets`,
       request
     );
     toast.success(APP_MESSAGES.COMMON.UPDATE_SUCCESS);

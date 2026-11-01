@@ -27,95 +27,76 @@ export interface DigitalAssetDto {
   description?: string | null;
   suppliername?: string | null;
   createdAt?: string;
-  createdat?: string;
   updatedAt?: string;
-  updatedat?: string;
 }
 
-// Thông số Cloud Server
-export interface DigitalCloudServerDto {
+// 1. Interface cơ sở cho toàn bộ các thông số kỹ thuật (Spec)
+// Tương đương IDigitalAssetSpec của C# Backend
+export interface IDigitalAssetSpec {
   id: string;
-  digitalassetid?: string;
+  digital_asset_id?: string;
+  digitalAssetId?: string;
+}
 
-  /** Tên cụm / Cluster (VD: FPT - AUM.Phụ lục 01, VPS-AD01) */
-  clustername?: string | null;
+// 2. Spec: INTERNET_LINE (Tương đương InternetLineSpecDto của C# Backend)
+export interface DigitalInternetLineDto extends IDigitalAssetSpec {
+  id: string;
+  line_type?: string | null;
+  domestic_bandwidth_mbps?: number | null;
+  international_min_bandwidth_mbps?: number | null;
+  monthly_fee?: number | null;
+  annual_fee?: number | null;
+  ip_type?: string | null;
+  static_ip_address?: string | null;
+}
 
-  /** Mục đích sử dụng (VD: LMS, Hệ thống Active Directory, Kas-Center) */
+// 3. Spec: DOMAIN / SSL (Tương đương DomainSslSpecDto của C# Backend)
+export interface DigitalDomainSslDto extends IDigitalAssetSpec {
+  id: string;
+  record_type?: string | null;
+  domain_name?: string | null;
+  program_tag?: string | null;
+  functional_scope?: string | null;
+  marketing_target?: string | null;
+  ssl_type?: string | null;
+  bound_domain_list?: string | null;
+  auto_renew?: boolean;
+}
+
+// 4. Spec: CLOUD_SERVER (Tương đương CloudServerSpecDto của C# Backend)
+export interface DigitalCloudServerDto extends IDigitalAssetSpec {
+  id: string;
+  cluster_name?: string | null;
   purpose?: string | null;
-
-  /** Số lượng vCPU (VD: 4, 8, 42, 97 vCPU) */
-  vcpucount?: number | null;
-
-  /** Dung lượng RAM (GB) */
-  ramgb?: number | null;
-  /** Thông số Storage (VD: 3545GB SSD 2000IOPS, 100GB) */
-  storagespec?: string | null;
-  operatingsystem?: string | null;
-  ipprivate?: string | null;
-  ippublic?: string | null;
-  allocatedipcount?: number;
-  costpermonth?: number | null;
+  vcpu_count?: number | null;
+  ram_gb?: number | null;
+  storage_spec?: string | null;
+  operating_system?: string | null;
+  ip_private?: string | null;
+  ip_public?: string | null;
+  allocated_ip_count?: number;
+  cost_per_month?: number | null;
 }
 
-// Thông số Domain & SSL
-export interface DigitalDomainSslDto {
+// 5. Spec: SOFTWARE_LICENSE (Tương đương SoftwareLicenseSpecDto của C# Backend)
+export interface DigitalSoftwareLicenseDto extends IDigitalAssetSpec {
   id: string;
-  digitalassetid?: string;
-  recordtype?: string;
-  domainname?: string;
-  programtag?: string | null;
-  functionalscope?: string | null;
-  marketingtarget?: string | null;
-  ssltype?: string | null;
-  bounddomainlist?: string | null;
-  autorenew?: boolean;
+  software_name?: string | null;
+  license_key?: string | null;
+  bound_hardware_serial?: string | null;
+  total_seats?: number;
+  allocated_seats?: number;
+  is_perpetual?: boolean;
 }
 
-// Thông số Đường truyền Internet
-export interface DigitalInternetLineDto {
+// 6. Spec: SAAS_SUBSCRIPTION (Tương đương SaasSubscriptionSpecDto của C# Backend)
+export interface DigitalSaasAccountDto extends IDigitalAssetSpec {
   id: string;
-  digitalassetid?: string;
-  linetype?: string | null;
-  domesticbandwidthmbps?: number | null;
-  internationalminbandwidthmbps?: number | null;
-  monthlyfee?: number | null;
-  annualfee?: number | null;
-  iptype?: string | null;
-  staticipaddress?: string | null;
-}
-
-// Thông số Tài khoản SaaS
-export interface DigitalSaasAccountDto {
-  id: string;
-  digitalassetid?: string;
-  servicebrand?: string;
-  plantier?: string | null;
-  adminaccountemail?: string | null;
-  totallicensesbought?: number;
-  storagequota?: string | null;
-}
-
-// Thông số Giấy phép phần mềm (Software License)
-export interface DigitalSoftwareLicenseDto {
-  id: string;
-  digitalassetid?: string;
-  softwarename?: string;
-  licensekey?: string | null;
-  boundhardwareserial?: string | null;
-  totalseats?: number;
-  allocatedseats?: number;
-  isperpetual?: boolean;
-}
-
-// Thông số Phân bổ tài khoản SaaS
-export interface DigitalSaasAllocationDto {
-  id: string;
-  digitalassetid?: string;
-  assignedemail?: string;
-  assignedemployeename?: string | null;
-  departmentid?: number | null;
-  allocateddate?: Date | string;
-  notes?: string | null;
+  service_brand?: string | null;
+  plan_tier?: string | null;
+  admin_account_email?: string | null;
+  total_licenses_bought?: number;
+  storage_quota?: string | null;
 }
 
 // Đối tượng bao gói tài sản số tổng hợp (tương đương DigitalAssetObject của Backend)
@@ -126,48 +107,30 @@ export interface DigitalAssetObject {
   digitalInternetLineDto?: DigitalInternetLineDto | null;
   digitalSaasAccountDto?: DigitalSaasAccountDto | null;
   digitalSoftwareLicenseDto?: DigitalSoftwareLicenseDto | null;
-  digitalSaasAllocationDto?: DigitalSaasAllocationDto | null;
 }
 
 export interface DigitalAssetViewdDto {
   id: string;
-  assetcode?: string;
   assetCode?: string;
-  assetsubtype?: string;
   assetSubType?: string;
   name: string;
   model?: string;
-  serialnumber?: string;
   serialNumber?: string;
   barcode?: string;
-  contractnumber?: string | null;
   contractNumber?: string | null;
-  categoryid?: number | null;
   categoryId?: number | null;
-  categoryname?: string;
   categoryName?: string;
-  statusid?: number | null;
   statusId?: number | null;
-  statusname?: string;
   statusName?: string;
-  supplierid?: number | null;
   supplierId?: number | null;
-  suppliername?: string;
   supplierName?: string;
-  departmentid?: number | null;
   departmentId?: number | null;
-  departmentname?: string;
   departmentName?: string;
-  costamount?: number;
   costAmount?: number;
   currency?: string;
-  billingcycle?: string;
   billingCycle?: string;
-  startdate?: string | Date | null;
   startDate?: string | Date | null;
-  expirydate?: string | Date | null;
   expiryDate?: string | Date | null;
-  renewalalertdate?: string | Date | null;
   renewalAlertDate?: string | Date | null;
   description?: string | null;
   notes?: string | null;
