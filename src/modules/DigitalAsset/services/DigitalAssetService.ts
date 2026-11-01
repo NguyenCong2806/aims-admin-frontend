@@ -137,7 +137,7 @@ export class DigitalAssetService
     }
 
     const response = await api.delete<Result<DigitalAssetViewdDto>>(
-      `${this.endpoint}/delete-digital-asset/${id}`
+      `${this.endpoint}/delete-digital-assets/${id}`
     );
     Swal.fire({
       title: APP_MESSAGES.COMMON.DELETE_HEADER,
