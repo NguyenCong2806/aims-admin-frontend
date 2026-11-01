@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useParams } from "react-router";
@@ -17,6 +17,7 @@ import { useSupplierAll } from "../../Lookups/queries/suppliersQuery";
 import { useAssetStatusAll } from "../../Lookups/queries/assetstatusQuery";
 import { useDepartmentAll } from "../../Lookups/queries/departmentsQuery";
 import { useAssetCategoryAll } from "../../Lookups/queries/assetcategoriesQuery";
+import { useContractSelectList } from "../../Contract/queries";
 import {
   useAddDigitalAsset,
   useCreateDigitalAsset,
@@ -220,6 +221,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
   const { data: assetStatusData } = useAssetStatusAll();
   const { data: supplierData } = useSupplierAll();
   const { data: departmentData } = useDepartmentAll();
+  const { data: contractSelectList, isLoading: isLoadingContracts } = useContractSelectList();
+  const [isManualContract, setIsManualContract] = useState(false);
 
   const addMutation = useAddDigitalAsset();
   const createMutation = useCreateDigitalAsset();
@@ -251,6 +254,67 @@ export const CreateDigitalAssetsPage: React.FC = () => {
   const currentSubtype = watchedValues.assetsubtype || "DOMAIN";
 
   // Label lookups cho Preview Card
+  // Danh sách options Hợp đồng từ Contract select-list API
+  const contractOptions = useMemo(() => {
+    const rawList: any[] = Array.isArray(contractSelectList)
+      ? contractSelectList
+      : (contractSelectList as any)?.data || [];
+
+    const opts: Array<{ value: string; label: string }> = [
+      { value: "", label: "-- Không liên kết hợp đồng --" },
+    ];
+
+    rawList.forEach((item: any) => {
+      if (!item) return;
+
+      // 1. DTO có contractNumber hoặc contractCode
+      const code = item.contractNumber || item.contractCode;
+      if (code) {
+        opts.push({
+          value: String(code),
+          label: item.title ? `${code} - ${item.title}` : String(code),
+        });
+        return;
+      }
+
+      // 2. Chuẩn SelectListItem { key, value }
+      if (item.key !== undefined && item.value !== undefined) {
+        const valStr = String(item.value);
+        const keyStr = String(item.key);
+
+        let contractCode = keyStr;
+        let displayLabel = valStr;
+
+        // Nếu key là số (ID) và value là mã HĐ hoặc "Mã HĐ - Tiêu đề"
+        if (/^\d+$/.test(keyStr) && typeof valStr === "string") {
+          contractCode = valStr.includes(" - ") ? valStr.split(" - ")[0].trim() : valStr;
+        }
+
+        opts.push({
+          value: contractCode,
+          label: displayLabel || contractCode,
+        });
+        return;
+      }
+
+      // 3. Chuỗi đơn giản
+      if (typeof item === "string") {
+        opts.push({ value: item, label: item });
+      }
+    });
+
+    // 4. Nếu đang ở mode Edit hoặc đã có giá trị contractnumber mà chưa có trong danh sách options, bổ sung vào
+    const currentCode = watchedValues.contractnumber?.trim();
+    if (currentCode && !opts.some((o) => o.value === currentCode)) {
+      opts.splice(1, 0, {
+        value: currentCode,
+        label: `${currentCode} (Hiện tại)`,
+      });
+    }
+
+    return opts;
+  }, [contractSelectList, watchedValues.contractnumber]);
+
   const selectedCategoryName = useMemo(() => {
     if (!watchedValues.categoryid || !assetCategories) return "Chưa chọn danh mục";
     return assetCategories.find((c) => c.id === watchedValues.categoryid)?.name || "N/A";
@@ -958,20 +1022,51 @@ export const CreateDigitalAssetsPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Số hợp đồng / Mã dịch vụ */}
+                {/* Số hợp đồng / Mã dịch vụ (Lấy từ Contract Select-List hoặc Nhập tay) */}
                 <div>
-                  <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Số hợp đồng / Mã dịch vụ
-                  </Label>
-                  <Input
-                    size="sm"
-                    type="text"
-                    {...register("contractnumber")}
-                    error={!!errors.contractnumber}
-                    hint={errors.contractnumber?.message}
-                    placeholder="VD: HD-IT-2026-09"
-                    className="font-mono"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Số hợp đồng (Contract)
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setIsManualContract(!isManualContract)}
+                      className="text-[11px] text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      {isManualContract ? "📋 Chọn từ danh mục HĐ" : "✍️ Nhập tay số HĐ"}
+                    </button>
+                  </div>
+
+                  {isManualContract ? (
+                    <Input
+                      size="sm"
+                      type="text"
+                      {...register("contractnumber")}
+                      error={!!errors.contractnumber}
+                      hint={errors.contractnumber?.message}
+                      placeholder="VD: HD-IT-2026-09"
+                      className="font-mono"
+                    />
+                  ) : (
+                    <Controller
+                      control={control}
+                      name="contractnumber"
+                      render={({ field }) => (
+                        <Select
+                          size="sm"
+                          options={contractOptions}
+                          value={field.value || ""}
+                          onChange={(val) => {
+                            field.onChange(val ? val.trim() : null);
+                            clearErrors("contractnumber");
+                          }}
+                          error={!!errors.contractnumber}
+                          hint={errors.contractnumber?.message}
+                          placeholder={isLoadingContracts ? "Đang tải danh sách hợp đồng..." : "Chọn hợp đồng liên kết..."}
+                        />
+                      )}
+                    />
+                  )}
                 </div>
 
                 {/* Nhà cung cấp dịch vụ */}
