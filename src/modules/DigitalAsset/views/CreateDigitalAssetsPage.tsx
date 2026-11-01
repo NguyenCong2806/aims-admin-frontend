@@ -127,6 +127,18 @@ const defaultStartDate = new Date();
 const defaultExpiryDate = new Date();
 defaultExpiryDate.setFullYear(defaultExpiryDate.getFullYear() + 1);
 
+const normalizeSubType = (val?: string): string => {
+  if (!val) return "DOMAIN";
+  const upper = val.toUpperCase().trim();
+  if (upper === "INTERNETLINE" || upper === "INTERNET_LINE" || upper === "INTERNET") return "INTERNET_LINE";
+  if (upper === "SOFTWARELICENSE" || upper === "SOFTWARE_LICENSE" || upper === "SOFTWARE") return "SOFTWARE_LICENSE";
+  if (upper === "SAASSUBSCRIPTION" || upper === "SAAS_SUBSCRIPTION" || upper === "SAAS") return "SAAS_SUBSCRIPTION";
+  if (upper === "CLOUDSERVER" || upper === "CLOUD_SERVER" || upper === "SERVER" || upper === "VPS") return "CLOUD_SERVER";
+  if (upper === "SSL" || upper === "SSLCERTIFICATE" || upper === "SSL_CERTIFICATE") return "SSL";
+  if (upper === "DOMAIN") return "DOMAIN";
+  return upper;
+};
+
 const defaultValues: Partial<DigitalAssetFormData> = {
   assetcode: "",
   name: "",
@@ -152,6 +164,27 @@ const defaultValues: Partial<DigitalAssetFormData> = {
     bounddomainlist: "",
     autorenew: false,
   },
+  cloudserverdetail: {
+    clustername: "",
+    purpose: "",
+    vcpucount: undefined,
+    ramgb: undefined,
+    storagespec: "",
+    operatingsystem: "",
+    ipprivate: "",
+    ippublic: "",
+    allocatedipcount: undefined,
+    costpermonth: undefined,
+  },
+  internetlinedetail: {
+    linetype: "",
+    domesticbandwidthmbps: undefined,
+    internationalminbandwidthmbps: undefined,
+    monthlyfee: undefined,
+    annualfee: undefined,
+    iptype: "",
+    staticipaddress: "",
+  },
   softwarelicensedetail: {
     softwarename: "",
     licensekey: "",
@@ -159,6 +192,13 @@ const defaultValues: Partial<DigitalAssetFormData> = {
     totalseats: 1,
     allocatedseats: 0,
     isperpetual: false,
+  },
+  saasdetail: {
+    servicebrand: "",
+    plantier: "",
+    adminaccountemail: "",
+    totallicensesbought: undefined,
+    storagequota: "",
   },
 };
 
@@ -266,7 +306,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
   // Load data khi ở chế độ Edit
   useEffect(() => {
     if (isEdit && assetDetail) {
-      const root = assetDetail.data as any;
+      const root = (assetDetail as any)?.data?.data || (assetDetail as any)?.data || assetDetail;
       if (!root) return;
 
       // 1. DTO chính: Tài sản số (digitalAssetDto)
@@ -353,7 +393,7 @@ export const CreateDigitalAssetsPage: React.FC = () => {
         id: String(main.id || assetId),
         assetcode: main.assetCode || main.assetcode || "",
         name: main.name || "",
-        assetsubtype: main.assetSubType || main.assetsubtype || "DOMAIN",
+        assetsubtype: normalizeSubType(main.assetSubType || main.assetsubtype || "DOMAIN"),
         contractnumber: main.contractNumber || main.contractnumber || "",
         categoryid: main.categoryId ?? main.categoryid ?? undefined,
         statusid: main.statusId ?? main.statusid ?? undefined,
@@ -493,76 +533,71 @@ export const CreateDigitalAssetsPage: React.FC = () => {
         const childId = isEdit ? ensureValidGuid(rawDomain.id) : generateGuid();
         digitalDomainSslDto = {
           id: childId,
-          digital_asset_id: mainId,
-          digitalAssetId: mainId,
-          record_type: rawDomain.recordtype || (data.assetsubtype === "DOMAIN" ? "DOMAIN" : "SSL_CERTIFICATE"),
-          domain_name: rawDomain.domainname?.trim() || data.name?.trim(),
-          program_tag: rawDomain.programtag?.trim() || null,
-          functional_scope: rawDomain.functionalscope?.trim() || null,
-          marketing_target: rawDomain.marketingtarget?.trim() || null,
-          ssl_type: rawDomain.ssltype?.trim() || null,
-          bound_domain_list: rawDomain.bounddomainlist?.trim() || null,
-          auto_renew: Boolean(rawDomain.autorenew ?? false),
+          digitalassetid: mainId,
+          recordtype: rawDomain.recordtype || (data.assetsubtype === "DOMAIN" ? "DOMAIN" : "SSL_CERTIFICATE"),
+          domainname: rawDomain.domainname?.trim() || data.name?.trim(),
+          programtag: rawDomain.programtag?.trim() || null,
+          functionalscope: rawDomain.functionalscope?.trim() || null,
+          marketingtarget: rawDomain.marketingtarget?.trim() || null,
+          ssltype: rawDomain.ssltype?.trim() || null,
+          bounddomainlist: rawDomain.bounddomainlist?.trim() || null,
+          autorenew: Boolean(rawDomain.autorenew ?? false),
         };
       } else if (data.assetsubtype === "CLOUD_SERVER") {
         const rawCloud = ((data as any).cloudserverdetail as any) || {};
         const childId = isEdit ? ensureValidGuid(rawCloud.id) : generateGuid();
         digitalCloudServerDto = {
           id: childId,
-          digital_asset_id: mainId,
-          digitalAssetId: mainId,
-          cluster_name: rawCloud.clustername?.trim() || null,
+          digitalassetid: mainId,
+          clustername: rawCloud.clustername?.trim() || null,
           purpose: rawCloud.purpose?.trim() || null,
-          vcpu_count: Number(rawCloud.vcpucount || 0),
-          ram_gb: Number(rawCloud.ramgb || 0),
-          storage_spec: rawCloud.storagespec?.trim() || null,
-          operating_system: rawCloud.operatingsystem?.trim() || null,
-          ip_private: rawCloud.ipprivate?.trim() || null,
-          ip_public: rawCloud.ippublic?.trim() || null,
-          allocated_ip_count: Number(rawCloud.allocatedipcount || 0),
-          cost_per_month: Number(rawCloud.costpermonth || 0),
+          vcpucount: Number(rawCloud.vcpucount || 0),
+          ramgb: Number(rawCloud.ramgb || 0),
+          storagespec: rawCloud.storagespec?.trim() || null,
+          operatingsystem: rawCloud.operatingsystem?.trim() || null,
+          ipprivate: rawCloud.ipprivate?.trim() || null,
+          ippublic: rawCloud.ippublic?.trim() || null,
+          allocatedipcount: Number(rawCloud.allocatedipcount || 0),
+          costpermonth: Number(rawCloud.costpermonth || 0),
         };
       } else if (data.assetsubtype === "INTERNET_LINE") {
         const rawLine = (data.internetlinedetail as any) || {};
         const childId = isEdit ? ensureValidGuid(rawLine.id) : generateGuid();
         digitalInternetLineDto = {
           id: childId,
-          digital_asset_id: mainId,
-          digitalAssetId: mainId,
-          line_type: rawLine.linetype?.trim() || null,
-          domestic_bandwidth_mbps: Number(rawLine.domesticbandwidthmbps || 0),
-          international_min_bandwidth_mbps: Number(rawLine.internationalminbandwidthmbps || 0),
-          monthly_fee: Number(rawLine.monthlyfee || 0),
-          annual_fee: Number(rawLine.annualfee || 0),
-          ip_type: rawLine.iptype?.trim() || null,
-          static_ip_address: rawLine.staticipaddress?.trim() || null,
+          digitalassetid: mainId,
+          linetype: rawLine.linetype?.trim() || null,
+          domesticbandwidthmbps: Number(rawLine.domesticbandwidthmbps || 0),
+          internationalminbandwidthmbps: Number(rawLine.internationalminbandwidthmbps || 0),
+          monthlyfee: Number(rawLine.monthlyfee || 0),
+          annualfee: Number(rawLine.annualfee || 0),
+          iptype: rawLine.iptype?.trim() || null,
+          staticipaddress: rawLine.staticipaddress?.trim() || null,
         };
       } else if (data.assetsubtype === "SOFTWARE_LICENSE" || data.assetsubtype === "SOFTWARE") {
         const rawLic = (data.softwarelicensedetail as any) || {};
         const childId = isEdit ? ensureValidGuid(rawLic.id) : generateGuid();
         digitalSoftwareLicenseDto = {
           id: childId,
-          digital_asset_id: mainId,
-          digitalAssetId: mainId,
-          software_name: rawLic.softwarename?.trim() || data.name?.trim() || "Bản quyền phần mềm",
-          license_key: rawLic.licensekey?.trim() || null,
-          bound_hardware_serial: rawLic.boundhardwareserial?.trim() || null,
-          total_seats: Number(rawLic.totalseats || 0),
-          allocated_seats: Number(rawLic.allocatedseats || 0),
-          is_perpetual: Boolean(rawLic.isperpetual ?? false),
+          digitalassetid: mainId,
+          softwarename: rawLic.softwarename?.trim() || data.name?.trim() || "Bản quyền phần mềm",
+          licensekey: rawLic.licensekey?.trim() || null,
+          boundhardwareserial: rawLic.boundhardwareserial?.trim() || null,
+          totalseats: Number(rawLic.totalseats || 0),
+          allocatedseats: Number(rawLic.allocatedseats || 0),
+          isperpetual: Boolean(rawLic.isperpetual ?? false),
         };
       } else if (data.assetsubtype === "SAAS_SUBSCRIPTION") {
         const rawSaas = (data.saasdetail as any) || {};
         const childId = isEdit ? ensureValidGuid(rawSaas.id) : generateGuid();
         digitalSaasAccountDto = {
           id: childId,
-          digital_asset_id: mainId,
-          digitalAssetId: mainId,
-          service_brand: rawSaas.servicebrand?.trim() || null,
-          plan_tier: rawSaas.plantier?.trim() || null,
-          admin_account_email: rawSaas.adminaccountemail?.trim() || null,
-          total_licenses_bought: Number(rawSaas.totallicensesbought || 0),
-          storage_quota: rawSaas.storagequota?.trim() || null,
+          digitalassetid: mainId,
+          servicebrand: rawSaas.servicebrand?.trim() || null,
+          plantier: rawSaas.plantier?.trim() || null,
+          adminaccountemail: rawSaas.adminaccountemail?.trim() || null,
+          totallicensesbought: Number(rawSaas.totallicensesbought || 0),
+          storagequota: rawSaas.storagequota?.trim() || null,
         };
       }
 

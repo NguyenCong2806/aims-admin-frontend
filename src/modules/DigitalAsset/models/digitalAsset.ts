@@ -34,69 +34,73 @@ export interface DigitalAssetDto {
 // Tương đương IDigitalAssetSpec của C# Backend
 export interface IDigitalAssetSpec {
   id: string;
-  digital_asset_id?: string;
-  digitalAssetId?: string;
+  digitalassetid?: string;
 }
 
 // 2. Spec: INTERNET_LINE (Tương đương InternetLineSpecDto của C# Backend)
 export interface DigitalInternetLineDto extends IDigitalAssetSpec {
   id: string;
-  line_type?: string | null;
-  domestic_bandwidth_mbps?: number | null;
-  international_min_bandwidth_mbps?: number | null;
-  monthly_fee?: number | null;
-  annual_fee?: number | null;
-  ip_type?: string | null;
-  static_ip_address?: string | null;
+  digitalassetid?: string;
+  linetype?: string | null;
+  domesticbandwidthmbps?: number | null;
+  internationalminbandwidthmbps?: number | null;
+  monthlyfee?: number | null;
+  annualfee?: number | null;
+  iptype?: string | null;
+  staticipaddress?: string | null;
 }
 
 // 3. Spec: DOMAIN / SSL (Tương đương DomainSslSpecDto của C# Backend)
 export interface DigitalDomainSslDto extends IDigitalAssetSpec {
   id: string;
-  record_type?: string | null;
-  domain_name?: string | null;
-  program_tag?: string | null;
-  functional_scope?: string | null;
-  marketing_target?: string | null;
-  ssl_type?: string | null;
-  bound_domain_list?: string | null;
-  auto_renew?: boolean;
+  digitalassetid?: string;
+  recordtype?: string | null;
+  domainname?: string | null;
+  programtag?: string | null;
+  functionalscope?: string | null;
+  marketingtarget?: string | null;
+  ssltype?: string | null;
+  bounddomainlist?: string | null;
+  autorenew?: boolean;
 }
 
 // 4. Spec: CLOUD_SERVER (Tương đương CloudServerSpecDto của C# Backend)
 export interface DigitalCloudServerDto extends IDigitalAssetSpec {
   id: string;
-  cluster_name?: string | null;
+  digitalassetid?: string;
+  clustername?: string | null;
   purpose?: string | null;
-  vcpu_count?: number | null;
-  ram_gb?: number | null;
-  storage_spec?: string | null;
-  operating_system?: string | null;
-  ip_private?: string | null;
-  ip_public?: string | null;
-  allocated_ip_count?: number;
-  cost_per_month?: number | null;
+  vcpucount?: number | null;
+  ramgb?: number | null;
+  storagespec?: string | null;
+  operatingsystem?: string | null;
+  ipprivate?: string | null;
+  ippublic?: string | null;
+  allocatedipcount?: number;
+  costpermonth?: number | null;
 }
 
 // 5. Spec: SOFTWARE_LICENSE (Tương đương SoftwareLicenseSpecDto của C# Backend)
 export interface DigitalSoftwareLicenseDto extends IDigitalAssetSpec {
   id: string;
-  software_name?: string | null;
-  license_key?: string | null;
-  bound_hardware_serial?: string | null;
-  total_seats?: number;
-  allocated_seats?: number;
-  is_perpetual?: boolean;
+  digitalassetid?: string;
+  softwarename?: string | null;
+  licensekey?: string | null;
+  boundhardwareserial?: string | null;
+  totalseats?: number;
+  allocatedseats?: number;
+  isperpetual?: boolean;
 }
 
 // 6. Spec: SAAS_SUBSCRIPTION (Tương đương SaasSubscriptionSpecDto của C# Backend)
 export interface DigitalSaasAccountDto extends IDigitalAssetSpec {
   id: string;
-  service_brand?: string | null;
-  plan_tier?: string | null;
-  admin_account_email?: string | null;
-  total_licenses_bought?: number;
-  storage_quota?: string | null;
+  digitalassetid?: string;
+  servicebrand?: string | null;
+  plantier?: string | null;
+  adminaccountemail?: string | null;
+  totallicensesbought?: number;
+  storagequota?: string | null;
 }
 
 // Đối tượng bao gói tài sản số tổng hợp (tương đương DigitalAssetObject của Backend)
