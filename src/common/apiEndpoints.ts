@@ -5,6 +5,9 @@ import { ENV } from "../config/env";
  */
 export const getFullApiUrl = (endpoint: string): string => {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  if (ENV.API_URL.startsWith("http://") || ENV.API_URL.startsWith("https://")) {
+    return `${ENV.API_URL}${cleanEndpoint}`;
+  }
   return `${ENV.BACKEND_TARGET}${ENV.API_URL}${cleanEndpoint}`;
 };
 
