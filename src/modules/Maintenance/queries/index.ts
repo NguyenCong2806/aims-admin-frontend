@@ -1,0 +1,2 @@
+// Maintenance module queries
+export {};

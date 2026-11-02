@@ -1,5 +1,5 @@
 import { ENV } from "../config/env";
-import { FileAcceptPreset, FileValidationRule } from "../models/File/file";
+import { FileAcceptPreset, FileValidationRule } from "../modules/System/models/file";
 
 export type FileCategory =
   | "image"

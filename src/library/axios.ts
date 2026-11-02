@@ -3,7 +3,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { ENV } from "../config/env";
-import { API_ENDPOINTS } from "../common/apiEndpoints";
+import { API_ENDPOINTS } from "../common/ApiEndpoints";
 
 /**
  * =========================================================================

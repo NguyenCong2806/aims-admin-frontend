@@ -15,7 +15,7 @@ export {
   useUploadMultipleFiles,
   useDownloadFile,
   useDeleteFile,
-} from "../../../query/files/filesQuery";
+} from "../../../modules/System/queries/filesQuery";
 
 export {
   formatFileSize,
@@ -35,4 +35,4 @@ export type {
   UploadOptions,
   FileAcceptPreset,
   FileValidationRule,
-} from "../../../models/File/file";
+} from "../../../modules/System/models/file";

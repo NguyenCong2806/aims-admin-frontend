@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_ENDPOINTS } from "../common/apiEndpoints";
+import { API_ENDPOINTS } from "../common/ApiEndpoints";
 import { ENV } from "../config/env";
 import { api, setAccessToken } from "../library/axios";
 import { AuthResponse, AuthUser, LoginCredentials } from "../types/auth";
@@ -131,9 +131,9 @@ export async function login(payload: LoginCredentials): Promise<AuthResponse> {
       if (DEMO_ACCOUNTS[normalizedUser]) {
         console.warn(
           "[Auth Offline Demo]: Không thể kết nối tới máy chủ backend tại " +
-            ENV.API_URL +
-            ". Kích hoạt tài khoản mẫu offline: " +
-            payload.username
+          ENV.API_URL +
+          ". Kích hoạt tài khoản mẫu offline: " +
+          payload.username
         );
         const demoUser = DEMO_ACCOUNTS[normalizedUser];
         const mockResponse: AuthResponse = {

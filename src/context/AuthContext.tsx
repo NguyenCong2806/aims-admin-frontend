@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { login as apiLogin, logout as apiLogout, refreshSession as apiRefresh } from "../api/auth.api";
 import { registerAuthCallbacks, setAccessToken } from "../library/axios";
 import { AuthContextValue, AuthResponse, AuthState, LoginCredentials } from "../types/auth";
-import { UserRole } from "../models/User/userAccount";
+import { UserRole } from "../modules/Users/models/userAccount";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -199,7 +199,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
       try {
         const res = await apiLogin(credentials);
-        console.log("[Auth Login Response]:", res);
 
         // Kiểm tra chặt chẽ điều kiện thành công:
         // isSuccess phải khác false, isError không được true, và phải có accessToken hợp lệ

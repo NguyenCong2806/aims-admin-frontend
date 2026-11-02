@@ -1,5 +1,4 @@
-// Định nghĩa kiểu dữ liệu cho hệ thống Authentication & Authorization an toàn
-import { UserRole } from "../models/User/userAccount";
+import { UserRole } from "../modules/Users/models/userAccount";
 
 export interface AuthUser {
   id: number;
