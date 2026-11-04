@@ -372,8 +372,12 @@ export const UserAccountsPage: React.FC = () => {
                       <td colSpan={9} className="py-12 text-center text-gray-400 dark:text-gray-500">
                         <div className="flex flex-col items-center justify-center">
                           <span className="text-3xl mb-2">👤</span>
-                          <p className="text-base font-medium">Không tìm thấy tài khoản người dùng phù hợp</p>
-                          <p className="text-xs text-gray-400 mt-1">Hãy thử xóa bộ lọc hoặc tìm kiếm từ khóa khác</p>
+                          <p className="text-base font-medium">
+                            {users.length === 0 ? "Chưa có tài khoản người dùng nào" : "Không tìm thấy tài khoản người dùng phù hợp"}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {users.length === 0 ? "Hãy bấm \"Thêm tài khoản mới\" để bắt đầu" : "Hãy thử xóa bộ lọc hoặc tìm kiếm từ khóa khác"}
+                          </p>
                         </div>
                       </td>
                     </tr>
@@ -551,8 +555,19 @@ export const UserAccountsPage: React.FC = () => {
 
         {/* 2. PROFILE CARDS GRID VIEW */}
         {viewMode === "kanban" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedUsers.map((user) => {
+          paginatedUsers.length === 0 ? (
+            <div className="py-16 text-center text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-850 rounded-2xl border border-gray-200 dark:border-gray-800">
+              <span className="text-3xl mb-2 block">👤</span>
+              <p className="text-base font-medium">
+                {users.length === 0 ? "Chưa có tài khoản người dùng nào" : "Không tìm thấy tài khoản người dùng phù hợp"}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {users.length === 0 ? "Hãy bấm \"Thêm tài khoản mới\" để bắt đầu" : "Hãy thử xóa bộ lọc hoặc tìm kiếm từ khóa khác"}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedUsers.map((user) => {
               const statusMeta = USER_STATUS_META[user.status] || USER_STATUS_META.ACTIVE;
               const assetsCount = (user.assignedAssets || []).length;
 
@@ -648,6 +663,7 @@ export const UserAccountsPage: React.FC = () => {
               );
             })}
           </div>
+          )
         )}
 
         {/* MODAL CHI TIẾT */}

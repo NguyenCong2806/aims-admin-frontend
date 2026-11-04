@@ -145,54 +145,88 @@ export const WorkstationDetailModal: React.FC<WorkstationDetailModalProps> = ({
                         </div>
 
                         {/* Danh sách phân vùng */}
-                        {partitions.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2 border-t border-gray-200/60 dark:border-gray-700/60">
-                            {partitions.map((part: any, pIdx: number) => {
-                              const pTotal = Number(part.totalGB ?? part.total_gb ?? 0);
-                              const pFree = Number(part.freeGB ?? part.free_gb ?? 0);
-                              const pUsed = Number(
-                                part.usedGB ?? part.used_gb ?? (pTotal >= pFree ? pTotal - pFree : 0)
-                              );
-                              const usagePercent = pTotal > 0 ? Math.round((pUsed / pTotal) * 100) : 0;
-                              const isNearFull = usagePercent > 85;
-                              const partLabel =
-                                part.drive_letter || part.driveLetter || part.label || `Part #${pIdx + 1}`;
+                        {partitions.length > 0 ? (() => {
+                          const totalPartCap = partitions.reduce((acc: number, p: any) => acc + Number(p.totalGB ?? p.total_gb ?? 0), 0);
+                          const totalPartUsed = partitions.reduce((acc: number, p: any) => {
+                            const pTotal = Number(p.totalGB ?? p.total_gb ?? 0);
+                            const pFree = Number(p.freeGB ?? p.free_gb ?? 0);
+                            return acc + Number(p.usedGB ?? p.used_gb ?? (pTotal >= pFree ? pTotal - pFree : 0));
+                          }, 0);
+                          const totalPartFree = totalPartCap >= totalPartUsed ? totalPartCap - totalPartUsed : 0;
 
-                              return (
-                                <div
-                                  key={pIdx}
-                                  className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-1.5 shadow-2xs"
-                                >
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="font-bold text-gray-900 dark:text-white font-mono flex items-center gap-1">
-                                      <span>📁</span>
-                                      <span>{partLabel}</span>
-                                    </span>
-                                    <span className={`text-[10px] font-mono font-semibold ${isNearFull ? "text-rose-600" : "text-gray-500"}`}>
-                                      {usagePercent}%
-                                    </span>
-                                  </div>
-
-                                  {/* Progress bar */}
-                                  <div className="w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-                                    <div
-                                      className={`h-full rounded-full transition-all ${
-                                        isNearFull ? "bg-rose-500" : usagePercent > 70 ? "bg-amber-500" : "bg-emerald-500"
-                                      }`}
-                                      style={{ width: `${Math.min(usagePercent, 100)}%` }}
-                                    />
-                                  </div>
-
-                                  <div className="flex justify-between text-[10px] font-mono text-gray-400">
-                                    <span>Đã dùng: {pUsed.toFixed(1)} GB</span>
-                                    <span>Trống: {pFree.toFixed(1)} GB</span>
-                                  </div>
+                          return (
+                            <div className="pt-2.5 border-t border-gray-200/80 dark:border-gray-700/80 space-y-2">
+                              {/* Dòng phân vùng ổ cứng và thông số */}
+                              <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+                                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                  <span className="text-amber-500 dark:text-amber-400">📂</span>
+                                  <span>Phân vùng ổ cứng và thông số</span>
+                                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-200/70 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-normal">
+                                    {partitions.length} phân vùng
+                                  </span>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="text-[11px] text-gray-400 italic pt-1">
+
+                                {totalPartCap > 0 && (
+                                  <div className="text-[11px] font-mono text-gray-500 dark:text-gray-400 flex items-center gap-1.5 flex-wrap">
+                                    <span>Đã dùng: <strong className="text-gray-800 dark:text-gray-200">{totalPartUsed.toFixed(1)} GB</strong></span>
+                                    <span>•</span>
+                                    <span>Trống: <strong className="text-emerald-600 dark:text-emerald-400">{totalPartFree.toFixed(1)} GB</strong></span>
+                                    <span>•</span>
+                                    <span>Tổng: <strong className="text-gray-900 dark:text-white">{totalPartCap.toFixed(1)} GB</strong></span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Danh sách các ổ đĩa C, D, F... */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                {partitions.map((part: any, pIdx: number) => {
+                                  const pTotal = Number(part.totalGB ?? part.total_gb ?? 0);
+                                  const pFree = Number(part.freeGB ?? part.free_gb ?? 0);
+                                  const pUsed = Number(
+                                    part.usedGB ?? part.used_gb ?? (pTotal >= pFree ? pTotal - pFree : 0)
+                                  );
+                                  const usagePercent = pTotal > 0 ? Math.round((pUsed / pTotal) * 100) : 0;
+                                  const isNearFull = usagePercent > 85;
+                                  const partLabel =
+                                    part.drive_letter || part.driveLetter || part.label || `Part #${pIdx + 1}`;
+
+                                  return (
+                                    <div
+                                      key={pIdx}
+                                      className="p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-1.5 shadow-2xs hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                                    >
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="font-bold text-gray-900 dark:text-white font-mono flex items-center gap-1.5">
+                                          <span className="text-amber-500">📁</span>
+                                          <span>{partLabel}</span>
+                                        </span>
+                                        <span className={`text-[10px] font-mono font-semibold ${isNearFull ? "text-rose-600" : "text-gray-500"}`}>
+                                          {usagePercent}%
+                                        </span>
+                                      </div>
+
+                                      {/* Progress bar */}
+                                      <div className="w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                                        <div
+                                          className={`h-full rounded-full transition-all ${
+                                            isNearFull ? "bg-rose-500" : usagePercent > 70 ? "bg-amber-500" : "bg-emerald-500"
+                                          }`}
+                                          style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                                        />
+                                      </div>
+
+                                      <div className="flex justify-between text-[10px] font-mono text-gray-400">
+                                        <span>Đã dùng: {pUsed.toFixed(1)} GB</span>
+                                        <span>Trống: {pFree.toFixed(1)} GB</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })() : (
+                          <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 text-[11px] text-gray-400 italic">
                             Ổ cứng lưu trữ vật lý (Chưa phân chia phân vùng logic hoặc dùng cho dữ liệu phụ)
                           </div>
                         )}

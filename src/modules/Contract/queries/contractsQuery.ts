@@ -17,6 +17,14 @@ export function useContractAll() {
   });
 }
 
+export function useContractSelectList() {
+  return useQuery({
+    queryKey: [...contractKeys.all, "select-list"] as const,
+    queryFn: () => services.contract.getSelectList(),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useContractParams(params?: PaginationFilter) {
   return useQuery({
     queryKey: contractKeys.list(params),
