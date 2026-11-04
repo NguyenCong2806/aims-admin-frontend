@@ -14,44 +14,19 @@ export type UserStatus =
   | "INACTIVE"  // Ngừng hoạt động
   | "PENDING";  // Chờ kích hoạt
 
-export interface AssignedAssetSummary {
-  assetId: string;
-  assetCode: string;
-  assetName: string;
-  categoryName: string;
-  assignedDate: string;
-}
-
-export interface UserAccount {
-  id: number;
+export interface CreateUserAccountDto {
   username: string; // Tên đăng nhập (VD: hoang.it, lan.hr)
   fullName: string; // Họ và tên đầy đủ
   email: string;
-  phone?: string | null;
-  avatarUrl?: string | null;
-
+  phonennumber?: string | null;
+  avatarurl?: string | null;
+  passwordhash: string;
   // Phòng ban & Vị trí
-  departmentId?: number | null;
-  departmentName?: string | null;
-  positionId?: number | null;
-  positionName?: string | null;
-
+  departmentid?: number;
+  positionid?: number | null;
   // Vai trò & Phân quyền
-  roles: UserRole[];
-
-  // Trạng thái & Bảo mật
-  status: UserStatus;
-  mfaEnabled: boolean; // Xác thực 2 yếu tố (2FA)
-
-  // Kiểm toán đăng nhập
-  lastLoginAt?: string | null;
-  lastLoginIp?: string | null;
-
-  // Danh mục tài sản đang được cấp phát sử dụng
-  assignedAssets?: AssignedAssetSummary[];
-
-  createdAt: string;
-  updatedAt: string;
+  isActive: boolean;
+  roleids: Array<number>[];
 }
 
 export interface UserAccountFilter {
@@ -60,4 +35,33 @@ export interface UserAccountFilter {
   status?: string;
   department?: string;
   mfa?: "all" | "enabled" | "disabled";
+}
+export interface UpdateUserAccountDto {
+  username: string;
+  fullName: string;
+  email: string;
+  phonennumber?: string | null;
+  avatarurl?: string | null;
+  // Phòng ban & Vị trí
+  departmentid?: number;
+  positionid?: number | null;
+  // Vai trò & Phân quyền
+  isActive: boolean;
+  roleids: Array<number>[];
+}
+export interface UserAccountView {
+  username: string;
+  fullName: string;
+  email: string;
+  phonennumber?: string | null;
+  avatarurl?: string | null;
+  // Phòng ban & Vị trí
+  departmentname?: string;
+  positionname?: string;
+  // Vai trò & Phân quyền
+  isActive: boolean;
+  rolenames: Array<string>[];
+}
+export interface UserChangePassword {
+  passwordhash: string;
 }
