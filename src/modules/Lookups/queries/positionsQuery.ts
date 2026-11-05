@@ -18,6 +18,10 @@ export function usePositionAll() {
   return useQuery({ queryKey: positionKeys.all, queryFn: () => services.position.getAll(), staleTime: 1000 * 60 * 3 });
 }
 
+export function usePositionSelectList() {
+  return useQuery({ queryKey: [...positionKeys.all, "select-list"] as const, queryFn: () => services.position.getSelectList(), staleTime: 1000 * 60 * 5 });
+}
+
 export function usePositionById(id: number | null) {
   return useQuery({ queryKey: positionKeys.detail(id), queryFn: () => services.position.getById(id as number), enabled: id !== null });
 }

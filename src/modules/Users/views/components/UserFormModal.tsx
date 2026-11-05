@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { UserAccount, UserRole, UserStatus } from "../../models/userAccount";
 import { USER_ROLE_META } from "../userHelper";
+import { useDepartmentSelectList } from "../../../Lookups/queries/departmentsQuery";
+import { usePositionSelectList } from "../../../Lookups/queries/positionsQuery";
+import Select from "../../../../components/form/Select";
+import { SelectListItem } from "../../../base/IService";
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -19,27 +23,24 @@ const ALL_ROLES: UserRole[] = [
   "Staff",
 ];
 
-const DEPARTMENTS = [
-  "Phòng Công nghệ & IT",
-  "Phòng Hành chính - Nhân sự",
-  "Phòng Kế toán & Tài chính",
-  "Phòng Trí tuệ Nhân tạo (AI & Data)",
-  "Phòng Kinh doanh & Tiếp thị",
-  "Ban Giám đốc Điều hành",
-];
-
 export const UserFormModal: React.FC<UserFormModalProps> = ({
   isOpen,
   onClose,
   initialData,
   onSave,
 }) => {
+  // Lấy dữ liệu Lookup Select-List từ API backend
+  const { data: departmentSelectList, isLoading: isLoadingDepts } = useDepartmentSelectList();
+  const { data: positionSelectList, isLoading: isLoadingPositions } = usePositionSelectList();
+
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [departmentName, setDepartmentName] = useState(DEPARTMENTS[0]);
-  const [positionName, setPositionName] = useState("");
+  const [departmentId, setDepartmentId] = useState<number | undefined>(undefined);
+  const [departmentName, setDepartmentName] = useState<string>("");
+  const [positionId, setPositionId] = useState<number | null | undefined>(undefined);
+  const [positionName, setPositionName] = useState<string>("");
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>(["Staff"]);
   const [status, setStatus] = useState<UserStatus>("ACTIVE");
   const [mfaEnabled, setMfaEnabled] = useState(false);
@@ -49,26 +50,74 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setUsername(initialData.username || "");
       setFullName(initialData.fullName || "");
       setEmail(initialData.email || "");
-      setPhone(initialData.phone || "");
-      setDepartmentName(initialData.departmentName || DEPARTMENTS[0]);
-      setPositionName(initialData.positionName || "");
+      setPhone(initialData.phoneNumber || initialData.phone || "");
+
+      // Phòng ban
+      let deptId = initialData.departmentId || undefined;
+      const deptNm = initialData.departmentName || "";
+      if (!deptId && deptNm && departmentSelectList) {
+        const found = departmentSelectList.find(
+          (d: SelectListItem) => String(d.value).toLowerCase() === deptNm.toLowerCase()
+        );
+        if (found) deptId = Number(found.key);
+      }
+      setDepartmentId(deptId);
+      setDepartmentName(deptNm);
+
+      // Chức vụ
+      let posId = initialData.positionId || undefined;
+      const posNm = initialData.positionName || "";
+      if (!posId && posNm && positionSelectList) {
+        const found = positionSelectList.find(
+          (p: SelectListItem) => String(p.value).toLowerCase() === posNm.toLowerCase()
+        );
+        if (found) posId = Number(found.key);
+      }
+      setPositionId(posId);
+      setPositionName(posNm);
+
       setSelectedRoles(initialData.roles || ["Staff"]);
-      setStatus(initialData.status || "ACTIVE");
+      const isAct = initialData.isActive ?? (initialData.status === "ACTIVE");
+      setStatus(initialData.status || (isAct ? "ACTIVE" : "INACTIVE"));
       setMfaEnabled(initialData.mfaEnabled || false);
     } else {
       setUsername("");
       setFullName("");
       setEmail("");
       setPhone("");
-      setDepartmentName(DEPARTMENTS[0]);
-      setPositionName("");
+      setDepartmentId(
+        departmentSelectList && departmentSelectList.length > 0
+          ? Number(departmentSelectList[0].key)
+          : undefined
+      );
+      setDepartmentName(departmentSelectList?.[0]?.value || "");
+      setPositionId(
+        positionSelectList && positionSelectList.length > 0
+          ? Number(positionSelectList[0].key)
+          : undefined
+      );
+      setPositionName(positionSelectList?.[0]?.value || "");
       setSelectedRoles(["Staff"]);
       setStatus("ACTIVE");
       setMfaEnabled(false);
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, departmentSelectList, positionSelectList]);
 
   if (!isOpen) return null;
+
+  const handleDepartmentChange = (val: string) => {
+    const num = val ? Number(val) : undefined;
+    setDepartmentId(num);
+    const matched = departmentSelectList?.find((d: SelectListItem) => String(d.key) === val);
+    setDepartmentName(matched ? matched.value : "");
+  };
+
+  const handlePositionChange = (val: string) => {
+    const num = val ? Number(val) : null;
+    setPositionId(num);
+    const matched = positionSelectList?.find((p: SelectListItem) => String(p.key) === val);
+    setPositionName(matched ? matched.value : "");
+  };
 
   const toggleRole = (role: UserRole) => {
     setSelectedRoles((prev) => {
@@ -97,10 +146,14 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       fullName: fullName.trim(),
       email: email.trim(),
       phone: phone.trim(),
-      departmentName,
-      positionName: positionName.trim() || "Nhân viên",
+      phoneNumber: phone.trim(),
+      departmentId,
+      departmentName: departmentName || undefined,
+      positionId,
+      positionName: positionName || undefined,
       roles: selectedRoles,
       status,
+      isActive: status === "ACTIVE",
       mfaEnabled,
       assignedAssets: initialData?.assignedAssets || [],
     });
@@ -196,34 +249,31 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
 
+          {/* LOOKUPS SELECT LIST: PHÒNG BAN & CHỨC VỤ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Phòng ban trực thuộc
               </label>
-              <select
-                value={departmentName}
-                onChange={(e) => setDepartmentName(e.target.value)}
-                className="w-full h-10 px-3 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
-              >
-                {DEPARTMENTS.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
+              <Select
+                options={departmentSelectList || []}
+                value={departmentId !== undefined ? String(departmentId) : ""}
+                onChange={(val: string) => handleDepartmentChange(val)}
+                placeholder={isLoadingDepts ? "Đang tải danh sách phòng ban..." : "-- Chọn phòng ban --"}
+                disabled={isLoadingDepts}
+              />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Chức vụ / Vị trí
               </label>
-              <input
-                type="text"
-                value={positionName}
-                onChange={(e) => setPositionName(e.target.value)}
-                placeholder="VD: Chuyên viên IT..."
-                className="w-full h-10 px-3 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
+              <Select
+                options={positionSelectList || []}
+                value={positionId !== undefined && positionId !== null ? String(positionId) : ""}
+                onChange={(val: string) => handlePositionChange(val)}
+                placeholder={isLoadingPositions ? "Đang tải danh sách chức vụ..." : "-- Chọn chức vụ --"}
+                disabled={isLoadingPositions}
               />
             </div>
           </div>
@@ -236,7 +286,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {ALL_ROLES.map((role) => {
                 const isSelected = selectedRoles.includes(role);
-                const roleMeta = (USER_ROLE_META as any)[role];
+                const roleMeta = (USER_ROLE_META as Record<string, any>)[role] || USER_ROLE_META.Staff;
                 return (
                   <label
                     key={role}
