@@ -207,10 +207,10 @@ export const UserAccountsPage: React.FC = () => {
           email: userData.email || "",
           phonennumber: userData.phone || userData.phoneNumber || null,
           avatarurl: userData.avatarUrl || null,
-          passwordhash: "P@ssword123",
+          passwordhash: userData.password || userData.passwordhash || "P@ssword123",
           departmentid: userData.departmentId || undefined,
           positionid: userData.positionId || null,
-          isActive: true,
+          isActive: userData.status === "ACTIVE",
           roleids: [],
         });
         toast.success(`Đã tạo mới tài khoản [${userData.username}] thành công!`);

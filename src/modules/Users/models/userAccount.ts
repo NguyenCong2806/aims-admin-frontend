@@ -30,6 +30,8 @@ export interface UserAccount {
   phone?: string | null;
   phoneNumber?: string | null;
   avatarUrl?: string | null;
+  password?: string;
+  passwordhash?: string;
 
   // Phòng ban & Vị trí
   departmentId?: number | null;

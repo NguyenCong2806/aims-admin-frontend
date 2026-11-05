@@ -37,6 +37,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [departmentId, setDepartmentId] = useState<number | undefined>(undefined);
   const [departmentName, setDepartmentName] = useState<string>("");
   const [positionId, setPositionId] = useState<number | null | undefined>(undefined);
@@ -51,6 +54,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setFullName(initialData.fullName || "");
       setEmail(initialData.email || "");
       setPhone(initialData.phoneNumber || initialData.phone || "");
+      setPassword("");
+      setConfirmPassword("");
+      setShowPassword(false);
 
       // Phòng ban
       let deptId = initialData.departmentId || undefined;
@@ -85,6 +91,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setFullName("");
       setEmail("");
       setPhone("");
+      setPassword("");
+      setConfirmPassword("");
+      setShowPassword(false);
       setDepartmentId(
         departmentSelectList && departmentSelectList.length > 0
           ? Number(departmentSelectList[0].key)
@@ -104,6 +113,18 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   }, [initialData, isOpen, departmentSelectList, positionSelectList]);
 
   if (!isOpen) return null;
+
+  const handleGenerateRandomPassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+    let gen = "";
+    for (let i = 0; i < 10; i++) {
+      gen += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setPassword(gen);
+    setConfirmPassword(gen);
+    setShowPassword(true);
+    toast.success("Đã sinh mật khẩu ngẫu nhiên: " + gen);
+  };
 
   const handleDepartmentChange = (val: string) => {
     const num = val ? Number(val) : undefined;
@@ -140,6 +161,21 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       return;
     }
 
+    if (!initialData) {
+      if (!password.trim()) {
+        toast.error("Vui lòng nhập mật khẩu khởi tạo cho tài khoản mới!");
+        return;
+      }
+      if (password.length < 6) {
+        toast.error("Mật khẩu khởi tạo phải có độ dài tối thiểu 6 ký tự!");
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error("Mật khẩu và xác nhận mật khẩu không khớp nhau!");
+        return;
+      }
+    }
+
     onSave({
       id: initialData?.id,
       username: username.trim().toLowerCase(),
@@ -147,6 +183,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       email: email.trim(),
       phone: phone.trim(),
       phoneNumber: phone.trim(),
+      password: password.trim() || undefined,
+      passwordhash: password.trim() || undefined,
       departmentId,
       departmentName: departmentName || undefined,
       positionId,
@@ -248,6 +286,69 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               />
             </div>
           </div>
+
+          {/* MẬT KHẨU KHỞI TẠO (CHỈ HIỂN THỊ KHI TẠO MỚI) */}
+          {!initialData && (
+            <div className="p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-950/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">🔑</span>
+                  <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                    Mật khẩu khởi tạo tài khoản <span className="text-rose-500">*</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGenerateRandomPassword}
+                  className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 flex items-center gap-1"
+                >
+                  ⚡ Tạo mật khẩu ngẫu nhiên
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Mật khẩu đăng nhập
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Tối thiểu 6 ký tự..."
+                      className="w-full h-10 pl-3 pr-10 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-sm"
+                      title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                    >
+                      {showPassword ? "🙈" : "👁️"}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Xác nhận lại mật khẩu
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Nhập lại mật khẩu..."
+                      className="w-full h-10 pl-3 pr-10 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* LOOKUPS SELECT LIST: PHÒNG BAN & CHỨC VỤ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
