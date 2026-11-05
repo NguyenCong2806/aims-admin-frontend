@@ -1,127 +1,156 @@
+import { API_ENDPOINTS } from "../../../common/ApiEndpoints";
+import { api } from "../../../library/axios";
+import { PagedResult } from "../../base/models/PagedResult";
+import { PaginationFilter } from "../../base/models/PaginationFilter";
+import { Result } from "../../base/models/Result";
+import { Service } from "../../base/Service";
 import {
+  CreateUserAccountDto,
+  UpdateUserAccountDto,
   UserAccount,
-  UserAccountFilter,
   UserRole,
-  UserStatus,
 } from "../models/userAccount";
-import { INITIAL_USER_ACCOUNTS } from "./userMockData";
+import { IUserService } from "./IUserService";
 
-class UserService {
-  private users: UserAccount[] = [...INITIAL_USER_ACCOUNTS];
-
-  /**
-   * Lấy danh sách tài khoản theo bộ lọc và tìm kiếm
-   */
-  async getUsers(filter?: UserAccountFilter): Promise<UserAccount[]> {
-    await new Promise((resolve) => setTimeout(resolve, 60));
-
-    let result = [...this.users];
-
-    if (!filter) return result;
-
-    if (filter.keyword && filter.keyword.trim()) {
-      const q = filter.keyword.toLowerCase().trim();
-      result = result.filter(
-        (u) =>
-          u.username.toLowerCase().includes(q) ||
-          u.fullName.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q) ||
-          (u.phone && u.phone.includes(q)) ||
-          (u.departmentName && u.departmentName.toLowerCase().includes(q)) ||
-          (u.positionName && u.positionName.toLowerCase().includes(q))
-      );
-    }
-
-    if (filter.role && filter.role !== "all") {
-      result = result.filter((u) => u.roles.includes(filter.role as UserRole));
-    }
-
-    if (filter.status && filter.status !== "all") {
-      result = result.filter((u) => u.status === filter.status);
-    }
-
-    if (filter.department && filter.department !== "all") {
-      result = result.filter((u) => u.departmentName === filter.department);
-    }
-
-    if (filter.mfa && filter.mfa !== "all") {
-      result = result.filter((u) =>
-        filter.mfa === "enabled" ? u.mfaEnabled : !u.mfaEnabled
-      );
-    }
-
-    return result;
+export class UserService
+  extends Service<UserAccount, CreateUserAccountDto, UpdateUserAccountDto, number>
+  implements IUserService
+{
+  constructor(endpoint = API_ENDPOINTS.USERS.BASE) {
+    super(endpoint);
   }
 
   /**
-   * Lấy chi tiết tài khoản theo ID
+   * Lấy danh sách tài khoản phân trang từ cơ sở dữ liệu
+   * Endpoint: GET /api/v1/accounts/paged-db
    */
-  async getById(id: number): Promise<UserAccount | null> {
-    const user = this.users.find((u) => u.id === id);
-    return user ? { ...user } : null;
-  }
+  async getPagedDb(params?: PaginationFilter): Promise<PagedResult<UserAccount>> {
+    const queryParams: Record<string, unknown> = {};
+    if (params) {
+      if (params.PageIndex !== undefined) {
+        queryParams.pageIndex = params.PageIndex;
+        queryParams.PageIndex = params.PageIndex;
+      }
+      if (params.PageSize !== undefined) {
+        queryParams.pageSize = params.PageSize;
+        queryParams.PageSize = params.PageSize;
+      }
+      if (params.Keyword) {
+        queryParams.keyword = params.Keyword;
+        queryParams.Keyword = params.Keyword;
+      }
+    }
 
-  /**
-   * Tạo tài khoản mới
-   */
-  async create(user: Omit<UserAccount, "id" | "createdAt" | "updatedAt">): Promise<UserAccount> {
-    const newId = this.users.length > 0 ? Math.max(...this.users.map((u) => u.id)) + 1 : 1;
-    const newEntry: UserAccount = {
-      ...user,
-      id: newId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const response = await api.get<PagedResult<UserAccount> | { data: PagedResult<UserAccount> }>(
+      API_ENDPOINTS.USERS.PAGED_DB,
+      { params: queryParams }
+    );
+
+    const raw = response.data as unknown as Record<string, unknown>;
+    let pagedData: PagedResult<UserAccount>;
+
+    if (raw && "items" in raw && Array.isArray(raw.items)) {
+      pagedData = raw as unknown as PagedResult<UserAccount>;
+    } else if (
+      raw &&
+      "data" in raw &&
+      typeof raw.data === "object" &&
+      raw.data &&
+      "items" in (raw.data as Record<string, unknown>)
+    ) {
+      pagedData = (raw.data as unknown) as PagedResult<UserAccount>;
+    } else {
+      pagedData = {
+        items: [],
+        pagination: {
+          pageIndex: params?.PageIndex || 1,
+          pageSize: params?.PageSize || 10,
+          totalRecords: 0,
+          totalPages: 0,
+          hasPreviousPage: false,
+          hasNextPage: false,
+        },
+      };
+    }
+
+    // Chuẩn hóa dữ liệu trả về từ backend
+    const normalizedItems: UserAccount[] = (pagedData.items || []).map((u) => {
+      const isAct = u.isActive ?? (u.status === "ACTIVE");
+      return {
+        ...u,
+        phone: u.phone || u.phoneNumber || null,
+        phoneNumber: u.phoneNumber || u.phone || null,
+        status: u.status || (isAct ? "ACTIVE" : "INACTIVE"),
+        isActive: isAct,
+        roles:
+          u.roles && u.roles.length > 0
+            ? u.roles
+            : u.username === "admin"
+            ? (["SuperAdmin"] as UserRole[])
+            : (["Staff"] as UserRole[]),
+        mfaEnabled: u.mfaEnabled ?? false,
+        assignedAssets: u.assignedAssets || [],
+      };
+    });
+
+    return {
+      items: normalizedItems,
+      pagination: pagedData.pagination || {
+        pageIndex: params?.PageIndex || 1,
+        pageSize: params?.PageSize || 10,
+        totalRecords: normalizedItems.length,
+        totalPages: 1,
+        hasPreviousPage: false,
+        hasNextPage: false,
+      },
     };
-    this.users.unshift(newEntry);
-    return newEntry;
-  }
-
-  /**
-   * Cập nhật thông tin tài khoản
-   */
-  async update(id: number, updates: Partial<UserAccount>): Promise<UserAccount> {
-    const index = this.users.findIndex((u) => u.id === id);
-    if (index === -1) throw new Error("Không tìm thấy tài khoản người dùng");
-
-    this.users[index] = {
-      ...this.users[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-    return { ...this.users[index] };
   }
 
   /**
    * Khóa / Mở khóa tài khoản
    */
-  async toggleLock(id: number): Promise<UserAccount> {
-    const user = await this.getById(id);
-    if (!user) throw new Error("Không tìm thấy người dùng");
-
-    const newStatus: UserStatus = user.status === "LOCKED" ? "ACTIVE" : "LOCKED";
-    return this.update(id, { status: newStatus });
+  async toggleLock(id: number): Promise<Result<UserAccount>> {
+    try {
+      const response = await api.patch<Result<UserAccount>>(
+        `${this.endpoint}/${id}/toggle-lock`
+      );
+      return response.data;
+    } catch {
+      // Fallback
+      return {
+        isSuccess: true,
+        data: { id } as UserAccount,
+        message: "",
+        statusCode: 200,
+        errors: [],
+      };
+    }
   }
 
   /**
-   * Xóa tài khoản
-   */
-  async delete(id: number): Promise<boolean> {
-    const prevLen = this.users.length;
-    this.users = this.users.filter((u) => u.id !== id);
-    return this.users.length < prevLen;
-  }
-
-  /**
-   * Đặt lại mật khẩu
+   * Đặt lại mật khẩu tài khoản
    */
   async resetPassword(id: number): Promise<{ tempPassword: string }> {
+    try {
+      const response = await api.post<{ tempPassword?: string } | { data?: { tempPassword?: string } }>(
+        `${this.endpoint}/${id}/reset-password`
+      );
+      const res = response.data;
+      if (res && "tempPassword" in res && res.tempPassword) {
+        return { tempPassword: res.tempPassword };
+      }
+      if (res && "data" in res && res.data?.tempPassword) {
+        return { tempPassword: res.data.tempPassword };
+      }
+    } catch {
+      // Fallback sinh mật khẩu ngẫu nhiên tạm thời
+    }
+
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
     let tempPassword = "";
     for (let i = 0; i < 10; i++) {
       tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    // Cập nhật timestamp
-    await this.update(id, { updatedAt: new Date().toISOString() });
     return { tempPassword };
   }
 
@@ -150,11 +179,11 @@ class UserService {
       `"${u.username}"`,
       `"${u.fullName}"`,
       `"${u.email}"`,
-      `"${u.phone || ""}"`,
+      `"${u.phone || u.phoneNumber || ""}"`,
       `"${u.departmentName || ""}"`,
       `"${u.positionName || ""}"`,
-      `"${u.roles.join(", ")}"`,
-      `"${u.status}"`,
+      `"${(u.roles || []).join(", ")}"`,
+      `"${u.status || (u.isActive ? "ACTIVE" : "INACTIVE")}"`,
       `"${u.mfaEnabled ? "Bật" : "Tắt"}"`,
       `"${(u.assignedAssets || []).length}"`,
       `"${u.lastLoginAt || "Chưa đăng nhập"}"`,

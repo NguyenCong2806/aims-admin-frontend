@@ -121,6 +121,7 @@ export const API_ENDPOINTS = {
   // Quản trị người dùng & Phân quyền (Users & RBAC)
   USERS: {
     BASE: "/accounts",
+    PAGED_DB: "/accounts/paged-db",
     USERS_FALLBACK: "/users",
   },
   ROLES: {

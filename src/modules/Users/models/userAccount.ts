@@ -28,6 +28,7 @@ export interface UserAccount {
   fullName: string; // Họ và tên đầy đủ
   email: string;
   phone?: string | null;
+  phoneNumber?: string | null;
   avatarUrl?: string | null;
 
   // Phòng ban & Vị trí
@@ -37,11 +38,13 @@ export interface UserAccount {
   positionName?: string | null;
 
   // Vai trò & Phân quyền
-  roles: UserRole[];
+  roles?: UserRole[];
+  rolenames?: string[];
 
   // Trạng thái & Bảo mật
-  status: UserStatus;
-  mfaEnabled: boolean; // Xác thực 2 yếu tố (2FA)
+  status?: UserStatus;
+  isActive?: boolean;
+  mfaEnabled?: boolean; // Xác thực 2 yếu tố (2FA)
 
   // Kiểm toán đăng nhập
   lastLoginAt?: string | null;
@@ -50,8 +53,9 @@ export interface UserAccount {
   // Danh mục tài sản đang được cấp phát sử dụng
   assignedAssets?: AssignedAssetSummary[];
 
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  totalCount?: number;
 }
 
 export interface CreateUserAccountDto {

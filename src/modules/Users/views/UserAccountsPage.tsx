@@ -1,10 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
 import PageMeta from "../../../components/common/PageMeta";
-import { UserAccount, UserRole } from "../models/userAccount";
+import { UserAccount, UserRole, UserStatus } from "../models/userAccount";
 import { userService } from "../services/UserService";
-import { INITIAL_USER_ACCOUNTS } from "../services/userMockData";
+import {
+  useUserAccountsPaged,
+  useCreateUserAccount,
+  useUpdateUserAccount,
+  useToggleLockUserAccount,
+  useDeleteUserAccount,
+} from "../queries/userAccountQuery";
 import { UserDetailModal } from "./components/UserDetailModal";
 import { UserFormModal } from "./components/UserFormModal";
 import { ResetPasswordModal } from "./components/ResetPasswordModal";
@@ -16,8 +22,8 @@ import {
 } from "./userHelper";
 
 export const UserAccountsPage: React.FC = () => {
-  const [users, setUsers] = useState<UserAccount[]>(INITIAL_USER_ACCOUNTS);
   const [keyword, setKeyword] = useState<string>("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<string | number | null>("all");
   const [pageIndex, setPageIndex] = useState<number>(1);
   const [pageSize] = useState<number>(10);
@@ -35,30 +41,60 @@ export const UserAccountsPage: React.FC = () => {
   const [resetTempPassword, setResetTempPassword] = useState<string>("");
   const [isResetOpen, setIsResetOpen] = useState<boolean>(false);
 
-  // 1. Thống kê KPI
+  // Debounce tìm kiếm từ khóa
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedKeyword(keyword.trim());
+      setPageIndex(1);
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [keyword]);
+
+  // 1. Gọi API phân trang thật từ Backend: GET /api/v1/accounts/paged-db
+  const {
+    data: pagedData,
+    isLoading,
+    refetch,
+  } = useUserAccountsPaged({
+    PageIndex: pageIndex,
+    PageSize: pageSize,
+    MaxPageSize: 100,
+    Keyword: debouncedKeyword || undefined,
+  });
+
+  const users: UserAccount[] = useMemo(() => pagedData?.items || [], [pagedData]);
+  const totalRecords: number = pagedData?.pagination?.totalRecords ?? users.length;
+
+  // React Query Mutations
+  const createMutation = useCreateUserAccount();
+  const updateMutation = useUpdateUserAccount();
+  const toggleLockMutation = useToggleLockUserAccount();
+  const deleteMutation = useDeleteUserAccount();
+
+  // 2. Thống kê KPI từ dữ liệu thật
   const stats = useMemo(() => {
-    const total = users.length;
-    const active = users.filter((u) => u.status === "ACTIVE").length;
-    const managers = users.filter(
-      (u) => u.roles.includes("SuperAdmin") || u.roles.includes("AssetManager")
+    const total = totalRecords;
+    const active = users.filter((u) => u.isActive || u.status === "ACTIVE").length;
+    const managers = users.filter((u) =>
+      (u.roles || []).some((r) => r === "SuperAdmin" || r === "AssetManager")
     ).length;
-    const locked = users.filter((u) => u.status === "LOCKED").length;
+    const locked = users.filter((u) => u.status === "LOCKED" || (!u.isActive && u.status !== "ACTIVE")).length;
     const mfa = users.filter((u) => u.mfaEnabled).length;
 
     return { total, active, managers, locked, mfa };
-  }, [users]);
+  }, [users, totalRecords]);
 
-  // 2. Cây bộ lọc phân cấp (AimsTreeFilter)
+  // 3. Cây bộ lọc phân cấp (AimsTreeFilter)
   const treeGroups: TreeFilterGroup[] = useMemo(() => {
-    const activeCount = users.filter((u) => u.status === "ACTIVE").length;
-    const lockedCount = users.filter((u) => u.status === "LOCKED").length;
+    const activeCount = users.filter((u) => u.isActive || u.status === "ACTIVE").length;
+    const lockedCount = users.filter((u) => u.status === "LOCKED" || (!u.isActive && u.status !== "ACTIVE")).length;
     const pendingCount = users.filter((u) => u.status === "PENDING").length;
 
-    const superAdminCount = users.filter((u) => u.roles.includes("SuperAdmin")).length;
-    const assetManagerCount = users.filter((u) => u.roles.includes("AssetManager")).length;
-    const itSupportCount = users.filter((u) => u.roles.includes("ITSupport")).length;
-    const auditorCount = users.filter((u) => u.roles.includes("Auditor")).length;
-    const staffCount = users.filter((u) => u.roles.includes("Staff")).length;
+    const superAdminCount = users.filter((u) => (u.roles || []).includes("SuperAdmin")).length;
+    const assetManagerCount = users.filter((u) => (u.roles || []).includes("AssetManager")).length;
+    const itSupportCount = users.filter((u) => (u.roles || []).includes("ITSupport")).length;
+    const auditorCount = users.filter((u) => (u.roles || []).includes("Auditor")).length;
+    const staffCount = users.filter((u) => (u.roles || []).includes("Staff")).length;
 
     // Đếm theo phòng ban
     const deptCounts: Record<string, number> = {};
@@ -72,7 +108,7 @@ export const UserAccountsPage: React.FC = () => {
         id: "status",
         title: "TRẠNG THÁI TÀI KHOẢN",
         items: [
-          { id: "all", label: "Tất cả tài khoản", count: users.length },
+          { id: "all", label: "Tất cả tài khoản", count: totalRecords },
           { id: "st_ACTIVE", label: "Đang hoạt động", count: activeCount },
           { id: "st_LOCKED", label: "Đã khóa bảo mật", count: lockedCount },
           { id: "st_PENDING", label: "Chờ kích hoạt", count: pendingCount },
@@ -99,56 +135,36 @@ export const UserAccountsPage: React.FC = () => {
         })),
       },
     ];
-  }, [users]);
+  }, [users, totalRecords]);
 
-  // 3. Lọc danh sách theo từ khóa & Tree filter
+  // 4. Lọc phụ trợ client-side nếu người dùng chọn nhánh trong cây bộ lọc
   const filteredUsers = useMemo(() => {
-    return users.filter((item) => {
-      if (keyword.trim()) {
-        const q = keyword.toLowerCase().trim();
-        const matchUser = item.username.toLowerCase().includes(q);
-        const matchName = item.fullName.toLowerCase().includes(q);
-        const matchEmail = item.email.toLowerCase().includes(q);
-        const matchPhone = item.phone ? item.phone.includes(q) : false;
-        const matchDept = item.departmentName ? item.departmentName.toLowerCase().includes(q) : false;
-        const matchPos = item.positionName ? item.positionName.toLowerCase().includes(q) : false;
+    if (!selectedFilter || selectedFilter === "all") return users;
+    const filterStr = String(selectedFilter);
 
-        if (!matchUser && !matchName && !matchEmail && !matchPhone && !matchDept && !matchPos) {
-          return false;
-        }
-      }
+    // Theo trạng thái
+    if (filterStr.startsWith("st_")) {
+      const st = filterStr.replace("st_", "");
+      return users.filter((u) => {
+        const statusKey = u.status || (u.isActive ? "ACTIVE" : "INACTIVE");
+        return statusKey === st;
+      });
+    }
 
-      if (selectedFilter && selectedFilter !== "all") {
-        const filterStr = String(selectedFilter);
+    // Theo vai trò
+    if (filterStr.startsWith("rl_")) {
+      const rl = filterStr.replace("rl_", "");
+      return users.filter((u) => (u.roles || []).includes(rl as UserRole));
+    }
 
-        // Theo trạng thái
-        if (filterStr.startsWith("st_")) {
-          const st = filterStr.replace("st_", "");
-          if (item.status !== st) return false;
-        }
+    // Theo phòng ban
+    if (filterStr.startsWith("dp_")) {
+      const dp = filterStr.replace("dp_", "");
+      return users.filter((u) => u.departmentName === dp);
+    }
 
-        // Theo vai trò
-        if (filterStr.startsWith("rl_")) {
-          const rl = filterStr.replace("rl_", "");
-          if (!item.roles.includes(rl as UserRole)) return false;
-        }
-
-        // Theo phòng ban
-        if (filterStr.startsWith("dp_")) {
-          const dp = filterStr.replace("dp_", "");
-          if (item.departmentName !== dp) return false;
-        }
-      }
-
-      return true;
-    });
-  }, [users, keyword, selectedFilter]);
-
-  // 4. Phân trang
-  const paginatedUsers = useMemo(() => {
-    const start = (pageIndex - 1) * pageSize;
-    return filteredUsers.slice(start, start + pageSize);
-  }, [filteredUsers, pageIndex, pageSize]);
+    return users;
+  }, [users, selectedFilter]);
 
   // 5. Thao tác CRUD & Bảo mật
   const handleOpenDetail = (user: UserAccount) => {
@@ -166,45 +182,64 @@ export const UserAccountsPage: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  const handleSaveForm = (userData: Partial<UserAccount>) => {
-    if (userData.id) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userData.id ? ({ ...u, ...userData } as UserAccount) : u))
-      );
-      toast.success(`Đã cập nhật thông tin tài khoản [${userData.username}]`);
-    } else {
-      const newUser: UserAccount = {
-        id: users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1,
-        username: userData.username || "",
-        fullName: userData.fullName || "",
-        email: userData.email || "",
-        phone: userData.phone || "",
-        departmentName: userData.departmentName || "Phòng Công nghệ & IT",
-        positionName: userData.positionName || "Nhân viên",
-        roles: userData.roles || ["Staff"],
-        status: userData.status || "ACTIVE",
-        mfaEnabled: userData.mfaEnabled || false,
-        assignedAssets: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setUsers((prev) => [newUser, ...prev]);
-      toast.success(`Đã tạo mới tài khoản: @${newUser.username}`);
+  const handleSaveForm = async (userData: Partial<UserAccount>) => {
+    try {
+      if (userData.id) {
+        await updateMutation.mutateAsync({
+          id: userData.id,
+          dto: {
+            username: userData.username || "",
+            fullName: userData.fullName || "",
+            email: userData.email || "",
+            phonennumber: userData.phone || userData.phoneNumber || null,
+            avatarurl: userData.avatarUrl || null,
+            departmentid: userData.departmentId || undefined,
+            positionid: userData.positionId || null,
+            isActive: userData.status === "ACTIVE",
+            roleids: [],
+          },
+        });
+        toast.success(`Đã cập nhật thông tin tài khoản [${userData.username}]`);
+      } else {
+        await createMutation.mutateAsync({
+          username: userData.username || "",
+          fullName: userData.fullName || "",
+          email: userData.email || "",
+          phonennumber: userData.phone || userData.phoneNumber || null,
+          avatarurl: userData.avatarUrl || null,
+          passwordhash: "P@ssword123",
+          departmentid: userData.departmentId || undefined,
+          positionid: userData.positionId || null,
+          isActive: true,
+          roleids: [],
+        });
+        toast.success(`Đã tạo mới tài khoản [${userData.username}] thành công!`);
+      }
+      setIsFormOpen(false);
+      refetch();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Lưu tài khoản thất bại!");
     }
   };
 
-  const handleToggleLock = (id: number) => {
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id !== id) return u;
-        const newStatus = u.status === "LOCKED" ? "ACTIVE" : "LOCKED";
-        return { ...u, status: newStatus, updatedAt: new Date().toISOString() };
-      })
-    );
-    if (inspectingUser && inspectingUser.id === id) {
-      setInspectingUser((prev) =>
-        prev ? { ...prev, status: prev.status === "LOCKED" ? "ACTIVE" : "LOCKED" } : null
-      );
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast.success("Đã xóa tài khoản người dùng thành công!");
+      setIsDetailOpen(false);
+      refetch();
+    } catch {
+      toast.error("Xóa tài khoản không thành công!");
+    }
+  };
+
+  const handleToggleLock = async (id: number) => {
+    try {
+      await toggleLockMutation.mutateAsync(id);
+      toast.success("Đã cập nhật trạng thái khóa tài khoản!");
+      refetch();
+    } catch {
+      toast.error("Thao tác khóa/mở khóa thất bại!");
     }
   };
 
@@ -216,15 +251,6 @@ export const UserAccountsPage: React.FC = () => {
     setResetModalUser(targetUser);
     setResetTempPassword(res.tempPassword);
     setIsResetOpen(true);
-  };
-
-  const handleDelete = (id: number) => {
-    setUsers((prev) => prev.filter((u) => u.id !== id));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
   };
 
   const handleExport = () => {
@@ -251,13 +277,13 @@ export const UserAccountsPage: React.FC = () => {
           </svg>
         }
         moduleTabs={[
-          { name: "Tài khoản", path: "/tai-khoan", badge: filteredUsers.length },
+          { name: "Tài khoản", path: "/tai-khoan", badge: totalRecords },
           { name: "Phân quyền (RBAC)", path: "/phan-quyen" },
           { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong" },
         ]}
         title="Tài khoản người dùng"
         subtitle="Quản lý danh sách tài khoản nhân viên, thiết lập vai trò phân quyền (RBAC) và theo dõi tài sản CNTT bàn giao"
-        totalRecords={filteredUsers.length}
+        totalRecords={totalRecords}
         pageIndex={pageIndex}
         pageSize={pageSize}
         onPageChange={setPageIndex}
@@ -346,11 +372,11 @@ export const UserAccountsPage: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={
-                          paginatedUsers.length > 0 &&
-                          paginatedUsers.every((u) => selectedIds.has(u.id))
+                          filteredUsers.length > 0 &&
+                          filteredUsers.every((u) => selectedIds.has(u.id))
                         }
                         onChange={(e) => {
-                          if (e.target.checked) setSelectedIds(new Set(paginatedUsers.map((u) => u.id)));
+                          if (e.target.checked) setSelectedIds(new Set(filteredUsers.map((u) => u.id)));
                           else setSelectedIds(new Set());
                         }}
                         className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
@@ -367,13 +393,28 @@ export const UserAccountsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {paginatedUsers.length === 0 ? (
+                  {isLoading && users.length === 0 ? (
+                    // SKELETON LOADING STATE
+                    [...Array(5)].map((_, idx) => (
+                      <tr key={`sk-${idx}`} className="animate-pulse">
+                        <td className="px-4 py-4 w-10"><div className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div></td>
+                        <td className="px-4 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-xl bg-gray-200 dark:bg-gray-700"></div><div className="space-y-1.5"><div className="w-24 h-3.5 bg-gray-200 dark:bg-gray-700 rounded"></div><div className="w-16 h-2.5 bg-gray-200 dark:bg-gray-700 rounded"></div></div></div></td>
+                        <td className="px-4 py-4"><div className="w-32 h-3.5 bg-gray-200 dark:bg-gray-700 rounded"></div></td>
+                        <td className="px-4 py-4"><div className="w-28 h-3.5 bg-gray-200 dark:bg-gray-700 rounded"></div></td>
+                        <td className="px-4 py-4"><div className="w-20 h-5 bg-gray-200 dark:bg-gray-700 rounded-md"></div></td>
+                        <td className="px-4 py-4 text-center"><div className="w-16 h-5 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto"></div></td>
+                        <td className="px-4 py-4"><div className="w-24 h-5 bg-gray-200 dark:bg-gray-700 rounded-full"></div></td>
+                        <td className="px-4 py-4"><div className="w-20 h-3.5 bg-gray-200 dark:bg-gray-700 rounded"></div></td>
+                        <td className="px-4 py-4 text-right"><div className="w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded-lg ml-auto"></div></td>
+                      </tr>
+                    ))
+                  ) : filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-gray-400 dark:text-gray-500">
                         <div className="flex flex-col items-center justify-center">
                           <span className="text-3xl mb-2">👤</span>
                           <p className="text-base font-medium">
-                            {users.length === 0 ? "Chưa có tài khoản người dùng nào" : "Không tìm thấy tài khoản người dùng phù hợp"}
+                            {users.length === 0 ? "Chưa có tài khoản người dùng nào từ máy chủ" : "Không tìm thấy tài khoản người dùng phù hợp"}
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
                             {users.length === 0 ? "Hãy bấm \"Thêm tài khoản mới\" để bắt đầu" : "Hãy thử xóa bộ lọc hoặc tìm kiếm từ khóa khác"}
@@ -382,10 +423,13 @@ export const UserAccountsPage: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    paginatedUsers.map((user) => {
+                    filteredUsers.map((user) => {
                       const isSelected = selectedIds.has(user.id);
-                      const statusMeta = USER_STATUS_META[user.status] || USER_STATUS_META.ACTIVE;
+                      const isAct = user.isActive ?? (user.status === "ACTIVE");
+                      const statusKey: UserStatus = user.status || (isAct ? "ACTIVE" : "INACTIVE");
+                      const statusMeta = USER_STATUS_META[statusKey] || USER_STATUS_META.ACTIVE;
                       const assetsCount = (user.assignedAssets || []).length;
+                      const phoneDisplay = user.phoneNumber || user.phone || "-";
 
                       return (
                         <tr
@@ -416,17 +460,17 @@ export const UserAccountsPage: React.FC = () => {
                             <div className="flex items-center gap-3">
                               <div
                                 className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${getAvatarColor(
-                                  user.fullName
+                                  user.fullName || user.username
                                 )} text-white flex items-center justify-center text-xs font-bold shadow-xs flex-shrink-0`}
                               >
-                                {getInitials(user.fullName)}
+                                {getInitials(user.fullName || user.username)}
                               </div>
                               <div>
                                 <p
                                   onClick={() => handleOpenDetail(user)}
                                   className="text-xs font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
                                 >
-                                  {user.fullName}
+                                  {user.fullName || user.username}
                                 </p>
                                 <p className="text-[11px] font-mono text-gray-400">
                                   @{user.username}
@@ -437,8 +481,8 @@ export const UserAccountsPage: React.FC = () => {
 
                           {/* EMAIL & PHONE */}
                           <td className="px-4 py-3.5 text-xs">
-                            <p className="text-gray-900 dark:text-white font-medium">{user.email}</p>
-                            <p className="text-[11px] text-gray-400">{user.phone || "-"}</p>
+                            <p className="text-gray-900 dark:text-white font-medium">{user.email || "-"}</p>
+                            <p className="text-[11px] text-gray-400">{phoneDisplay}</p>
                           </td>
 
                           {/* DEPARTMENT & POSITION */}
@@ -452,17 +496,23 @@ export const UserAccountsPage: React.FC = () => {
                           {/* ROLES */}
                           <td className="px-4 py-3.5">
                             <div className="flex flex-wrap gap-1 max-w-xs">
-                              {user.roles.map((r) => {
-                                const rMeta = USER_ROLE_META[r] || USER_ROLE_META.Staff;
-                                return (
-                                  <span
-                                    key={r}
-                                    className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${rMeta.badgeClass}`}
-                                  >
-                                    {rMeta.label}
-                                  </span>
-                                );
-                              })}
+                              {(user.roles || []).length > 0 ? (
+                                user.roles!.map((r) => {
+                                  const rMeta = USER_ROLE_META[r] || USER_ROLE_META.Staff;
+                                  return (
+                                    <span
+                                      key={r}
+                                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${rMeta.badgeClass}`}
+                                    >
+                                      {rMeta.label}
+                                    </span>
+                                  );
+                                })
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-md text-[11px] font-medium border bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700">
+                                  {user.positionName || "Nhân viên"}
+                                </span>
+                              )}
                             </div>
                           </td>
 
@@ -485,7 +535,7 @@ export const UserAccountsPage: React.FC = () => {
                           <td className="px-4 py-3.5">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${statusMeta.badgeClass}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dotClass}`}></span>
-                              {statusMeta.label}
+                              {isAct ? "Đang hoạt động" : "Đã khóa / Ngừng"}
                             </span>
                           </td>
 
@@ -526,13 +576,13 @@ export const UserAccountsPage: React.FC = () => {
                               <button
                                 onClick={() => handleToggleLock(user.id)}
                                 className={`p-1 rounded-lg transition ${
-                                  user.status === "LOCKED"
+                                  !isAct
                                     ? "text-emerald-600 hover:bg-emerald-50"
                                     : "text-amber-600 hover:bg-amber-50"
                                 }`}
-                                title={user.status === "LOCKED" ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                                title={!isAct ? "Mở khóa tài khoản" : "Khóa tài khoản"}
                               >
-                                {user.status === "LOCKED" ? "🔓" : "🔒"}
+                                {!isAct ? "🔓" : "🔒"}
                               </button>
                               <button
                                 onClick={() => handleResetPassword(user.id)}
@@ -555,11 +605,11 @@ export const UserAccountsPage: React.FC = () => {
 
         {/* 2. PROFILE CARDS GRID VIEW */}
         {viewMode === "kanban" && (
-          paginatedUsers.length === 0 ? (
+          filteredUsers.length === 0 ? (
             <div className="py-16 text-center text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-850 rounded-2xl border border-gray-200 dark:border-gray-800">
               <span className="text-3xl mb-2 block">👤</span>
               <p className="text-base font-medium">
-                {users.length === 0 ? "Chưa có tài khoản người dùng nào" : "Không tìm thấy tài khoản người dùng phù hợp"}
+                {users.length === 0 ? "Chưa có tài khoản người dùng nào từ máy chủ" : "Không tìm thấy tài khoản người dùng phù hợp"}
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 {users.length === 0 ? "Hãy bấm \"Thêm tài khoản mới\" để bắt đầu" : "Hãy thử xóa bộ lọc hoặc tìm kiếm từ khóa khác"}
@@ -567,102 +617,114 @@ export const UserAccountsPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {paginatedUsers.map((user) => {
-              const statusMeta = USER_STATUS_META[user.status] || USER_STATUS_META.ACTIVE;
-              const assetsCount = (user.assignedAssets || []).length;
+              {filteredUsers.map((user) => {
+                const isAct = user.isActive ?? (user.status === "ACTIVE");
+                const statusKey: UserStatus = user.status || (isAct ? "ACTIVE" : "INACTIVE");
+                const statusMeta = USER_STATUS_META[statusKey] || USER_STATUS_META.ACTIVE;
+                const assetsCount = (user.assignedAssets || []).length;
 
-              return (
-                <div
-                  key={user.id}
-                  className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-850 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between gap-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${getAvatarColor(
-                          user.fullName
-                        )} text-white flex items-center justify-center text-base font-bold shadow-md flex-shrink-0`}
-                      >
-                        {getInitials(user.fullName)}
-                      </div>
-                      <div className="min-w-0">
-                        <h4
-                          onClick={() => handleOpenDetail(user)}
-                          className="font-bold text-sm text-gray-900 dark:text-white hover:text-indigo-600 cursor-pointer truncate"
+                return (
+                  <div
+                    key={user.id}
+                    className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-850 p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between gap-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${getAvatarColor(
+                            user.fullName || user.username
+                          )} text-white flex items-center justify-center text-base font-bold shadow-md flex-shrink-0`}
                         >
-                          {user.fullName}
-                        </h4>
-                        <p className="text-xs font-mono text-gray-400">@{user.username}</p>
-                        <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate mt-0.5">
-                          {user.positionName || "Nhân viên"}
-                        </p>
+                          {getInitials(user.fullName || user.username)}
+                        </div>
+                        <div className="min-w-0">
+                          <h4
+                            onClick={() => handleOpenDetail(user)}
+                            className="font-bold text-sm text-gray-900 dark:text-white hover:text-indigo-600 cursor-pointer truncate"
+                          >
+                            {user.fullName || user.username}
+                          </h4>
+                          <p className="text-xs font-mono text-gray-400">@{user.username}</p>
+                          <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium truncate mt-0.5">
+                            {user.positionName || "Nhân viên"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusMeta.badgeClass}`}>
-                      {statusMeta.label}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 text-xs text-gray-600 dark:text-gray-300 pt-2 border-t border-gray-100 dark:border-gray-800">
-                    <div className="flex items-center gap-2">
-                      <span>🏢</span>
-                      <span className="truncate">{user.departmentName || "Chưa phân bổ"}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>✉️</span>
-                      <span className="truncate">{user.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>💻</span>
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">
-                        {assetsCount} thiết bị IT đang giữ
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusMeta.badgeClass}`}>
+                        {isAct ? "Hoạt động" : "Đã khóa"}
                       </span>
                     </div>
-                  </div>
 
-                  {/* ROLES BADGES */}
-                  <div className="flex flex-wrap gap-1">
-                    {user.roles.map((r) => {
-                      const rMeta = USER_ROLE_META[r] || USER_ROLE_META.Staff;
-                      return (
-                        <span
-                          key={r}
-                          className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${rMeta.badgeClass}`}
-                        >
-                          {rMeta.label}
+                    <div className="space-y-1.5 text-xs text-gray-600 dark:text-gray-300 pt-2 border-t border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-2">
+                        <span>🏢</span>
+                        <span className="truncate">{user.departmentName || "Chưa phân bổ"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>✉️</span>
+                        <span className="truncate">{user.email || "-"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>📱</span>
+                        <span className="truncate">{user.phoneNumber || user.phone || "-"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>💻</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">
+                          {assetsCount} thiết bị IT đang giữ
                         </span>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    </div>
 
-                  {/* CARD ACTIONS */}
-                  <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                    <button
-                      onClick={() => handleResetPassword(user.id)}
-                      className="text-xs font-medium text-gray-500 hover:text-indigo-600 flex items-center gap-1"
-                    >
-                      🔑 Reset MK
-                    </button>
-                    <div className="flex items-center gap-1.5">
+                    {/* ROLES BADGES */}
+                    <div className="flex flex-wrap gap-1">
+                      {(user.roles || []).length > 0 ? (
+                        user.roles!.map((r) => {
+                          const rMeta = USER_ROLE_META[r] || USER_ROLE_META.Staff;
+                          return (
+                            <span
+                              key={r}
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${rMeta.badgeClass}`}
+                            >
+                              {rMeta.label}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold border bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700">
+                          {user.positionName || "Nhân viên"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* CARD ACTIONS */}
+                    <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
                       <button
-                        onClick={() => handleEdit(user)}
-                        className="px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 rounded-lg transition"
+                        onClick={() => handleResetPassword(user.id)}
+                        className="text-xs font-medium text-gray-500 hover:text-indigo-600 flex items-center gap-1"
                       >
-                        Sửa
+                        🔑 Reset MK
                       </button>
-                      <button
-                        onClick={() => handleOpenDetail(user)}
-                        className="px-3 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-lg transition"
-                      >
-                        Chi tiết →
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 rounded-lg transition"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => handleOpenDetail(user)}
+                          className="px-3 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-lg transition"
+                        >
+                          Chi tiết →
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
           )
         )}
 

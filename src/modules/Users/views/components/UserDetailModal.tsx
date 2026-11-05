@@ -26,7 +26,9 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
   if (!isOpen || !user) return null;
 
-  const statusMeta = (USER_STATUS_META as any)[user.status] || USER_STATUS_META.ACTIVE;
+  const isAct = user.isActive ?? (user.status === "ACTIVE");
+  const statusKey = user.status || (isAct ? "ACTIVE" : "INACTIVE");
+  const statusMeta = (USER_STATUS_META as Record<string, any>)[statusKey] || USER_STATUS_META.ACTIVE;
   const assignedAssets = user.assignedAssets || [];
 
   return (
@@ -132,7 +134,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                     </div>
                     <div className="flex justify-between py-1 border-b border-gray-200/60 dark:border-gray-800">
                       <span className="text-gray-500">Số điện thoại:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{user.phone || "-"}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{user.phoneNumber || user.phone || "-"}</span>
                     </div>
                     <div className="flex justify-between py-1">
                       <span className="text-gray-500">Mã User ID:</span>
@@ -155,7 +157,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                     <div className="flex justify-between py-1">
                       <span className="text-gray-500">Ngày tạo tài khoản:</span>
                       <span className="text-xs text-gray-700 dark:text-gray-300">
-                        {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString("vi-VN") : "Hệ thống"}
                       </span>
                     </div>
                   </div>
@@ -168,7 +170,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   Các vai trò đã được cấp quyền (Roles)
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {user.roles.map((role: any) => {
+                  {(user.roles || []).map((role: any) => {
                     const roleMeta = (USER_ROLE_META as any)[role] || USER_ROLE_META.Staff;
                     return (
                       <div
