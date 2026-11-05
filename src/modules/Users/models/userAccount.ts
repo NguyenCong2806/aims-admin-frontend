@@ -14,6 +14,46 @@ export type UserStatus =
   | "INACTIVE"  // Ngừng hoạt động
   | "PENDING";  // Chờ kích hoạt
 
+export interface AssignedAssetSummary {
+  assetId: string;
+  assetCode: string;
+  assetName: string;
+  categoryName: string;
+  assignedDate: string;
+}
+
+export interface UserAccount {
+  id: number;
+  username: string; // Tên đăng nhập (VD: hoang.it, lan.hr)
+  fullName: string; // Họ và tên đầy đủ
+  email: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
+
+  // Phòng ban & Vị trí
+  departmentId?: number | null;
+  departmentName?: string | null;
+  positionId?: number | null;
+  positionName?: string | null;
+
+  // Vai trò & Phân quyền
+  roles: UserRole[];
+
+  // Trạng thái & Bảo mật
+  status: UserStatus;
+  mfaEnabled: boolean; // Xác thực 2 yếu tố (2FA)
+
+  // Kiểm toán đăng nhập
+  lastLoginAt?: string | null;
+  lastLoginIp?: string | null;
+
+  // Danh mục tài sản đang được cấp phát sử dụng
+  assignedAssets?: AssignedAssetSummary[];
+
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateUserAccountDto {
   username: string; // Tên đăng nhập (VD: hoang.it, lan.hr)
   fullName: string; // Họ và tên đầy đủ
@@ -36,6 +76,7 @@ export interface UserAccountFilter {
   department?: string;
   mfa?: "all" | "enabled" | "disabled";
 }
+
 export interface UpdateUserAccountDto {
   username: string;
   fullName: string;
@@ -49,6 +90,7 @@ export interface UpdateUserAccountDto {
   isActive: boolean;
   roleids: Array<number>[];
 }
+
 export interface UserAccountView {
   username: string;
   fullName: string;
@@ -62,6 +104,7 @@ export interface UserAccountView {
   isActive: boolean;
   rolenames: Array<string>[];
 }
+
 export interface UserChangePassword {
   passwordhash: string;
 }

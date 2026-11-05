@@ -10,12 +10,19 @@ import React, {
 import { toast } from "sonner";
 import { login as apiLogin, logout as apiLogout, refreshSession as apiRefresh } from "../api/auth.api";
 import { registerAuthCallbacks, setAccessToken } from "../library/axios";
+import {
+  clearAuthSession,
+  getStoredAccessToken,
+  getStoredTokenExpiresAt,
+  getStoredUser,
+  getTokenExpiresAtIso,
+  isTokenValid,
+  saveAuthSession,
+} from "../library/tokenHelper";
 import { AuthContextValue, AuthResponse, AuthState, LoginCredentials } from "../types/auth";
 import { UserRole } from "../modules/Users/models/userAccount";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-const SESSION_HINT_KEY = "aims_has_session";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
@@ -23,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     accessToken: null,
     isAuthenticated: false,
     isLoading: false,
-    isInitializing: true, // Đang chạy Silent Refresh khi tải app
+    isInitializing: true, // Đang kiểm tra token khi tải app
     error: null,
   });
 
@@ -40,7 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Lên lịch tự động làm mới token trước khi hết hạn 1 phút (hoặc sau 80% thời gian sống)
+  /**
+   * Lên lịch tự động làm mới token trước khi hết hạn
+   * [Lưu ý quan trọng]: Chỉ thực hiện khi AccessToken VẪN CÒN HẠN.
+   */
   const scheduleProactiveRefresh = useCallback((expiresAtIso?: string) => {
     clearProactiveTimer();
 
@@ -51,10 +61,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const now = Date.now();
       const timeRemainingMs = expiresTime - now;
 
-      // Gia hạn trước 60 giây (hoặc tối thiểu sau 5 giây nếu thời gian ngắn)
-      const refreshDelayMs = Math.max(timeRemainingMs - 60 * 1000, 5000);
-
+      // Chỉ lên lịch nếu còn hạn ít nhất 10 giây
       if (timeRemainingMs > 10000) {
+        // Làm mới trước khi hết hạn 60 giây (hoặc giữa chừng nếu thời hạn còn ít)
+        const refreshDelayMs =
+          timeRemainingMs > 90000
+            ? timeRemainingMs - 60000
+            : Math.max(Math.floor(timeRemainingMs * 0.7), 5000);
+
         proactiveRefreshTimerRef.current = window.setTimeout(async () => {
           try {
             console.log("[Auth Proactive]: Đang tự động làm mới token trước khi hết hạn...");
@@ -68,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               scheduleProactiveRefresh(res.accessTokenExpiresAt);
             }
           } catch (err) {
-            console.warn("[Auth Proactive]: Gia hạn chủ động không thành công, sẽ chờ interceptor.", err);
+            console.warn("[Auth Proactive]: Gia hạn chủ động không thành công, phiên sẽ được kiểm soát bởi interceptor.", err);
           }
         }, refreshDelayMs);
       }
@@ -77,13 +91,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Xử lý khi phiên làm việc hết hạn từ Axios Interceptor (401 không thể refresh)
+  /**
+   * [Nguyên tắc 3]: Xử lý khi phiên làm việc hết hạn hoặc bị hủy:
+   * - Xóa AccessToken khỏi local storage / state management.
+   * - Xóa thông tin user trong state.
+   * - Dừng retry tự động.
+   * - Chuyển về trang login.
+   */
   const handleSessionExpired = useCallback(() => {
     clearProactiveTimer();
     setAccessToken(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(SESSION_HINT_KEY);
-    }
+    clearAuthSession();
+
     setState((prev) => {
       if (prev.isAuthenticated) {
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.");
@@ -99,12 +118,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  // Đăng ký callbacks với Axios Interceptor
+  // Đăng ký callbacks với Axios Interceptor & sự kiện hệ thống
   useEffect(() => {
     registerAuthCallbacks({
       onSessionExpired: handleSessionExpired,
-      onTokenRefreshed: (_newToken) => {
-        setState((prev) => ({ ...prev, accessToken: _newToken }));
+      onTokenRefreshed: (newToken) => {
+        setState((prev) => ({ ...prev, accessToken: newToken }));
       },
     });
 
@@ -117,22 +136,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [handleSessionExpired]);
 
-  // Khởi tạo: Silent Refresh khi người dùng mở trang hoặc F5
+  /**
+   * [Nguyên tắc 1]: Khi khởi động ứng dụng
+   * Front-end đọc AccessToken đã lưu:
+   * • Nếu AccessToken vẫn còn hạn:
+   *   - Dùng tiếp AccessToken hiện tại.
+   *   - KHÔNG gọi /auth/refresh bắt buộc.
+   *   - Sử dụng bình thường.
+   * • Nếu AccessToken đã hết hạn:
+   *   - KHÔNG cố refresh bằng cookie.
+   *   - Xóa AccessToken đã lưu.
+   *   - Chuyển người dùng về màn hình login.
+   * • Nếu không có AccessToken:
+   *   - Hiển thị màn hình login.
+   */
   useEffect(() => {
-    // Tránh gọi lặp lại 2 lần trong React StrictMode
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
 
-    const initializeAuth = async () => {
-      // 1. Kiểm tra Session Hint: nếu chưa từng đăng nhập hoặc đã logout thì bỏ qua gọi API refresh
-      const hasSessionHint =
-        typeof window !== "undefined" &&
-        localStorage.getItem(SESSION_HINT_KEY) === "true";
-      const hasDemoSession =
-        typeof window !== "undefined" &&
-        Boolean(sessionStorage.getItem("aims_demo_session"));
+    const initializeAuth = () => {
+      // 1. Kiểm tra tài khoản Demo phát triển (nếu đang bật)
+      if (typeof window !== "undefined") {
+        const demoUserStr = sessionStorage.getItem("aims_demo_session");
+        if (demoUserStr) {
+          try {
+            const demoUser = JSON.parse(demoUserStr);
+            setState({
+              user: demoUser,
+              accessToken: "mock_demo_session_token",
+              isAuthenticated: true,
+              isLoading: false,
+              isInitializing: false,
+              error: null,
+            });
+            return;
+          } catch {
+            sessionStorage.removeItem("aims_demo_session");
+          }
+        }
+      }
 
-      if (!hasSessionHint && !hasDemoSession) {
+      // 2. Đọc AccessToken và dữ liệu xác thực đã lưu
+      const storedToken = getStoredAccessToken();
+      const storedExp = getStoredTokenExpiresAt();
+      const storedUser = getStoredUser();
+
+      // Trường hợp: Không có AccessToken -> hiển thị login
+      if (!storedToken) {
+        clearAuthSession();
         setState((prev) => ({
           ...prev,
           isInitializing: false,
@@ -143,43 +194,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      try {
-        // Có cờ phiên: Gọi /auth/refresh với timeout an toàn 6 giây để không bao giờ bị treo loading
-        const refreshPromise = apiRefresh();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout khôi phục phiên")), 6000)
-        );
+      // Trường hợp: Có AccessToken -> Kiểm tra hạn sử dụng
+      if (isTokenValid(storedToken, storedExp)) {
+        // • CÒN HẠN: Dùng tiếp AccessToken hiện tại, KHÔNG gọi /auth/refresh bắt buộc
+        setAccessToken(storedToken, storedExp);
+        setState({
+          user: storedUser,
+          accessToken: storedToken,
+          isAuthenticated: true,
+          isLoading: false,
+          isInitializing: false,
+          error: null,
+        });
 
-        const res = await Promise.race([refreshPromise, timeoutPromise]);
-
-        if (
-          res?.accessToken &&
-          res.accessToken.trim() !== "" &&
-          res.isSuccess !== false &&
-          !res.isError
-        ) {
-          if (typeof window !== "undefined") {
-            localStorage.setItem(SESSION_HINT_KEY, "true");
-          }
-          setState({
-            user: res.user,
-            accessToken: res.accessToken,
-            isAuthenticated: true,
-            isLoading: false,
-            isInitializing: false,
-            error: null,
-          });
-          scheduleProactiveRefresh(res.accessTokenExpiresAt);
-        } else {
-          throw new Error("Không nhận được token hợp lệ");
-        }
-      } catch (err) {
-        console.warn("[Auth]: Không thể khôi phục phiên khi tải trang:", err);
-        // Cookie không tồn tại hoặc đã hết hạn -> Xóa cờ và đặt về unauthenticated
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(SESSION_HINT_KEY);
-          sessionStorage.removeItem("aims_demo_session");
-        }
+        // Lên lịch gia hạn chủ động trước khi token hết hạn
+        scheduleProactiveRefresh(storedExp || getTokenExpiresAtIso(storedToken) || undefined);
+      } else {
+        // • HẾT HẠN: Không cố refresh bằng cookie, xóa token và yêu cầu login lại
+        console.warn("[Auth]: AccessToken đã hết hạn khi mở ứng dụng. Chuyển về màn hình đăng nhập.");
+        clearAuthSession();
+        setAccessToken(null);
         setState((prev) => ({
           ...prev,
           isInitializing: false,
@@ -200,8 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const res = await apiLogin(credentials);
 
-        // Kiểm tra chặt chẽ điều kiện thành công:
-        // isSuccess phải khác false, isError không được true, và phải có accessToken hợp lệ
         if (
           !res ||
           res.isSuccess === false ||
@@ -217,7 +249,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error(errMsg);
         }
 
-        // Kiểm tra thông tin người dùng: không được là người dùng rỗng (id: 0 và username: "")
         if (
           !res.user ||
           (res.user.id === 0 && (!res.user.username || res.user.username.trim() === ""))
@@ -228,9 +259,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error(errMsg);
         }
 
-        if (typeof window !== "undefined") {
-          localStorage.setItem(SESSION_HINT_KEY, "true");
-        }
+        saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user);
+        setAccessToken(res.accessToken, res.accessTokenExpiresAt);
 
         setState({
           user: res.user,
@@ -249,12 +279,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ? err.message
             : "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản và mật khẩu.";
 
-        // Xóa token và cờ phiên khi đăng nhập thất bại
         setAccessToken(null);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(SESSION_HINT_KEY);
-          sessionStorage.removeItem("aims_demo_session");
-        }
+        clearAuthSession();
 
         setState((prev) => ({
           ...prev,
@@ -274,10 +300,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async (): Promise<void> => {
     setState((prev) => ({ ...prev, isLoading: true }));
     clearProactiveTimer();
-
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(SESSION_HINT_KEY);
-    }
+    clearAuthSession();
+    setAccessToken(null);
 
     try {
       await apiLogout();
@@ -294,14 +318,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Hàm làm mới phiên thủ công
+  // Hàm làm mới phiên thủ công (chỉ hoạt động khi AccessToken còn hạn)
   const refreshSession = useCallback(async (): Promise<AuthResponse | null> => {
     try {
       const res = await apiRefresh();
       if (res?.accessToken) {
+        saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user);
+        setAccessToken(res.accessToken, res.accessTokenExpiresAt);
+
         setState((prev) => ({
           ...prev,
-          user: res.user,
+          user: res.user || prev.user,
           accessToken: res.accessToken,
           isAuthenticated: true,
         }));
@@ -319,7 +346,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const hasRole = useCallback(
     (role: UserRole | string): boolean => {
       if (!state.user?.roles) return false;
-      if (state.user.roles.includes("SuperAdmin")) return true; // SuperAdmin có mọi quyền
+      if (state.user.roles.includes("SuperAdmin")) return true;
       return state.user.roles.includes(role as UserRole);
     },
     [state.user]
