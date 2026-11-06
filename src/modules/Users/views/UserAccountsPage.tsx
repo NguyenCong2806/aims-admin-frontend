@@ -227,10 +227,11 @@ export const UserAccountsPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await deleteMutation.mutateAsync(id);
-      toast.success("Đã xóa tài khoản người dùng thành công!");
-      setIsDetailOpen(false);
-      refetch();
+      const res = await deleteMutation.mutateAsync(id);
+      if (res !== null) {
+        setIsDetailOpen(false);
+        refetch();
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Xóa tài khoản không thành công!");
     }
@@ -239,10 +240,10 @@ export const UserAccountsPage: React.FC = () => {
   const handleToggleLock = async (id: number) => {
     try {
       await toggleLockMutation.mutateAsync(id);
-      toast.success("Đã cập nhật trạng thái khóa tài khoản!");
+      toast.success("Đã khóa tài khoản thành công!");
       refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Thao tác khóa/mở khóa thất bại!");
+      toast.error(err instanceof Error ? err.message : "Thao tác khóa tài khoản thất bại!");
     }
   };
 
@@ -581,6 +582,15 @@ export const UserAccountsPage: React.FC = () => {
                                 title="Đặt lại mật khẩu"
                               >
                                 🔑
+                              </button>
+                              <button
+                                onClick={() => handleDelete(user.id)}
+                                className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                                title="Xóa tài khoản"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                               </button>
                             </div>
                           </td>

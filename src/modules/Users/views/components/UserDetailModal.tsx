@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { toast } from "sonner";
 import { UserAccount } from "../../models/userAccount";
 import { USER_ROLE_META, USER_STATUS_META, getInitials, getAvatarColor } from "../userHelper";
 
@@ -283,24 +282,13 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex-wrap gap-3">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                onDelete(user.id);
-                onClose();
-                toast.success("Đã xóa tài khoản người dùng");
-              }}
+              onClick={() => onDelete(user.id)}
               className="px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition"
             >
               Xóa tài khoản
             </button>
             <button
-              onClick={() => {
-                onToggleLock(user.id);
-                toast.success(
-                  user.status === "LOCKED"
-                    ? `Đã mở khóa tài khoản [${user.username}]`
-                    : `Đã khóa tài khoản [${user.username}]`
-                );
-              }}
+              onClick={() => onToggleLock(user.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                 user.status === "LOCKED"
                   ? "text-emerald-600 hover:bg-emerald-50"

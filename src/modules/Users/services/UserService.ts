@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from "../../../common/ApiEndpoints";
 import { APP_MESSAGES } from "../../../common/AppMessages";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { api } from "../../../library/axios";
 import { PagedResult } from "../../base/models/PagedResult";
 import { PaginationFilter } from "../../base/models/PaginationFilter";
@@ -169,24 +170,70 @@ export class UserService
   }
 
   /**
-   * Khóa / Mở khóa tài khoản
+   * Khóa tài khoản người dùng
+   * Endpoint: POST /api/v1/accounts/{id}/lock
    */
-  async toggleLock(id: number): Promise<Result<UserAccount>> {
-    try {
-      const response = await api.patch<Result<UserAccount>>(
-        `${this.endpoint}/${id}/toggle-lock`
-      );
-      return response.data;
-    } catch {
-      // Fallback
-      return {
+  async lock(id: number): Promise<Result<UserAccount>> {
+    const response = await api.post<Result<UserAccount> | void>(
+      API_ENDPOINTS.USERS.LOCK(id)
+    );
+    const resData = response.data as Result<UserAccount> | undefined;
+    return (
+      resData ||
+      ({
         isSuccess: true,
+        statusCode: response.status || 204,
+        message: "Đã cập nhật trạng thái khóa tài khoản!",
         data: { id } as UserAccount,
-        message: "",
-        statusCode: 200,
-        errors: [],
-      };
+      } as unknown as Result<UserAccount>)
+    );
+  }
+
+  async toggleLock(id: number): Promise<Result<UserAccount>> {
+    return this.lock(id);
+  }
+
+  /**
+   * Xóa mềm tài khoản người dùng theo Procedure
+   * Endpoint: DELETE /api/v1/accounts/{id}/soft
+   */
+  override async delete(id: number): Promise<Result<UserAccount> | null> {
+    const result = await Swal.fire({
+      title: APP_MESSAGES.COMMON.DELETE_CONFIRM_TITLE,
+      text: "Tài khoản người dùng sẽ bị xóa khỏi hệ thống.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: APP_MESSAGES.COMMON.CONFIRM_DELETE_BTN,
+      cancelButtonText: APP_MESSAGES.COMMON.CANCEL_BTN,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) {
+      return null;
     }
+
+    const response = await api.delete<Result<UserAccount> | void>(
+      API_ENDPOINTS.USERS.SOFT_DELETE(id)
+    );
+
+    Swal.fire({
+      title: APP_MESSAGES.COMMON.DELETE_HEADER,
+      text: APP_MESSAGES.COMMON.DELETE_SUCCESS,
+      icon: "success",
+    });
+
+    const resData = response.data as Result<UserAccount> | undefined;
+    return (
+      resData ||
+      ({
+        isSuccess: true,
+        statusCode: response.status || 204,
+        message: APP_MESSAGES.COMMON.DELETE_SUCCESS,
+        data: { id } as UserAccount,
+      } as unknown as Result<UserAccount>)
+    );
   }
 
   /**

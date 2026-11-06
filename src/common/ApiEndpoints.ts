@@ -124,6 +124,8 @@ export const API_ENDPOINTS = {
     PAGED_DB: "/accounts/paged-db",
     WITH_ROLES: "/accounts/with-roles",
     UPDATE_WITH_ROLES: (id: string | number) => `/accounts/${id}/with-roles`,
+    LOCK: (id: string | number) => `/accounts/${id}/lock`,
+    SOFT_DELETE: (id: string | number) => `/accounts/${id}/soft`,
     USERS_FALLBACK: "/users",
   },
   ROLES: {
