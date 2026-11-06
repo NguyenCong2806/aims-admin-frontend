@@ -49,6 +49,40 @@ export class UserService
   }
 
   /**
+   * Cập nhật thông tin tài khoản kèm gán vai trò
+   * Endpoint: PUT /api/v1/accounts/{id}/with-roles
+   */
+  override async update(id: number, request: UpdateUserAccountDto): Promise<Result<UserAccount>> {
+    const payload = {
+      username: request.username,
+      email: request.email,
+      fullName: request.fullName,
+      phoneNumber: request.phoneNumber ?? request.phonennumber ?? null,
+      avatarUrl: request.avatarUrl ?? request.avatarurl ?? null,
+      departmentid: request.departmentid,
+      positionid: request.positionid ?? null,
+      isActive: request.isActive,
+      roleids: request.roleids && request.roleids.length > 0 ? request.roleids : [1],
+    };
+
+    const response = await api.put<Result<UserAccount> | void>(
+      API_ENDPOINTS.USERS.UPDATE_WITH_ROLES(id),
+      payload
+    );
+
+    const resData = response.data as Result<UserAccount> | undefined;
+    return (
+      resData ||
+      ({
+        isSuccess: true,
+        statusCode: response.status || 204,
+        message: APP_MESSAGES.COMMON.UPDATE_SUCCESS,
+        data: { id, ...payload },
+      } as unknown as Result<UserAccount>)
+    );
+  }
+
+  /**
    * Lấy danh sách tài khoản phân trang từ cơ sở dữ liệu
    * Endpoint: GET /api/v1/accounts/paged-db
    */

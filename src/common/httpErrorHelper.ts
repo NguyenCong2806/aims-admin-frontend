@@ -17,10 +17,10 @@ export const HTTP_STATUS_ERRORS = {
 export type HttpErrorCode = keyof typeof HTTP_STATUS_ERRORS;
 
 /**
- * Kiểm tra xem một mã HTTP status có phải là mã lỗi cần xử lý không (bỏ qua 200, 201)
+ * Kiểm tra xem một mã HTTP status có phải là mã lỗi cần xử lý không (bỏ qua 200, 201, 204)
  */
 export const isHttpErrorStatus = (status: number): boolean => {
-  return status !== 200 && status !== 201 && status >= 400;
+  return status !== 200 && status !== 201 && status !== 204 && status >= 400;
 };
 
 /**
@@ -33,8 +33,8 @@ export function extractApiErrorMessage(error: unknown, defaultFallback?: string)
   if (axios.isAxiosError(error)) {
     const status = error.response?.status;
 
-    // Bỏ qua mã 200, 201 vì đây là thành công
-    if (status === 200 || status === 201) {
+    // Bỏ qua mã 200, 201, 204 vì đây là thành công
+    if (status === 200 || status === 201 || status === 204) {
       return "";
     }
 

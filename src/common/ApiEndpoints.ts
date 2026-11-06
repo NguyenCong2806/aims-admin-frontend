@@ -123,6 +123,7 @@ export const API_ENDPOINTS = {
     BASE: "/accounts",
     PAGED_DB: "/accounts/paged-db",
     WITH_ROLES: "/accounts/with-roles",
+    UPDATE_WITH_ROLES: (id: string | number) => `/accounts/${id}/with-roles`,
     USERS_FALLBACK: "/users",
   },
   ROLES: {
