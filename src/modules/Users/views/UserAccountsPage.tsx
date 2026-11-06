@@ -10,6 +10,7 @@ import {
   useUpdateUserAccount,
   useToggleLockUserAccount,
   useDeleteUserAccount,
+  useChangePassword,
 } from "../queries/userAccountQuery";
 import { UserDetailModal } from "./components/UserDetailModal";
 import { UserFormModal } from "./components/UserFormModal";
@@ -38,7 +39,6 @@ export const UserAccountsPage: React.FC = () => {
 
   // Reset password state
   const [resetModalUser, setResetModalUser] = useState<UserAccount | null>(null);
-  const [resetTempPassword, setResetTempPassword] = useState<string>("");
   const [isResetOpen, setIsResetOpen] = useState<boolean>(false);
 
   // Debounce tìm kiếm từ khóa
@@ -70,6 +70,7 @@ export const UserAccountsPage: React.FC = () => {
   const updateMutation = useUpdateUserAccount();
   const toggleLockMutation = useToggleLockUserAccount();
   const deleteMutation = useDeleteUserAccount();
+  const changePasswordMutation = useChangePassword();
 
   // 2. Thống kê KPI từ dữ liệu thật
   const stats = useMemo(() => {
@@ -247,14 +248,19 @@ export const UserAccountsPage: React.FC = () => {
     }
   };
 
-  const handleResetPassword = async (id: number) => {
+  const handleResetPassword = (id: number) => {
     const targetUser = users.find((u) => u.id === id);
     if (!targetUser) return;
-
-    const res = await userService.resetPassword(id);
     setResetModalUser(targetUser);
-    setResetTempPassword(res.tempPassword);
     setIsResetOpen(true);
+  };
+
+  const handleConfirmChangePassword = async (newPassword: string) => {
+    if (!resetModalUser) return;
+    await changePasswordMutation.mutateAsync({
+      id: resetModalUser.id,
+      newPassword,
+    });
   };
 
   const handleExport = () => {
@@ -754,16 +760,15 @@ export const UserAccountsPage: React.FC = () => {
           onSave={handleSaveForm}
         />
 
-        {/* MODAL RESET MẬT KHẨU */}
+        {/* MODAL RESET / ĐỔI MẬT KHẨU */}
         <ResetPasswordModal
           isOpen={isResetOpen}
           onClose={() => {
             setIsResetOpen(false);
             setResetModalUser(null);
-            setResetTempPassword("");
           }}
           user={resetModalUser}
-          tempPassword={resetTempPassword}
+          onConfirm={handleConfirmChangePassword}
         />
       </AimsBasePageLayout>
     </>

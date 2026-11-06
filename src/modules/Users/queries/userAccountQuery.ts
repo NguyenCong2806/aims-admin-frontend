@@ -69,3 +69,14 @@ export function useDeleteUserAccount() {
   });
 }
 
+export function useChangePassword() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, newPassword }: { id: number; newPassword: string }) =>
+      services.user.changePassword(id, newPassword),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: userAccountKeys.detail(id) });
+    },
+  });
+}
+

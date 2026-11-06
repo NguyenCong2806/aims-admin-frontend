@@ -126,6 +126,7 @@ export const API_ENDPOINTS = {
     UPDATE_WITH_ROLES: (id: string | number) => `/accounts/${id}/with-roles`,
     LOCK: (id: string | number) => `/accounts/${id}/lock`,
     SOFT_DELETE: (id: string | number) => `/accounts/${id}/soft`,
+    PASSWORD: (id: string | number) => `/accounts/${id}/password`,
     USERS_FALLBACK: "/users",
   },
   ROLES: {

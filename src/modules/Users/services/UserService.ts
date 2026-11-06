@@ -237,30 +237,46 @@ export class UserService
   }
 
   /**
-   * Đặt lại mật khẩu tài khoản
+   * Đổi mật khẩu tài khoản qua Procedure
+   * Endpoint: POST /api/v1/accounts/{id}/password
    */
-  async resetPassword(id: number): Promise<{ tempPassword: string }> {
-    try {
-      const response = await api.post<{ tempPassword?: string } | { data?: { tempPassword?: string } }>(
-        `${this.endpoint}/${id}/reset-password`
-      );
-      const res = response.data;
-      if (res && "tempPassword" in res && res.tempPassword) {
-        return { tempPassword: res.tempPassword };
+  async changePassword(id: number, newPassword: string): Promise<Result<void>> {
+    const payload = {
+      newPassword,
+      NewPassword: newPassword,
+    };
+
+    const response = await api.post<Result<void> | void>(
+      API_ENDPOINTS.USERS.PASSWORD(id),
+      payload
+    );
+
+    const resData = response.data as Result<void> | undefined;
+    return (
+      resData ||
+      ({
+        isSuccess: true,
+        statusCode: response.status || 204,
+        message: APP_MESSAGES.AUTH.CHANGE_PASSWORD_SUCCESS,
+      } as unknown as Result<void>)
+    );
+  }
+
+  /**
+   * Đặt lại mật khẩu tài khoản (tự động sinh mật khẩu tạm ngẫu nhiên và gửi lên Backend)
+   */
+  async resetPassword(id: number, customPassword?: string): Promise<{ tempPassword: string }> {
+    let passwordToSet = customPassword;
+    if (!passwordToSet) {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+      passwordToSet = "";
+      for (let i = 0; i < 10; i++) {
+        passwordToSet += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      if (res && "data" in res && res.data?.tempPassword) {
-        return { tempPassword: res.data.tempPassword };
-      }
-    } catch {
-      // Fallback sinh mật khẩu ngẫu nhiên tạm thời
     }
 
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
-    let tempPassword = "";
-    for (let i = 0; i < 10; i++) {
-      tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return { tempPassword };
+    await this.changePassword(id, passwordToSet);
+    return { tempPassword: passwordToSet };
   }
 
   /**

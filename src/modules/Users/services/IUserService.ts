@@ -12,8 +12,10 @@ export interface IUserService {
   getById(id: number): Promise<Result<UserAccount> | UserAccount | null>;
   create(dto: CreateUserAccountDto): Promise<Result<UserAccount>>;
   update(id: number, dto: UpdateUserAccountDto): Promise<Result<UserAccount>>;
+  lock(id: number): Promise<Result<UserAccount>>;
   toggleLock(id: number): Promise<Result<UserAccount>>;
   delete(id: number): Promise<Result<UserAccount> | boolean | null>;
-  resetPassword(id: number): Promise<{ tempPassword: string }>;
+  changePassword(id: number, newPassword: string): Promise<Result<void>>;
+  resetPassword(id: number, customPassword?: string): Promise<{ tempPassword: string }>;
   exportToCsv(users: UserAccount[]): void;
 }

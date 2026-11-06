@@ -122,3 +122,8 @@ export interface UserAccountView {
 export interface UserChangePassword {
   passwordhash: string;
 }
+
+export interface ChangeAccountPasswordDto {
+  newPassword: string;
+  NewPassword?: string;
+}
