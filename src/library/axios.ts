@@ -4,6 +4,7 @@ import axios, {
 } from "axios";
 import { ENV } from "../config/env";
 import { API_ENDPOINTS } from "../common/ApiEndpoints";
+import { extractApiErrorMessage } from "../common/httpErrorHelper";
 import {
   getStoredAccessToken,
   getStoredTokenExpiresAt,
@@ -142,10 +143,30 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-// 5. Response Interceptor: Xử lý 401 theo đúng 5 nguyên tắc backend
+// 5. Response Interceptor: Chuẩn hóa mã lỗi HTTP & xử lý Refresh Token 401
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Với mã 200 và 201: Thành công, trả về dữ liệu bình thường, không xử lý lỗi
+    return response;
+  },
   async (error: AxiosError) => {
+    // Chuẩn hóa thông điệp lỗi tiếng Việt theo bảng mã lỗi (400, 401, 403, 404, 409, 500)
+    // Đối với mã 200 và 201: Thành công, bỏ qua không xử lý
+    if (error.response) {
+      const status = error.response.status;
+      if (status !== 200 && status !== 201) {
+        const friendlyMessage = extractApiErrorMessage(error);
+        if (friendlyMessage) {
+          error.message = friendlyMessage;
+          (error as unknown as Record<string, unknown>).userFriendlyMessage = friendlyMessage;
+        }
+      }
+    } else if (!error.response) {
+      const friendlyMessage = extractApiErrorMessage(error);
+      error.message = friendlyMessage;
+      (error as unknown as Record<string, unknown>).userFriendlyMessage = friendlyMessage;
+    }
+
     const originalRequest = error.config as RetryConfig | undefined;
 
     // Không xử lý nếu không có config hoặc lỗi không phải 401
@@ -253,6 +274,9 @@ api.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return api(originalRequest);
     } catch (refreshError) {
+      if (axios.isAxiosError(refreshError)) {
+        refreshError.message = extractApiErrorMessage(refreshError);
+      }
       // [Nguyên tắc 3]: Khi /auth/refresh trả về 401 hoặc lỗi:
       // Xóa AccessToken, xóa state, dừng retry tự động, đăng xuất
       processQueue(refreshError, null);

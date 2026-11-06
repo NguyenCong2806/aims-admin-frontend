@@ -3,6 +3,17 @@
  * Tránh magic strings rải rác trong các form, service và views.
  */
 export const APP_MESSAGES = {
+  // Trạng thái phản hồi HTTP & Mã lỗi (HTTP Status Codes)
+  // Quy định: 200, 201 là thành công không xử lý lỗi; các mã còn lại là mã lỗi nghiệp vụ
+  HTTP_STATUS: {
+    400: "Dữ liệu không hợp lệ",
+    401: "Chưa đăng nhập/ token không hợp lệ",
+    403: "Đã đăng nhập nhưng không có quyền",
+    404: "Không tìm thấy dữ liệu",
+    409: "Trùng dữ liệu",
+    500: "Lỗi hệ thống",
+  },
+
   // Xác thực & Tài khoản
   AUTH: {
     USERNAME_REQUIRED: "Vui lòng nhập email hoặc tên đăng nhập.",

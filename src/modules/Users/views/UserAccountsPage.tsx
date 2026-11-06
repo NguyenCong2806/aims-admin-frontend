@@ -231,8 +231,8 @@ export const UserAccountsPage: React.FC = () => {
       toast.success("Đã xóa tài khoản người dùng thành công!");
       setIsDetailOpen(false);
       refetch();
-    } catch {
-      toast.error("Xóa tài khoản không thành công!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Xóa tài khoản không thành công!");
     }
   };
 
@@ -241,8 +241,8 @@ export const UserAccountsPage: React.FC = () => {
       await toggleLockMutation.mutateAsync(id);
       toast.success("Đã cập nhật trạng thái khóa tài khoản!");
       refetch();
-    } catch {
-      toast.error("Thao tác khóa/mở khóa thất bại!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Thao tác khóa/mở khóa thất bại!");
     }
   };
 
