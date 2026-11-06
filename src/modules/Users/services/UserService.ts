@@ -1,4 +1,6 @@
 import { API_ENDPOINTS } from "../../../common/ApiEndpoints";
+import { APP_MESSAGES } from "../../../common/AppMessages";
+import { toast } from "sonner";
 import { api } from "../../../library/axios";
 import { PagedResult } from "../../base/models/PagedResult";
 import { PaginationFilter } from "../../base/models/PaginationFilter";
@@ -18,6 +20,32 @@ export class UserService
 {
   constructor(endpoint = API_ENDPOINTS.USERS.BASE) {
     super(endpoint);
+  }
+
+  /**
+   * Tạo mới người dùng kèm gán vai trò
+   * Endpoint: POST /api/v1/accounts/with-roles
+   */
+  override async create(request: CreateUserAccountDto): Promise<Result<UserAccount>> {
+    const payload = {
+      username: request.username,
+      email: request.email,
+      fullName: request.fullName,
+      passwordhash: request.passwordhash,
+      phoneNumber: request.phoneNumber ?? request.phonennumber ?? null,
+      avatarUrl: request.avatarUrl ?? request.avatarurl ?? null,
+      departmentid: request.departmentid,
+      positionid: request.positionid ?? null,
+      isActive: request.isActive,
+      roleids: request.roleids && request.roleids.length > 0 ? request.roleids : [1],
+    };
+
+    const response = await api.post<Result<UserAccount>>(
+      API_ENDPOINTS.USERS.WITH_ROLES,
+      payload
+    );
+    toast.success(APP_MESSAGES.COMMON.CREATE_SUCCESS);
+    return response.data;
   }
 
   /**

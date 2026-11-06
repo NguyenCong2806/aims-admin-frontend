@@ -122,6 +122,7 @@ export const API_ENDPOINTS = {
   USERS: {
     BASE: "/accounts",
     PAGED_DB: "/accounts/paged-db",
+    WITH_ROLES: "/accounts/with-roles",
     USERS_FALLBACK: "/users",
   },
   ROLES: {

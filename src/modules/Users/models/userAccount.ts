@@ -35,13 +35,16 @@ export interface UserAccount {
 
   // Phòng ban & Vị trí
   departmentId?: number | null;
+  departmentid?: number | null;
   departmentName?: string | null;
   positionId?: number | null;
+  positionid?: number | null;
   positionName?: string | null;
 
   // Vai trò & Phân quyền
   roles?: UserRole[];
   rolenames?: string[];
+  roleids?: number[];
 
   // Trạng thái & Bảo mật
   status?: UserStatus;
@@ -64,15 +67,17 @@ export interface CreateUserAccountDto {
   username: string; // Tên đăng nhập (VD: hoang.it, lan.hr)
   fullName: string; // Họ và tên đầy đủ
   email: string;
-  phonennumber?: string | null;
-  avatarurl?: string | null;
   passwordhash: string;
+  phoneNumber?: string | null;
+  phonennumber?: string | null;
+  avatarUrl?: string | null;
+  avatarurl?: string | null;
   // Phòng ban & Vị trí
   departmentid?: number;
   positionid?: number | null;
   // Vai trò & Phân quyền
   isActive: boolean;
-  roleids: Array<number>[];
+  roleids: number[];
 }
 
 export interface UserAccountFilter {
@@ -87,14 +92,17 @@ export interface UpdateUserAccountDto {
   username: string;
   fullName: string;
   email: string;
+  phoneNumber?: string | null;
   phonennumber?: string | null;
+  avatarUrl?: string | null;
   avatarurl?: string | null;
+  passwordhash?: string;
   // Phòng ban & Vị trí
   departmentid?: number;
   positionid?: number | null;
   // Vai trò & Phân quyền
   isActive: boolean;
-  roleids: Array<number>[];
+  roleids: number[];
 }
 
 export interface UserAccountView {

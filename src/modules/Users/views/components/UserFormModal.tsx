@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { UserAccount, UserRole, UserStatus } from "../../models/userAccount";
-import { USER_ROLE_META } from "../userHelper";
+import { USER_ROLE_META, ROLE_TO_ID_MAP, ID_TO_ROLE_MAP } from "../userHelper";
 import { useDepartmentSelectList } from "../../../Lookups/queries/departmentsQuery";
 import { usePositionSelectList } from "../../../Lookups/queries/positionsQuery";
 import Select from "../../../../components/form/Select";
@@ -79,7 +79,17 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setPositionId(posId);
       setPositionName(posNm);
 
-      setSelectedRoles(initialData.roles || ["Staff"]);
+      if (initialData.roleids && initialData.roleids.length > 0) {
+        const mapped = initialData.roleids
+          .map((id) => ID_TO_ROLE_MAP[id])
+          .filter(Boolean) as UserRole[];
+        setSelectedRoles(mapped.length > 0 ? mapped : ["Staff"]);
+      } else if (initialData.roles && initialData.roles.length > 0) {
+        setSelectedRoles(initialData.roles);
+      } else {
+        setSelectedRoles(["Staff"]);
+      }
+
       const isAct = initialData.isActive ?? (initialData.status === "ACTIVE");
       setStatus(initialData.status || (isAct ? "ACTIVE" : "INACTIVE"));
     } else {
@@ -101,7 +111,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           : undefined
       );
       setPositionName(positionSelectList?.[0]?.value || "");
-      setSelectedRoles(["Staff"]);
+      setSelectedRoles(["SuperAdmin"]);
       setStatus("ACTIVE");
     }
   }, [initialData, isOpen, departmentSelectList, positionSelectList]);
@@ -165,20 +175,26 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       }
     }
 
+    const roleids = selectedRoles.map((r) => ROLE_TO_ID_MAP[r] ?? 1);
+
     onSave({
       id: initialData?.id,
       username: username.trim().toLowerCase(),
       fullName: fullName.trim(),
       email: email.trim(),
-      phone: phone.trim(),
-      phoneNumber: phone.trim(),
+      phone: phone.trim() || null,
+      phoneNumber: phone.trim() || null,
+      avatarUrl: null,
       password: password.trim() || undefined,
       passwordhash: password.trim() || undefined,
       departmentId,
+      departmentid: departmentId,
       departmentName: departmentName || undefined,
       positionId,
+      positionid: positionId,
       positionName: positionName || undefined,
       roles: selectedRoles,
+      roleids: roleids.length > 0 ? roleids : [1],
       status,
       isActive: status === "ACTIVE",
       assignedAssets: initialData?.assignedAssets || [],

@@ -101,3 +101,24 @@ export function getAvatarColor(name: string): string {
   }
   return colors[Math.abs(hash) % colors.length];
 }
+
+/**
+ * Mapping giữa UserRole và RoleId dạng số của Backend
+ */
+export const ROLE_TO_ID_MAP: Record<UserRole, number> = {
+  SuperAdmin: 1,
+  AssetManager: 2,
+  ITSupport: 3,
+  Auditor: 4,
+  DepartmentHead: 5,
+  Staff: 6,
+};
+
+export const ID_TO_ROLE_MAP: Record<number, UserRole> = {
+  1: "SuperAdmin",
+  2: "AssetManager",
+  3: "ITSupport",
+  4: "Auditor",
+  5: "DepartmentHead",
+  6: "Staff",
+};
