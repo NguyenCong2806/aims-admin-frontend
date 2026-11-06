@@ -64,11 +64,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dotClass}`}></span>
                   {statusMeta.label}
                 </span>
-                {user.mfaEnabled && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    🔒 2FA Bật
-                  </span>
-                )}
               </div>
 
               <p className="text-sm text-indigo-200 mt-1 flex items-center gap-2 flex-wrap">
@@ -252,12 +247,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   Trạng thái An toàn & Kiểm toán Đăng nhập
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-gray-800">
-                    <span className="text-gray-500">Xác thực 2 yếu tố (2FA / MFA):</span>
-                    <span className={`font-semibold ${user.mfaEnabled ? "text-emerald-600" : "text-amber-600"}`}>
-                      {user.mfaEnabled ? "Đã bật (Bảo mật cao)" : "Chưa kích hoạt"}
-                    </span>
-                  </div>
                   <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-gray-800">
                     <span className="text-gray-500">Lần đăng nhập gần nhất:</span>
                     <span className="text-gray-900 dark:text-white font-medium">

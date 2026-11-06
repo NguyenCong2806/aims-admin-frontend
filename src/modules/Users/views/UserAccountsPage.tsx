@@ -79,9 +79,8 @@ export const UserAccountsPage: React.FC = () => {
       (u.roles || []).some((r) => r === "SuperAdmin" || r === "AssetManager")
     ).length;
     const locked = users.filter((u) => u.status === "LOCKED" || (!u.isActive && u.status !== "ACTIVE")).length;
-    const mfa = users.filter((u) => u.mfaEnabled).length;
 
-    return { total, active, managers, locked, mfa };
+    return { total, active, managers, locked };
   }, [users, totalRecords]);
 
   // 3. Cây bộ lọc phân cấp (AimsTreeFilter)
@@ -307,7 +306,7 @@ export const UserAccountsPage: React.FC = () => {
         }}
       >
         {/* KPI OVERVIEW METRICS */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <div className="p-3.5 rounded-xl bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Tổng tài khoản</p>
@@ -345,18 +344,6 @@ export const UserAccountsPage: React.FC = () => {
             </div>
             <div className="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-900/60 flex items-center justify-center text-rose-700 dark:text-rose-300 font-bold">
               🔒
-            </div>
-          </div>
-
-          <div className="col-span-2 sm:col-span-1 p-3.5 rounded-xl bg-cyan-50/60 dark:bg-cyan-950/20 border border-cyan-200/80 dark:border-cyan-900/40 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">Bảo mật 2FA</p>
-              <p className="text-xl font-bold text-cyan-800 dark:text-cyan-300 mt-0.5">
-                {stats.mfa}/{stats.total}
-              </p>
-            </div>
-            <div className="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-900/60 flex items-center justify-center text-cyan-700 dark:text-cyan-300 font-bold">
-              ⚡
             </div>
           </div>
         </div>

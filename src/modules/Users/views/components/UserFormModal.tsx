@@ -45,7 +45,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   const [positionName, setPositionName] = useState<string>("");
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>(["Staff"]);
   const [status, setStatus] = useState<UserStatus>("ACTIVE");
-  const [mfaEnabled, setMfaEnabled] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -83,7 +82,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setSelectedRoles(initialData.roles || ["Staff"]);
       const isAct = initialData.isActive ?? (initialData.status === "ACTIVE");
       setStatus(initialData.status || (isAct ? "ACTIVE" : "INACTIVE"));
-      setMfaEnabled(initialData.mfaEnabled || false);
     } else {
       setUsername("");
       setFullName("");
@@ -105,7 +103,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setPositionName(positionSelectList?.[0]?.value || "");
       setSelectedRoles(["Staff"]);
       setStatus("ACTIVE");
-      setMfaEnabled(false);
     }
   }, [initialData, isOpen, departmentSelectList, positionSelectList]);
 
@@ -184,7 +181,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       roles: selectedRoles,
       status,
       isActive: status === "ACTIVE",
-      mfaEnabled,
       assignedAssets: initialData?.assignedAssets || [],
     });
 
@@ -388,8 +384,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
 
-          {/* STATUS & 2FA */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+          {/* STATUS */}
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Trạng thái tài khoản
@@ -404,19 +400,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 <option value="PENDING">🟡 Chờ xác nhận (Pending)</option>
                 <option value="INACTIVE">⚪ Ngừng sử dụng (Inactive)</option>
               </select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-800 mt-5">
-              <div>
-                <p className="text-xs font-bold text-gray-900 dark:text-white">Bảo mật 2 yếu tố (2FA)</p>
-                <p className="text-[11px] text-gray-400">Yêu cầu mã OTP qua ứng dụng Authenticator</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={mfaEnabled}
-                onChange={(e) => setMfaEnabled(e.target.checked)}
-                className="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
-              />
             </div>
           </div>
 
