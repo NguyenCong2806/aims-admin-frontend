@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { AppRole } from "../../models/permissionModel";
 import { permissionService } from "../../services/permissionService";
-import { USER_STATUS_META, getInitials, getAvatarColor } from "../userHelper";
+import { USER_STATUS_META, getInitials, getAvatarColor } from "../../../Users/views/userHelper";
 
 interface RoleMembersModalProps {
   isOpen: boolean;

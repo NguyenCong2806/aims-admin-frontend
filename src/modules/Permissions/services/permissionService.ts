@@ -9,8 +9,8 @@ import {
   INITIAL_APP_ROLES,
   PERMISSION_MODULES,
 } from "./permissionMockData";
-import { INITIAL_USER_ACCOUNTS } from "./userMockData";
-import { UserRole } from "../models/userAccount";
+import { INITIAL_USER_ACCOUNTS } from "../../Users/services/userMockData";
+import { UserRole } from "../../Users/models/userAccount";
 
 export class PermissionService {
   private roles: AppRole[] = [...INITIAL_APP_ROLES];

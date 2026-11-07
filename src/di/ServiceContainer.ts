@@ -29,7 +29,8 @@ import {
   AuditLogService,
 } from "../modules/System/services";
 
-import { PermissionService, UserService } from "../modules/Users/services";
+import { PermissionService } from "../modules/Permissions/services";
+import { UserService } from "../modules/Users/services";
 import { HardwareService } from "../modules/Hardware/services";
 
 export class ServiceContainer {
