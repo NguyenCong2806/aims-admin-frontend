@@ -3,6 +3,7 @@ import {
   AppRole,
   PermissionModuleGroup,
   PermissionAction,
+  PermissionDefinition,
 } from "../../models/permissionModel";
 import { PERMISSION_ACTION_META, getModuleIcon } from "../permissionHelper";
 
@@ -13,6 +14,8 @@ interface PermissionMatrixTableProps {
   onToggleModulePermissions: (roleId: string, moduleKey: string, grantAll: boolean) => void;
   onInspectMembers: (role: AppRole) => void;
   onEditRole: (role: AppRole) => void;
+  onEditPermission?: (perm: PermissionDefinition) => void;
+  onDeletePermission?: (perm: PermissionDefinition) => void;
   keyword: string;
   selectedModuleKey?: string;
 }
@@ -24,6 +27,8 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
   onToggleModulePermissions,
   onInspectMembers,
   onEditRole,
+  onEditPermission,
+  onDeletePermission,
   keyword,
   selectedModuleKey,
 }) => {
@@ -99,11 +104,10 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
           </span>
           <button
             onClick={() => setFilterAction("ALL")}
-            className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-              filterAction === "ALL"
+            className={`px-2.5 py-1 rounded-lg font-medium transition-all ${filterAction === "ALL"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
+              }`}
           >
             Tất cả ({totalPermissionsCount})
           </button>
@@ -123,11 +127,10 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
               <button
                 key={action}
                 onClick={() => setFilterAction(action)}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 shrink-0 ${
-                  filterAction === action
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 shrink-0 ${filterAction === action
                     ? "bg-indigo-600 text-white shadow-sm"
                     : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
+                  }`}
               >
                 <span>{meta.icon}</span>
                 <span>{meta.label}</span>
@@ -297,9 +300,8 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
 
                           <span className="text-gray-400 p-1">
                             <svg
-                              className={`w-4 h-4 transform transition-transform duration-200 ${
-                                isCollapsed ? "-rotate-90" : "rotate-0"
-                              }`}
+                              className={`w-4 h-4 transform transition-transform duration-200 ${isCollapsed ? "-rotate-90" : "rotate-0"
+                                }`}
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -337,21 +339,20 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
                                   !isAllGranted
                                 )
                               }
-                              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-all inline-flex items-center gap-1 ${
-                                role.code === "SUPER_ADMIN"
+                              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-all inline-flex items-center gap-1 ${role.code === "SUPER_ADMIN"
                                   ? "opacity-50 cursor-not-allowed text-gray-400"
                                   : isAllGranted
-                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-200"
-                                  : isSomeGranted
-                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-200"
-                                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-                              }`}
+                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 hover:bg-emerald-200"
+                                    : isSomeGranted
+                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 hover:bg-amber-200"
+                                      : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                }`}
                               title={
                                 role.code === "SUPER_ADMIN"
                                   ? "Vai trò Super Admin luôn có toàn quyền"
                                   : isAllGranted
-                                  ? "Bỏ chọn tất cả quyền trong phân hệ này"
-                                  : "Cấp toàn bộ quyền trong phân hệ này"
+                                    ? "Bỏ chọn tất cả quyền trong phân hệ này"
+                                    : "Cấp toàn bộ quyền trong phân hệ này"
                               }
                             >
                               <span>
@@ -374,26 +375,60 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
                             className="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/15 transition-colors"
                           >
                             {/* Sticky Left: Permission details */}
-                            <td className="p-3 pl-8 sticky left-0 z-10 bg-white dark:bg-gray-850 border-r border-gray-200 dark:border-gray-800">
+                            <td className="p-3 pl-8 sticky left-0 z-10 bg-white dark:bg-gray-850 border-r border-gray-200 dark:border-gray-800 group/perm">
                               <div className="flex items-center justify-between gap-2">
-                                <div>
-                                  <div className="flex items-center gap-2">
+                                <div className="min-w-0 pr-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <span
-                                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${actionMeta.badgeClass}`}
+                                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${actionMeta?.badgeClass || ""}`}
                                     >
-                                      {actionMeta.label}
+                                      {actionMeta?.label || perm.action}
                                     </span>
                                     <span className="text-xs font-semibold text-gray-900 dark:text-white">
                                       {perm.name}
                                     </span>
+                                    {perm.isActive === false && (
+                                      <span className="text-[10px] px-1.5 py-0.2 bg-red-100 text-red-700 dark:bg-red-950/70 dark:text-red-300 rounded font-medium">
+                                        Đã tắt
+                                      </span>
+                                    )}
                                   </div>
-                                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">
                                     {perm.description}
                                   </p>
                                 </div>
-                                <span className="text-[10px] font-mono text-gray-400 shrink-0">
-                                  {perm.code}
-                                </span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[10px] font-mono text-gray-400">
+                                    {perm.code}
+                                  </span>
+                                  {/* Thao tác Chỉnh sửa & Xóa Permission */}
+                                  <div className="flex items-center gap-0.5 opacity-40 group-hover/perm:opacity-100 transition-opacity">
+                                    {onEditPermission && (
+                                      <button
+                                        type="button"
+                                        onClick={() => onEditPermission(perm)}
+                                        className="p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-400 transition-colors"
+                                        title="Chỉnh sửa thông tin quyền hạn (PUT /api/v1/permissions/{id})"
+                                      >
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                    {onDeletePermission && (
+                                      <button
+                                        type="button"
+                                        onClick={() => onDeletePermission(perm)}
+                                        className="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/60 dark:hover:text-red-400 transition-colors"
+                                        title="Xóa quyền hạn (DELETE /api/v1/permissions/{id})"
+                                      >
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </td>
 
@@ -409,17 +444,16 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
                                 >
                                   <div className="flex items-center justify-center">
                                     <label
-                                      className={`relative inline-flex items-center justify-center w-6 h-6 rounded-lg cursor-pointer transition-all ${
-                                        isSuperAdmin
+                                      className={`relative inline-flex items-center justify-center w-6 h-6 rounded-lg cursor-pointer transition-all ${isSuperAdmin
                                           ? "cursor-not-allowed opacity-90"
                                           : "hover:scale-110 active:scale-95"
-                                      }`}
+                                        }`}
                                       title={
                                         isSuperAdmin
                                           ? "Vai trò Super Admin luôn giữ quyền này"
                                           : isChecked
-                                          ? `Bấm để thu hồi [${perm.name}] khỏi ${role.name}`
-                                          : `Bấm để cấp [${perm.name}] cho ${role.name}`
+                                            ? `Bấm để thu hồi [${perm.name}] khỏi ${role.name}`
+                                            : `Bấm để cấp [${perm.name}] cho ${role.name}`
                                       }
                                     >
                                       <input
@@ -432,11 +466,10 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
                                         className="sr-only"
                                       />
                                       <div
-                                        className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
-                                          isChecked
+                                        className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${isChecked
                                             ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
                                             : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-indigo-400"
-                                        }`}
+                                          }`}
                                       >
                                         {isChecked && (
                                           <svg

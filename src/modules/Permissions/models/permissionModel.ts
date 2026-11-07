@@ -70,6 +70,33 @@ export interface RolePermissionDto {
 export interface UpdateRolePermissionsRequest {
   roleId: string;
   permissionCodes: string[];
+  permissions?: string[];
+}
+
+/**
+ * Request DTO khi bật / tắt một quyền riêng lẻ cho vai trò
+ * Endpoint: POST /api/v1/roles/{roleId}/toggle-permission
+ */
+export interface TogglePermissionRequest {
+  permissionCode: string;
+  code?: string;
+  permissionId?: number | string;
+  isGranted?: boolean;
+}
+
+/**
+ * DTO cập nhật thông tin quyền hạn
+ * Endpoint: PUT /api/v1/permissions/{permissionId}
+ */
+export interface UpdatePermissionDto {
+  name: string;
+  description?: string;
+  action?: PermissionAction;
+  displayOrder?: number;
+  isActive?: boolean;
+  moduleKey?: string;
+  module?: string;
+  code?: string;
 }
 
 export type RoleDto = AppRole;

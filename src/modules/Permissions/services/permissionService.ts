@@ -2,8 +2,10 @@ import { api } from "../../../library/axios";
 import { API_ENDPOINTS } from "../../../common/ApiEndpoints";
 import {
   AppRole,
+  PermissionDefinition,
   PermissionModuleGroup,
   RoleMember,
+  UpdatePermissionDto,
   UpdateRolePermissionsRequest,
 } from "../models/permissionModel";
 
@@ -188,6 +190,7 @@ export class PermissionService {
       const payload: UpdateRolePermissionsRequest = {
         roleId,
         permissionCodes: permissions,
+        permissions: permissions,
       };
       const response = await api.put<AppRole | { data?: AppRole }>(
         API_ENDPOINTS.ROLES.PERMISSIONS(roleId),
@@ -220,22 +223,84 @@ export class PermissionService {
 
   /**
    * Bật/Tắt 1 quyền đơn lẻ cho 1 vai trò
+   * Endpoint: POST /api/v1/roles/{roleId}/toggle-permission
    */
   async togglePermission(
     roleId: string,
-    permissionId: string
+    permissionIdOrCode: string | number
   ): Promise<AppRole> {
-    const role = this.roles.find((r) => r.id === roleId);
-    if (!role) throw new Error("Không tìm thấy vai trò");
-
-    let updatedPermissions: string[];
-    if (role.permissions.includes(permissionId)) {
-      updatedPermissions = role.permissions.filter((p) => p !== permissionId);
-    } else {
-      updatedPermissions = [...role.permissions, permissionId];
+    // Tìm thông tin permission trong danh sách module đã nạp
+    let permDef: PermissionDefinition | undefined;
+    for (const mod of this.modules) {
+      const found = mod.permissions.find(
+        (p) =>
+          String(p.permissionId) === String(permissionIdOrCode) ||
+          p.id === permissionIdOrCode ||
+          p.code === permissionIdOrCode
+      );
+      if (found) {
+        permDef = found;
+        break;
+      }
     }
 
-    return this.updateRolePermissions(roleId, updatedPermissions);
+    const permCode = permDef?.code || permDef?.id || String(permissionIdOrCode);
+    const permNumId = permDef?.permissionId ?? (typeof permissionIdOrCode === "number" ? permissionIdOrCode : undefined);
+
+    const role = this.roles.find((r) => String(r.id) === String(roleId));
+    const isCurrentlyGranted = role
+      ? role.permissions.includes(permCode) || (permDef ? role.permissions.includes(permDef.id) : false)
+      : false;
+    const willBeGranted = !isCurrentlyGranted;
+
+    const payload = {
+      roleId,
+      permissionCode: permCode,
+      code: permCode,
+      permissionId: permNumId,
+      isGranted: willBeGranted,
+    };
+
+    try {
+      const response = await api.post<AppRole | { data?: AppRole }>(
+        API_ENDPOINTS.ROLES.TOGGLE_PERMISSION(roleId),
+        payload
+      );
+      const raw = response.data;
+      const resData =
+        raw && typeof raw === "object" && "data" in raw && raw.data
+          ? (raw.data as AppRole)
+          : (raw as AppRole);
+      if (resData && typeof resData === "object" && resData.id) {
+        const idx = this.roles.findIndex((r) => String(r.id) === String(roleId));
+        if (idx !== -1) this.roles[idx] = resData;
+        return resData;
+      }
+    } catch (error) {
+      console.warn("API toggle-permission fallback to local state:", error);
+    }
+
+    // Cập nhật trạng thái cục bộ nếu API trả về void hoặc fallback
+    if (role) {
+      let updatedPerms: string[];
+      if (isCurrentlyGranted) {
+        updatedPerms = role.permissions.filter(
+          (p) => p !== permCode && (!permDef || p !== permDef.id)
+        );
+      } else {
+        updatedPerms = [...role.permissions, permCode];
+      }
+      const updatedRole: AppRole = {
+        ...role,
+        permissions: updatedPerms,
+        updatedAt: new Date().toISOString(),
+      };
+      const idx = this.roles.findIndex((r) => String(r.id) === String(roleId));
+      if (idx !== -1) this.roles[idx] = updatedRole;
+      return updatedRole;
+    }
+
+    throw new Error("Không tìm thấy vai trò");
   }
 
   /**
@@ -266,6 +331,87 @@ export class PermissionService {
     }
 
     return this.updateRolePermissions(roleId, updatedPermissions);
+  }
+
+  /**
+   * Cập nhật thông tin quyền hạn (Permission)
+   * Endpoint: PUT /api/v1/permissions/{permissionId}
+   */
+  async updatePermission(
+    permissionId: string | number,
+    dto: UpdatePermissionDto
+  ): Promise<PermissionDefinition> {
+    const response = await api.put<PermissionDefinition | { data?: PermissionDefinition }>(
+      API_ENDPOINTS.PERMISSIONS.BY_ID(permissionId),
+      dto
+    );
+    const raw = response.data;
+    const resData =
+      raw && typeof raw === "object" && "data" in raw && raw.data
+        ? (raw.data as PermissionDefinition)
+        : (raw as PermissionDefinition);
+
+    // Cập nhật in-memory modules list
+    for (const mod of this.modules) {
+      const idx = mod.permissions.findIndex(
+        (p) =>
+          String(p.permissionId) === String(permissionId) ||
+          p.id === String(permissionId) ||
+          p.code === String(permissionId)
+      );
+      if (idx !== -1) {
+        mod.permissions[idx] = {
+          ...mod.permissions[idx],
+          ...dto,
+          ...(resData && typeof resData === "object" ? resData : {}),
+        };
+        return mod.permissions[idx];
+      }
+    }
+
+    return (resData && typeof resData === "object"
+      ? resData
+      : {
+          id: String(permissionId),
+          code: dto.code || String(permissionId),
+          name: dto.name,
+          description: dto.description || "",
+          moduleKey: dto.moduleKey || "",
+          action: dto.action || "VIEW",
+          displayOrder: dto.displayOrder,
+          isActive: dto.isActive,
+        }) as PermissionDefinition;
+  }
+
+  /**
+   * Xóa quyền hạn khỏi hệ thống
+   * Endpoint: DELETE /api/v1/permissions/{permissionId}
+   */
+  async deletePermission(permissionId: string | number): Promise<boolean> {
+    await api.delete(API_ENDPOINTS.PERMISSIONS.BY_ID(permissionId));
+
+    // Xóa khỏi in-memory modules list
+    let deleted = false;
+    for (const mod of this.modules) {
+      const prevLen = mod.permissions.length;
+      mod.permissions = mod.permissions.filter(
+        (p) =>
+          String(p.permissionId) !== String(permissionId) &&
+          p.id !== String(permissionId) &&
+          p.code !== String(permissionId)
+      );
+      if (mod.permissions.length < prevLen) {
+        deleted = true;
+      }
+    }
+
+    // Xóa permission khỏi danh sách của mọi vai trò
+    const permIdStr = String(permissionId);
+    this.roles.forEach((r) => {
+      r.permissions = r.permissions.filter((p) => p !== permIdStr);
+    });
+
+    return deleted;
   }
 
   /**

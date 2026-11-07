@@ -1,14 +1,23 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
 import PageMeta from "../../../components/common/PageMeta";
 import {
   AppRole,
   PermissionModuleGroup,
+  PermissionDefinition,
+  UpdatePermissionDto,
 } from "../models/permissionModel";
 import { permissionService } from "../services/permissionService";
-import { usePermissionModules, useRoles } from "../queries/roleQuery";
+import {
+  usePermissionModules,
+  useRoles,
+  useUpdatePermissionMutation,
+  useDeletePermissionMutation,
+} from "../queries/roleQuery";
 import { PermissionMatrixTable } from "./components/PermissionMatrixTable";
+import { PermissionEditModal } from "./components/PermissionEditModal";
 import { RoleCardsView } from "./components/RoleCardsView";
 import { RoleFormModal } from "./components/RoleFormModal";
 import { RoleMembersModal } from "./components/RoleMembersModal";
@@ -50,6 +59,14 @@ export const PermissionsPage: React.FC = () => {
 
   const [inspectingRole, setInspectingRole] = useState<AppRole | null>(null);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState<boolean>(false);
+
+  // Permission Edit Modal state
+  const [editingPermission, setEditingPermission] = useState<PermissionDefinition | null>(null);
+  const [isPermissionEditModalOpen, setIsPermissionEditModalOpen] = useState<boolean>(false);
+
+  // Mutations
+  const updatePermissionMutation = useUpdatePermissionMutation();
+  const deletePermissionMutation = useDeletePermissionMutation();
 
   // 1. Thống kê KPI tổng quan
   const stats = useMemo(() => {
@@ -254,6 +271,56 @@ export const PermissionsPage: React.FC = () => {
     }
   };
 
+  // 9. Thao tác Sửa / Xóa Quyền hạn (Permission)
+  const handleEditPermission = (perm: PermissionDefinition) => {
+    setEditingPermission(perm);
+    setIsPermissionEditModalOpen(true);
+  };
+
+  const handleSavePermission = async (
+    permissionId: string | number,
+    dto: UpdatePermissionDto
+  ) => {
+    try {
+      await updatePermissionMutation.mutateAsync({ permissionId, dto });
+      toast.success(`Đã cập nhật thông tin quyền [${dto.name}] thành công!`);
+      setIsPermissionEditModalOpen(false);
+      refetchModules();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Cập nhật quyền hạn thất bại!"
+      );
+    }
+  };
+
+  const handleDeletePermission = async (perm: PermissionDefinition) => {
+    const permId = perm.permissionId ?? perm.id;
+    const result = await Swal.fire({
+      title: "Xác nhận xóa quyền hạn?",
+      text: `Quyền [${perm.name}] (${perm.code}) sẽ bị xóa vĩnh viễn khỏi toàn bộ vai trò trong hệ thống.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Xác nhận xóa",
+      cancelButtonText: "Hủy bỏ",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await deletePermissionMutation.mutateAsync(permId);
+      toast.success(`Đã xóa quyền [${perm.name}] thành công!`);
+      refetchModules();
+      refetchRoles();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Xóa quyền hạn thất bại!"
+      );
+    }
+  };
+
   const isInitialLoading =
     (isLoadingModules && modules.length === 0) ||
     (isLoadingRoles && roles.length === 0);
@@ -390,6 +457,8 @@ export const PermissionsPage: React.FC = () => {
             onToggleModulePermissions={handleToggleModulePermissions}
             onInspectMembers={handleInspectMembers}
             onEditRole={handleOpenEditRole}
+            onEditPermission={handleEditPermission}
+            onDeletePermission={handleDeletePermission}
             keyword={keyword}
             selectedModuleKey={activeModuleKey}
           />
@@ -405,6 +474,14 @@ export const PermissionsPage: React.FC = () => {
           />
         )}
       </AimsBasePageLayout>
+
+      {/* MODAL CẬP NHẬT QUYỀN HẠN (PUT /api/v1/permissions/{id}) */}
+      <PermissionEditModal
+        isOpen={isPermissionEditModalOpen}
+        onClose={() => setIsPermissionEditModalOpen(false)}
+        permission={editingPermission}
+        onSave={handleSavePermission}
+      />
 
       {/* MODAL THÊM / SỬA VAI TRÒ */}
       <RoleFormModal
