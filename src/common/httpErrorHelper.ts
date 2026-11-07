@@ -84,6 +84,10 @@ export function extractApiErrorMessage(error: unknown, defaultFallback?: string)
       // Nếu có chi tiết nghiệp vụ cụ thể từ backend (không phải chữ tiếng Anh mặc định của HTTP status)
       const isGeneric = /^(unauthorized|forbidden|bad request|internal server error|not found|conflict)$/i.test(detail.trim());
       if (detail && !isGeneric && detail !== standardText && !detail.toLowerCase().includes("request failed")) {
+        // Nếu chi tiết từ backend là thông báo về phiên bị thay thế bởi thiết bị khác hoặc tài khoản bị khóa
+        if (/thiết bị khác|another device|thay thế|phiên.*(hết hạn|kết thúc|thay thế)/i.test(detail)) {
+          return detail;
+        }
         return `${standardText} (${detail})`;
       }
       return standardText;

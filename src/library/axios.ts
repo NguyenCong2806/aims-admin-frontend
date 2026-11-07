@@ -11,7 +11,6 @@ import {
   getStoredTokenExpiresAt,
   saveAuthSession,
   clearAuthSession,
-  isTokenValid,
   getTokenExpiresAtIso,
 } from "./tokenHelper";
 
@@ -21,21 +20,19 @@ import {
  * =========================================================================
  * 1. ACCESS TOKEN:
  *    - Được lưu trữ đồng bộ in-memory và localStorage để duy trì phiên khi F5.
- *    - Kiểm tra thời gian hết hạn (AccessTokenExpiresAt hoặc claim JWT `exp`).
- *    - Khi AccessToken đã hết hạn: KHÔNG cố gọi /auth/refresh bằng cookie,
- *      xóa AccessToken và chuyển người dùng về trang login.
  *
  * 2. REFRESH TOKEN (/auth/refresh):
- *    - Chỉ được phép gọi khi AccessToken CÒN HẠN (gia hạn chủ động / sliding session).
- *    - Bắt buộc gửi header: `Authorization: Bearer <current-access-token>`
- *    - Bắt buộc kèm `withCredentials: true` để gửi HttpOnly cookie refresh_token.
- *    - Body yêu cầu là `null`.
+ *    - Bắt buộc gửi Access Token hiện tại trong request body: { accessToken: currentToken }
+ *    - Bắt buộc gửi kèm header: Authorization: Bearer <current-access-token>
+ *    - Bắt buộc kèm withCredentials: true để gửi HttpOnly cookie refresh_token.
  *
- * 3. 401 INTERCEPTOR & CHỐNG LẶP VÔ HẠN:
- *    - Request chỉ được retry tối đa 1 lần (`_retry = true`).
+ * 3. 401 INTERCEPTOR & XỬ LÝ ĐĂNG XUẤT:
+ *    - Request chỉ được retry tối đa 1 lần (_retry = true).
  *    - KHÔNG retry chính request /auth/refresh, /auth/login, /auth/logout.
- *    - KHÔNG tự động refresh nếu AccessToken đã hết hạn.
- *    - Nếu refresh thất bại với 401: Xóa toàn bộ token & user, dừng retry, logout.
+ *    - Nếu tài khoản bị khóa, token bị thu hồi hoặc phiên bị thay thế bởi thiết bị khác:
+ *      -> Đăng xuất ngay lập tức, không cố gọi refresh.
+ *    - Nếu nhận 401 thông thường: Gọi /auth/refresh gửi kèm Access Token hiện tại.
+ *    - Nếu /auth/refresh thất bại với 401: Xóa toàn bộ token & user, thông báo và đưa về trang login.
  * =========================================================================
  */
 
@@ -43,15 +40,13 @@ import {
 let inMemoryAccessToken: string | null = null;
 let inMemoryExpiresAt: string | null = null;
 
-// Khởi tạo từ Storage nếu còn hạn
+// Khởi tạo từ Storage
 if (typeof window !== "undefined") {
   const storedToken = getStoredAccessToken();
   const storedExp = getStoredTokenExpiresAt();
-  if (storedToken && isTokenValid(storedToken, storedExp)) {
+  if (storedToken) {
     inMemoryAccessToken = storedToken;
     inMemoryExpiresAt = storedExp || getTokenExpiresAtIso(storedToken);
-  } else if (storedToken) {
-    clearAuthSession();
   }
 }
 
@@ -73,10 +68,9 @@ export const setAccessToken = (token: string | null, expiresAtIso?: string | nul
 export const getAccessToken = (): string | null => {
   if (!inMemoryAccessToken && typeof window !== "undefined") {
     const storedToken = getStoredAccessToken();
-    const storedExp = getStoredTokenExpiresAt();
-    if (storedToken && isTokenValid(storedToken, storedExp)) {
+    if (storedToken) {
       inMemoryAccessToken = storedToken;
-      inMemoryExpiresAt = storedExp || getTokenExpiresAtIso(storedToken);
+      inMemoryExpiresAt = getStoredTokenExpiresAt() || getTokenExpiresAtIso(storedToken);
     }
   }
   return inMemoryAccessToken;
@@ -175,15 +169,16 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Kiểm tra nếu tài khoản bị khóa hoặc token bị thu hồi -> Đăng xuất ngay, không thử refresh
+    // Kiểm tra nếu tài khoản bị khóa, token bị thu hồi hoặc phiên bị thay thế bởi thiết bị khác -> Đăng xuất ngay, không thử refresh
     const errorData = error.response?.data as Record<string, unknown> | string | undefined;
     const errorDetail = typeof errorData === "string"
       ? errorData
       : (errorData?.message || errorData?.errorMessage || errorData?.detail || "") as string;
-    const isLockedOrRevoked = /khóa|lock|thu hồi|revoked|vô hiệu/i.test(errorDetail);
+    const isSessionTerminated = /khóa|lock|thu hồi|revoked|vô hiệu|thiết bị khác|another device|session.*(replaced|terminated|superseded)|thay thế/i.test(errorDetail);
 
-    if (isLockedOrRevoked) {
+    if (isSessionTerminated) {
       setAccessToken(null);
+      clearAuthSession();
       if (sessionExpiredCallback) sessionExpiredCallback();
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -203,6 +198,7 @@ api.interceptors.response.use(
 
     if (isAuthEndpoint) {
       setAccessToken(null);
+      clearAuthSession();
       if (sessionExpiredCallback) sessionExpiredCallback();
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -217,6 +213,7 @@ api.interceptors.response.use(
     // [Nguyên tắc 5]: Chỉ retry request tối đa một lần
     if (originalRequest._retry) {
       setAccessToken(null);
+      clearAuthSession();
       if (sessionExpiredCallback) sessionExpiredCallback();
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -228,13 +225,12 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // [Nguyên tắc 1 & 5]: Không tự động refresh nếu AccessToken đã hết hạn
+    // Lấy Access Token hiện tại để gửi lên backend làm mới
     const currentToken = getAccessToken();
-    const currentExp = getAccessTokenExpiresAt();
 
-    if (!currentToken || !isTokenValid(currentToken, currentExp)) {
-      // AccessToken đã hết hạn: Không cố refresh bằng cookie. Xóa token và yêu cầu login lại
+    if (!currentToken || currentToken.trim() === "") {
       setAccessToken(null);
+      clearAuthSession();
       if (sessionExpiredCallback) sessionExpiredCallback();
       if (typeof window !== "undefined") {
         window.dispatchEvent(
@@ -264,10 +260,10 @@ api.interceptors.response.use(
 
     try {
       /**
-       * [Nguyên tắc 2]: Gọi POST /auth/refresh khi AccessToken còn hạn
-       * Gửi cả Authorization: Bearer <current-access-token>
-       * withCredentials: true (để gửi kèm HttpOnly refresh cookie)
-       * Body: null
+       * Backend yêu cầu gửi Access Token hiện tại khi làm mới phiên:
+       * - Request body: { accessToken: currentToken }
+       * - Request header: Authorization: Bearer <currentToken>
+       * - withCredentials: true (để trình duyệt gửi kèm HttpOnly refresh cookie)
        */
       const response = await axios.post<{
         accessToken?: string;
@@ -280,7 +276,9 @@ api.interceptors.response.use(
         isError?: boolean;
       }>(
         `${ENV.API_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
-        null,
+        {
+          accessToken: currentToken,
+        },
         {
           withCredentials: true,
           headers: {
@@ -292,16 +290,21 @@ api.interceptors.response.use(
       );
 
       const resData = response.data;
+      const dataObj =
+        resData && typeof resData === "object" && "data" in resData && (resData as { data?: { accessToken?: string; accessTokenExpiresAt?: string } }).data
+          ? (resData as { data: { accessToken?: string; accessTokenExpiresAt?: string } }).data
+          : (resData as { accessToken?: string; accessTokenExpiresAt?: string });
+
       const newAccessToken =
-        resData?.accessToken || resData?.data?.accessToken;
+        dataObj?.accessToken || resData?.accessToken;
       const newExpiresAt =
-        resData?.accessTokenExpiresAt || resData?.data?.accessTokenExpiresAt;
+        dataObj?.accessTokenExpiresAt || resData?.accessTokenExpiresAt;
 
       if (!newAccessToken) {
         throw new Error("Không nhận được token mới từ phản hồi máy chủ");
       }
 
-      // [Nguyên tắc 4]: Cập nhật AccessToken và thời gian hết hạn sau khi refresh
+      // Cập nhật AccessToken và thời gian hết hạn sau khi refresh
       setAccessToken(newAccessToken, newExpiresAt);
 
       if (tokenRefreshedCallback) {
@@ -316,10 +319,11 @@ api.interceptors.response.use(
       if (axios.isAxiosError(refreshError)) {
         refreshError.message = extractApiErrorMessage(refreshError);
       }
-      // [Nguyên tắc 3]: Khi /auth/refresh trả về 401 hoặc lỗi:
-      // Xóa AccessToken, xóa state, dừng retry tự động, đăng xuất
+      // Khi /auth/refresh trả về 401 hoặc lỗi (e.g. phiên bị thay thế bởi thiết bị khác):
+      // Xóa toàn bộ token, dừng retry tự động, đăng xuất
       processQueue(refreshError, null);
       setAccessToken(null);
+      clearAuthSession();
 
       if (sessionExpiredCallback) {
         sessionExpiredCallback();

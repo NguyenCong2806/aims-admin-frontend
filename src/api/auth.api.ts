@@ -1,11 +1,11 @@
 import axios from "axios";
 import { API_ENDPOINTS } from "../common/ApiEndpoints";
 import { ENV } from "../config/env";
+import { extractApiErrorMessage } from "../common/httpErrorHelper";
 import { api, getAccessToken, setAccessToken } from "../library/axios";
 import {
   clearAuthSession,
-  getStoredTokenExpiresAt,
-  isTokenValid,
+  getStoredAccessToken,
   saveAuthSession,
 } from "../library/tokenHelper";
 import { AuthResponse, AuthUser, LoginCredentials } from "../types/auth";
@@ -170,9 +170,10 @@ export async function login(payload: LoginCredentials): Promise<AuthResponse> {
 
 /**
  * Khôi phục phiên làm việc (POST /auth/refresh)
- * [Nguyên tắc 1]: Chỉ gọi refresh khi AccessToken CÒN HẠN. Nếu đã hết hạn -> không gọi bằng cookie.
- * [Nguyên tắc 2]: Gửi kèm Authorization: Bearer <current-access-token>, withCredentials: true, body: null.
- * [Nguyên tắc 3]: Nếu backend trả về 401 -> Xóa token, xóa state, chuyển về trang login.
+ * [Nguyên tắc 1]: Gửi Access Token hiện tại trong request body: { accessToken: currentToken }
+ * [Nguyên tắc 2]: Gửi kèm Authorization: Bearer <current-access-token>, withCredentials: true.
+ * [Nguyên tắc 3]: Nếu backend trả về 401 (token hết hạn, session bị thay thế bởi thiết bị khác):
+ *                 Xóa token, xóa state, chuyển về trang login.
  * [Nguyên tắc 4]: Cập nhật AccessToken và accessTokenExpiresAt mới sau khi refresh thành công.
  */
 export async function refreshSession(): Promise<AuthResponse> {
@@ -200,23 +201,22 @@ export async function refreshSession(): Promise<AuthResponse> {
     }
   }
 
-  // 2. Phiên thật: Kiểm tra tính hợp lệ của AccessToken hiện tại
-  const currentToken = getAccessToken();
-  const currentExp = getStoredTokenExpiresAt();
+  // 2. Phiên thật: Lấy Access Token hiện tại (kể cả đã hết hạn) để gửi lên backend làm mới
+  const currentToken = getAccessToken() || getStoredAccessToken();
 
-  // [Nguyên tắc 1 & 5]: Nếu AccessToken đã hết hạn hoặc không tồn tại:
-  // KHÔNG cố refresh bằng cookie. Xóa sạch AccessToken đã lưu và ném lỗi để chuyển về login.
-  if (!currentToken || !isTokenValid(currentToken, currentExp)) {
+  if (!currentToken || currentToken.trim() === "") {
     setAccessToken(null);
     clearAuthSession();
-    throw new Error("AccessToken đã hết hạn hoặc không tồn tại. Vui lòng đăng nhập lại.");
+    throw new Error("Không tìm thấy Access Token hiện tại để làm mới phiên. Vui lòng đăng nhập lại.");
   }
 
   try {
-    // [Nguyên tắc 2]: Gửi cả Authorization Bearer, withCredentials: true, và body: null
+    // Backend yêu cầu gửi Access Token hiện tại trong body và header
     const response = await axios.post(
       `${ENV.API_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
-      null,
+      {
+        accessToken: currentToken,
+      },
       {
         withCredentials: true,
         headers: {
@@ -241,14 +241,19 @@ export async function refreshSession(): Promise<AuthResponse> {
       throw new Error(data?.errorMessage || "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.");
     }
 
-    // [Nguyên tắc 4]: Cập nhật AccessToken và thời gian hết hạn mới
+    // Cập nhật AccessToken và thời gian hết hạn mới
     setAccessToken(data.accessToken, data.accessTokenExpiresAt);
     saveAuthSession(data.accessToken, data.accessTokenExpiresAt, data.user);
     return data;
   } catch (error) {
-    // [Nguyên tắc 3]: Xóa toàn bộ token & user khi refresh thất bại
+    // Khi refresh thất bại (401 - e.g. session bị thay thế bởi thiết bị khác, cookie hết hạn):
+    // Xóa toàn bộ token & session
     setAccessToken(null);
     clearAuthSession();
+    if (axios.isAxiosError(error)) {
+      const msg = extractApiErrorMessage(error);
+      error.message = msg;
+    }
     throw error;
   }
 }

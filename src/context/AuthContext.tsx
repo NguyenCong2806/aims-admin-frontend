@@ -7,8 +7,10 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import axios from "axios";
 import { toast } from "sonner";
 import { APP_MESSAGES } from "../common/AppMessages";
+import { extractApiErrorMessage } from "../common/httpErrorHelper";
 import { login as apiLogin, logout as apiLogout, refreshSession as apiRefresh } from "../api/auth.api";
 import { registerAuthCallbacks, setAccessToken } from "../library/axios";
 import {
@@ -37,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Guard tránh gọi kép initializeAuth trong React 18+ StrictMode
   const hasInitializedRef = useRef(false);
+  const hasHadSessionRef = useRef(false);
 
   // Timer tự động gia hạn token trước khi hết hạn (Proactive Refresh)
   const proactiveRefreshTimerRef = useRef<number | null>(null);
@@ -50,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * Lên lịch tự động làm mới token trước khi hết hạn
-   * [Lưu ý quan trọng]: Chỉ thực hiện khi AccessToken VẪN CÒN HẠN.
    */
   const scheduleProactiveRefresh = useCallback((expiresAtIso?: string) => {
     clearProactiveTimer();
@@ -75,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log("[Auth Proactive]: Đang tự động làm mới token trước khi hết hạn...");
             const res = await apiRefresh();
             if (res?.accessToken) {
+              hasHadSessionRef.current = true;
               setState((prev) => ({
                 ...prev,
                 accessToken: res.accessToken,
@@ -82,8 +85,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }));
               scheduleProactiveRefresh(res.accessTokenExpiresAt);
             }
-          } catch (err) {
-            console.warn("[Auth Proactive]: Gia hạn chủ động không thành công, phiên sẽ được kiểm soát bởi interceptor.", err);
+          } catch (err: unknown) {
+            console.warn("[Auth Proactive]: Gia hạn chủ động không thành công:", err);
+            // Nếu backend trả về 401 (e.g. phiên bị thay thế bởi thiết bị khác hoặc token bị thu hồi)
+            if (axios.isAxiosError(err) && err.response?.status === 401) {
+              const msg =
+                extractApiErrorMessage(err) ||
+                APP_MESSAGES.HTTP_STATUS[401];
+              handleSessionExpired(msg);
+            }
           }
         }, refreshDelayMs);
       }
@@ -93,10 +103,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   /**
-   * [Nguyên tắc 3]: Xử lý khi phiên làm việc hết hạn hoặc bị hủy:
+   * Xử lý khi phiên làm việc hết hạn hoặc bị hủy (đặc biệt khi session bị thay thế bởi thiết bị khác):
    * - Xóa AccessToken khỏi local storage / state management.
    * - Xóa thông tin user trong state.
    * - Dừng retry tự động.
+   * - Hiển thị toast thông báo lỗi rõ ràng.
    * - Chuyển về trang login.
    */
   const handleSessionExpired = useCallback((customMessage?: string) => {
@@ -107,7 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const messageToShow = customMessage || APP_MESSAGES.HTTP_STATUS[401];
 
     setState((prev) => {
-      if (prev.isAuthenticated) {
+      if (prev.isAuthenticated || hasHadSessionRef.current) {
+        hasHadSessionRef.current = false;
         toast.error(messageToShow);
       }
       return {
@@ -205,6 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isTokenValid(storedToken, storedExp)) {
         // • CÒN HẠN: Dùng tiếp AccessToken hiện tại, KHÔNG gọi /auth/refresh bắt buộc
         setAccessToken(storedToken, storedExp);
+        hasHadSessionRef.current = true;
         setState({
           user: storedUser,
           accessToken: storedToken,
@@ -217,17 +230,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Lên lịch gia hạn chủ động trước khi token hết hạn
         scheduleProactiveRefresh(storedExp || getTokenExpiresAtIso(storedToken) || undefined);
       } else {
-        // • HẾT HẠN: Không cố refresh bằng cookie, xóa token và yêu cầu login lại
-        console.warn("[Auth]: AccessToken đã hết hạn khi mở ứng dụng. Chuyển về màn hình đăng nhập.");
-        clearAuthSession();
-        setAccessToken(null);
-        setState((prev) => ({
-          ...prev,
-          isInitializing: false,
-          isAuthenticated: false,
-          user: null,
-          accessToken: null,
-        }));
+        // • HẾT HẠN: Gửi Access Token hiện tại lên /auth/refresh để làm mới phiên nếu cookie còn hiệu lực
+        (async () => {
+          try {
+            console.log("[Auth]: AccessToken đã hết hạn khi mở app. Đang gửi AccessToken hiện tại để làm mới phiên...");
+            setAccessToken(storedToken, storedExp);
+            const res = await apiRefresh();
+            if (res?.accessToken) {
+              hasHadSessionRef.current = true;
+              setState({
+                user: res.user || storedUser,
+                accessToken: res.accessToken,
+                isAuthenticated: true,
+                isLoading: false,
+                isInitializing: false,
+                error: null,
+              });
+              scheduleProactiveRefresh(res.accessTokenExpiresAt);
+              return;
+            }
+          } catch (err: unknown) {
+            console.warn("[Auth]: Không thể làm mới phiên từ backend:", err);
+            if (axios.isAxiosError(err) && err.response?.status === 401) {
+              const msg =
+                extractApiErrorMessage(err) ||
+                APP_MESSAGES.HTTP_STATUS[401];
+              toast.error(msg);
+            }
+          }
+          clearAuthSession();
+          setAccessToken(null);
+          setState((prev) => ({
+            ...prev,
+            isInitializing: false,
+            isAuthenticated: false,
+            user: null,
+            accessToken: null,
+          }));
+        })();
       }
     };
 
@@ -268,6 +308,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user);
         setAccessToken(res.accessToken, res.accessTokenExpiresAt);
+        hasHadSessionRef.current = true;
 
         setState({
           user: res.user,
@@ -307,6 +348,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async (): Promise<void> => {
     setState((prev) => ({ ...prev, isLoading: true }));
     clearProactiveTimer();
+    hasHadSessionRef.current = false;
     clearAuthSession();
     setAccessToken(null);
 
@@ -343,8 +385,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return res;
       }
       return null;
-    } catch {
-      handleSessionExpired();
+    } catch (err: unknown) {
+      const msg =
+        axios.isAxiosError(err) && err.response?.status === 401
+          ? extractApiErrorMessage(err) || APP_MESSAGES.HTTP_STATUS[401]
+          : undefined;
+      handleSessionExpired(msg);
       return null;
     }
   }, [scheduleProactiveRefresh, handleSessionExpired]);
