@@ -7,8 +7,8 @@ export const APP_MESSAGES = {
   // Quy định: 200, 201 là thành công không xử lý lỗi; các mã còn lại là mã lỗi nghiệp vụ
   HTTP_STATUS: {
     400: "Dữ liệu không hợp lệ",
-    401: "Chưa đăng nhập/ token không hợp lệ",
-    403: "Đã đăng nhập nhưng không có quyền",
+    401: "Token hết hạn, token bị thu hồi, tài khoản bị khóa",
+    403: "Đã đăng nhập nhưng không có quyền chức năng",
     404: "Không tìm thấy dữ liệu",
     409: "Trùng dữ liệu",
     500: "Lỗi hệ thống",

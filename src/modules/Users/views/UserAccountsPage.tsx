@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
 import PageMeta from "../../../components/common/PageMeta";
 import { UserAccount, UserRole, UserStatus } from "../models/userAccount";
+import { useAuth } from "../../../context/AuthContext";
 import { userService } from "../services/UserService";
 import {
   useUserAccountsPaged,
@@ -23,6 +24,7 @@ import {
 } from "./userHelper";
 
 export const UserAccountsPage: React.FC = () => {
+  const { user: currentUser, logout } = useAuth();
   const [keyword, setKeyword] = useState<string>("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<string | number | null>("all");
@@ -243,6 +245,21 @@ export const UserAccountsPage: React.FC = () => {
       await toggleLockMutation.mutateAsync(id);
       toast.success("Đã khóa tài khoản thành công!");
       refetch();
+
+      // Nếu tài khoản vừa bị khóa chính là tài khoản đang đăng nhập -> Đăng xuất ngay lập tức!
+      const targetUser = users.find((u) => u.id === id);
+      const isCurrentAccount =
+        currentUser &&
+        (Number(currentUser.id) === id ||
+          (targetUser &&
+            currentUser.username?.toLowerCase() === targetUser.username?.toLowerCase()));
+
+      if (isCurrentAccount) {
+        toast.error("Tài khoản của bạn đã bị khóa! Đang đăng xuất khỏi hệ thống...");
+        setTimeout(() => {
+          logout();
+        }, 1000);
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Thao tác khóa tài khoản thất bại!");
     }

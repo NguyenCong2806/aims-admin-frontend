@@ -7,8 +7,8 @@ import { APP_MESSAGES } from "./AppMessages";
  */
 export const HTTP_STATUS_ERRORS = {
   400: APP_MESSAGES.HTTP_STATUS[400], // "Dữ liệu không hợp lệ"
-  401: APP_MESSAGES.HTTP_STATUS[401], // "Chưa đăng nhập/ token không hợp lệ"
-  403: APP_MESSAGES.HTTP_STATUS[403], // "Đã đăng nhập nhưng không có quyền"
+  401: APP_MESSAGES.HTTP_STATUS[401], // "Token hết hạn, token bị thu hồi, tài khoản bị khóa"
+  403: APP_MESSAGES.HTTP_STATUS[403], // "Đã đăng nhập nhưng không có quyền chức năng"
   404: APP_MESSAGES.HTTP_STATUS[404], // "Không tìm thấy dữ liệu"
   409: APP_MESSAGES.HTTP_STATUS[409], // "Trùng dữ liệu"
   500: APP_MESSAGES.HTTP_STATUS[500], // "Lỗi hệ thống"
@@ -81,8 +81,9 @@ export function extractApiErrorMessage(error: unknown, defaultFallback?: string)
     if (status && status in HTTP_STATUS_ERRORS) {
       const standardText = HTTP_STATUS_ERRORS[status as HttpErrorCode];
 
-      // Nếu có chi tiết nghiệp vụ cụ thể từ backend
-      if (detail && detail !== standardText && !detail.toLowerCase().includes("request failed")) {
+      // Nếu có chi tiết nghiệp vụ cụ thể từ backend (không phải chữ tiếng Anh mặc định của HTTP status)
+      const isGeneric = /^(unauthorized|forbidden|bad request|internal server error|not found|conflict)$/i.test(detail.trim());
+      if (detail && !isGeneric && detail !== standardText && !detail.toLowerCase().includes("request failed")) {
         return `${standardText} (${detail})`;
       }
       return standardText;

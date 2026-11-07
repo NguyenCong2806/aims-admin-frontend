@@ -8,6 +8,7 @@ import React, {
   useRef,
 } from "react";
 import { toast } from "sonner";
+import { APP_MESSAGES } from "../common/AppMessages";
 import { login as apiLogin, logout as apiLogout, refreshSession as apiRefresh } from "../api/auth.api";
 import { registerAuthCallbacks, setAccessToken } from "../library/axios";
 import {
@@ -98,14 +99,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * - Dừng retry tự động.
    * - Chuyển về trang login.
    */
-  const handleSessionExpired = useCallback(() => {
+  const handleSessionExpired = useCallback((customMessage?: string) => {
     clearProactiveTimer();
     setAccessToken(null);
     clearAuthSession();
 
+    const messageToShow = customMessage || APP_MESSAGES.HTTP_STATUS[401];
+
     setState((prev) => {
       if (prev.isAuthenticated) {
-        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.");
+        toast.error(messageToShow);
       }
       return {
         user: null,
@@ -113,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: false,
         isLoading: false,
         isInitializing: false,
-        error: "Session expired",
+        error: messageToShow,
       };
     });
   }, []);
@@ -127,7 +130,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
 
-    const handleAuthExpiredEvent = () => handleSessionExpired();
+    const handleAuthExpiredEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ message?: string }>;
+      const msg = customEvent.detail?.message;
+      handleSessionExpired(msg);
+    };
     window.addEventListener("aims:auth-expired", handleAuthExpiredEvent);
 
     return () => {
