@@ -1,15 +1,26 @@
 // Model dữ liệu Phân quyền & Vai trò người dùng (RBAC - Role-Based Access Control)
 
-export type PermissionAction = "VIEW" | "CREATE" | "UPDATE" | "DELETE" | "EXPORT" | "APPROVE" | "AUDIT";
+export type PermissionAction =
+  | "VIEW"
+  | "CREATE"
+  | "UPDATE"
+  | "DELETE"
+  | "EXPORT"
+  | "APPROVE"
+  | "AUDIT"
+  | string;
 
 export interface PermissionDefinition {
+  permissionId?: number;
   id: string; // VD: "hardware.view"
   code: string; // "hardware.view"
   name: string; // "Xem danh sách thiết bị"
-  module: string; // "Thiết bị phần cứng"
-  moduleKey: string; // "hardware"
-  action: PermissionAction;
   description: string;
+  module?: string; // Tên hiển thị module, VD: "Quản lý Thiết bị phần cứng"
+  moduleKey: string; // Khóa định danh module, VD: "hardware"
+  action: PermissionAction;
+  displayOrder?: number;
+  isActive?: boolean;
 }
 
 export interface PermissionModuleGroup {

@@ -3,6 +3,7 @@ import {
   AppRole,
   PermissionModuleGroup,
 } from "../../models/permissionModel";
+import { getModuleIcon } from "../permissionHelper";
 
 interface RoleCardsViewProps {
   roles: AppRole[];
@@ -149,7 +150,7 @@ export const RoleCardsView: React.FC<RoleCardsViewProps> = ({
                       ).length;
                       return (
                         <div key={mod.moduleKey} className="text-center">
-                          <span className="text-[11px] block">{mod.icon}</span>
+                          <span className="text-[11px] block">{getModuleIcon(mod.icon)}</span>
                           <span className="text-[9px] text-gray-500 dark:text-gray-400 font-mono">
                             {granted}/{mod.permissions.length}
                           </span>

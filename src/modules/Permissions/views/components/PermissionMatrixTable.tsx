@@ -4,7 +4,7 @@ import {
   PermissionModuleGroup,
   PermissionAction,
 } from "../../models/permissionModel";
-import { PERMISSION_ACTION_META } from "../permissionHelper";
+import { PERMISSION_ACTION_META, getModuleIcon } from "../permissionHelper";
 
 interface PermissionMatrixTableProps {
   roles: AppRole[];
@@ -279,7 +279,7 @@ export const PermissionMatrixTable: React.FC<PermissionMatrixTableProps> = ({
                           onClick={() => toggleModuleAccordion(mod.moduleKey)}
                         >
                           <div className="flex items-center gap-2.5">
-                            <span className="text-lg">{mod.icon}</span>
+                            <span className="text-lg">{getModuleIcon(mod.icon)}</span>
                             <div>
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wide">
