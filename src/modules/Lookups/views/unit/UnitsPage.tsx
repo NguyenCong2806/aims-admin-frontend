@@ -14,6 +14,7 @@ import {
   useBatchImportUnits,
 } from "../../queries/unitsQuery";
 import { AimsBasePageLayout, ViewMode, ExcelImportColumn } from "../../../../components/aims";
+import { useAuth } from "../../../../context/AuthContext";
 
 const UNIT_IMPORT_COLUMNS: ExcelImportColumn[] = [
   { key: "Code", label: "Mã đơn vị", required: true, description: "Mã ký hiệu đơn vị tính (duy nhất)" },
@@ -24,6 +25,11 @@ const UNIT_IMPORT_COLUMNS: ExcelImportColumn[] = [
 ];
 
 const UnitsPage: React.FC = () => {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("units.create");
+  const canUpdate = hasPermission("units.update");
+  const canDelete = hasPermission("units.delete");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize] = useState(10);
@@ -155,33 +161,41 @@ const UnitsPage: React.FC = () => {
           setKeyword(val);
           setPageIndex(1);
         }}
-        onAddNew={() => {
-          setUnitId(null);
-          setIsModalOpen(true);
-        }}
+        onAddNew={
+          canCreate
+            ? () => {
+                setUnitId(null);
+                setIsModalOpen(true);
+              }
+            : undefined
+        }
         addNewLabel="Thêm mới"
         onExportExcel={() => toast.success("Đang xuất dữ liệu đơn vị tính ra file Excel...")}
         templateFileName="Mau_Nhap_Don_Vi_Tinh.csv"
         templateUrl="/templates/Mau_Nhap_Don_Vi_Tinh.csv"
         importTemplateColumns={UNIT_IMPORT_COLUMNS}
-        onImportData={async (rows: any, file?: any) => {
-          try {
-            if (file) {
-              await batchImportMutation.mutateAsync(file);
-            } else {
-              await batchImportMutation.mutateAsync(rows);
-            }
-            toast.success("Nhập dữ liệu đơn vị tính từ tệp thành công!");
-          } catch (err) {
-            toast.error(
-              `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
-            );
-            throw err;
-          }
-        }}
+        onImportData={
+          canCreate
+            ? async (rows: any, file?: any) => {
+                try {
+                  if (file) {
+                    await batchImportMutation.mutateAsync(file);
+                  } else {
+                    await batchImportMutation.mutateAsync(rows);
+                  }
+                  toast.success("Nhập dữ liệu đơn vị tính từ tệp thành công!");
+                } catch (err) {
+                  toast.error(
+                    `Nhập tệp thất bại: ${err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập tệp."}`
+                  );
+                  throw err;
+                }
+              }
+            : undefined
+        }
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
-        onBatchDelete={handleBatchDelete}
+        onBatchDelete={canDelete ? handleBatchDelete : undefined}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         isFetching={isFetching}
@@ -261,24 +275,28 @@ const UnitsPage: React.FC = () => {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setUnitId(item.id!);
-                                  setIsModalOpen(true);
-                                }}
-                                className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/50 rounded-lg transition-colors cursor-pointer"
-                                title="Chỉnh sửa"
-                              >
-                                <PencilIcon fontSize={16} />
-                              </button>
-                              <button
-                                disabled={deleteMutation.isPending}
-                                onClick={() => remove(item.id!)}
-                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors cursor-pointer"
-                                title="Xóa"
-                              >
-                                <TrashBinIcon fontSize={16} />
-                              </button>
+                              {canUpdate && (
+                                <button
+                                  onClick={() => {
+                                    setUnitId(item.id!);
+                                    setIsModalOpen(true);
+                                  }}
+                                  className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/50 rounded-lg transition-colors cursor-pointer"
+                                  title="Chỉnh sửa (units.update)"
+                                >
+                                  <PencilIcon fontSize={16} />
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  disabled={deleteMutation.isPending}
+                                  onClick={() => remove(item.id!)}
+                                  className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition-colors cursor-pointer"
+                                  title="Xóa (units.delete)"
+                                >
+                                  <TrashBinIcon fontSize={16} />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -352,24 +370,30 @@ const UnitsPage: React.FC = () => {
                           className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-1.5"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <button
-                            onClick={() => {
-                              setUnitId(item.id!);
-                              setIsModalOpen(true);
-                            }}
-                            className="px-2.5 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                          >
-                            <PencilIcon fontSize={14} />
-                            <span>Sửa</span>
-                          </button>
-                          <button
-                            disabled={deleteMutation.isPending}
-                            onClick={() => remove(item.id!)}
-                            className="px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                          >
-                            <TrashBinIcon fontSize={14} />
-                            <span>Xóa</span>
-                          </button>
+                          {canUpdate && (
+                            <button
+                              onClick={() => {
+                                setUnitId(item.id!);
+                                setIsModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Chỉnh sửa (units.update)"
+                            >
+                              <PencilIcon fontSize={14} />
+                              <span>Sửa</span>
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              disabled={deleteMutation.isPending}
+                              onClick={() => remove(item.id!)}
+                              className="px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Xóa (units.delete)"
+                            >
+                              <TrashBinIcon fontSize={14} />
+                              <span>Xóa</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     );

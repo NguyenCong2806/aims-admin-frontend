@@ -103,3 +103,42 @@ export type RoleDto = AppRole;
 export type Role = AppRole;
 export type PermissionDto = PermissionDefinition;
 export type Permission = PermissionDefinition;
+export type PermissionModule = PermissionModuleGroup;
+
+/**
+ * Cấu trúc quyền của tài khoản hiện tại trả về từ GET /api/v1/permissions/me
+ */
+export interface CurrentPermissions {
+  roles: string[];
+  permissionCodes: string[];
+  modules: PermissionModule[];
+}
+
+/**
+ * Hàm kiểm tra quyền hạn của người dùng hiện tại
+ * @param permissions Toàn bộ quyền của tài khoản (CurrentPermissions)
+ * @param code Mã quyền cần kiểm tra (Ví dụ: "units.view", "hardware_assets.create")
+ * @returns boolean True nếu có quyền hoặc là SUPER_ADMIN
+ */
+export function hasPermission(
+  permissions: CurrentPermissions | null | undefined,
+  code: string
+): boolean {
+  if (!permissions) return false;
+
+  // SUPER_ADMIN được backend cho phép toàn quyền.
+  if (
+    permissions.roles.some((r) => {
+      const upper = String(r).toUpperCase();
+      return upper === "SUPER_ADMIN" || upper === "SUPERADMIN" || upper === "ADMIN";
+    })
+  ) {
+    return true;
+  }
+
+  const targetCode = code.toLowerCase().trim();
+  return (
+    permissions.permissionCodes.includes(code) ||
+    permissions.permissionCodes.some((c) => c.toLowerCase().trim() === targetCode)
+  );
+}

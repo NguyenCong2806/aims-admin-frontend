@@ -2,6 +2,7 @@ import { api } from "../../../library/axios";
 import { API_ENDPOINTS } from "../../../common/ApiEndpoints";
 import {
   AppRole,
+  CurrentPermissions,
   PermissionDefinition,
   PermissionModuleGroup,
   RoleMember,
@@ -154,6 +155,25 @@ export class PermissionService {
       console.error("Lỗi khi tải danh sách phân hệ quyền từ backend:", error);
       throw error;
     }
+  }
+
+  /**
+   * Lấy toàn bộ quyền của tài khoản hiện tại
+   * Endpoint: GET /api/v1/permissions/me
+   */
+  async getMyPermissions(): Promise<CurrentPermissions> {
+    const response = await api.get<{
+      isSuccess?: boolean;
+      isError?: boolean;
+      errorMessage?: string;
+      data?: CurrentPermissions;
+    } | CurrentPermissions>(API_ENDPOINTS.PERMISSIONS.ME);
+
+    const raw = response.data;
+    if (raw && typeof raw === "object" && "data" in raw && raw.data) {
+      return raw.data as CurrentPermissions;
+    }
+    return raw as CurrentPermissions;
   }
 
   /**

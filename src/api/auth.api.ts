@@ -9,6 +9,7 @@ import {
   saveAuthSession,
 } from "../library/tokenHelper";
 import { AuthResponse, AuthUser, LoginCredentials } from "../types/auth";
+import type { CurrentPermissions } from "../modules/Permissions/models/permissionModel";
 
 // Tài khoản giả lập phục vụ chế độ phát triển (khi máy chủ backend local chưa bật)
 const DEMO_ACCOUNTS: Record<string, AuthUser> = {
@@ -283,4 +284,22 @@ export async function logout(): Promise<void> {
 export async function getCurrentUser(): Promise<AuthUser> {
   const { data } = await api.get<AuthUser>(API_ENDPOINTS.AUTH.ME);
   return data;
+}
+
+/**
+ * Lấy toàn bộ quyền của tài khoản hiện tại (GET /api/v1/permissions/me)
+ */
+export async function getMyPermissions(): Promise<CurrentPermissions> {
+  const response = await api.get<{
+    isSuccess?: boolean;
+    isError?: boolean;
+    errorMessage?: string;
+    data?: CurrentPermissions;
+  } | CurrentPermissions>(API_ENDPOINTS.PERMISSIONS.ME);
+
+  const raw = response.data;
+  if (raw && typeof raw === "object" && "data" in raw && raw.data) {
+    return raw.data as CurrentPermissions;
+  }
+  return raw as CurrentPermissions;
 }

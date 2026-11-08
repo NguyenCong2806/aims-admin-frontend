@@ -138,6 +138,7 @@ export const API_ENDPOINTS = {
   PERMISSIONS: {
     BASE: "/permissions",
     MODULES: "/permissions/modules",
+    ME: "/permissions/me",
     BY_ID: (permissionId: string | number) => `/permissions/${permissionId}`,
   },
 

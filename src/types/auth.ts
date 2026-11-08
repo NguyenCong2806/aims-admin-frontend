@@ -1,4 +1,5 @@
 import { UserRole } from "../modules/Users/models/userAccount";
+import type { CurrentPermissions } from "../modules/Permissions/models/permissionModel";
 
 export interface AuthUser {
   id: number;
@@ -30,6 +31,7 @@ export interface AuthResponse {
 export interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
+  currentPermissions: CurrentPermissions | null;
   isAuthenticated: boolean;
   isLoading: boolean;       // Đang thực hiện login/logout
   isInitializing: boolean;  // Đang kiểm tra khôi phục phiên (Silent Refresh) lần đầu tải app
@@ -43,5 +45,6 @@ export interface AuthContextValue extends AuthState {
   hasRole: (role: UserRole | string) => boolean;
   hasAnyRole: (roles: (UserRole | string)[]) => boolean;
   hasPermission: (permission: string) => boolean;
+  fetchCurrentPermissions: () => Promise<CurrentPermissions | null>;
   clearError: () => void;
 }

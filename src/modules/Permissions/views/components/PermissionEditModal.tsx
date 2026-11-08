@@ -260,3 +260,4 @@ export const PermissionEditModal: React.FC<PermissionEditModalProps> = ({
     </div>
   );
 };
+

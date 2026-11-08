@@ -1,9 +1,11 @@
 import type { AuthUser } from "../types/auth";
+import type { CurrentPermissions } from "../modules/Permissions/models/permissionModel";
 
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: "aims_access_token",
   EXPIRES_AT: "aims_access_token_expires_at",
   USER: "aims_user",
+  PERMISSIONS: "aims_user_permissions",
   SESSION_HINT: "aims_has_session",
   DEMO_SESSION: "aims_demo_session",
 } as const;
@@ -123,12 +125,34 @@ export function getStoredUser(): AuthUser | null {
 }
 
 /**
+ * Đọc danh sách quyền hiện tại từ localStorage
+ */
+export function getStoredPermissions(): CurrentPermissions | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const str = localStorage.getItem(STORAGE_KEYS.PERMISSIONS);
+    return str ? JSON.parse(str) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lưu danh sách quyền của người dùng vào localStorage
+ */
+export function saveStoredPermissions(permissions: CurrentPermissions): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEYS.PERMISSIONS, JSON.stringify(permissions));
+}
+
+/**
  * Lưu toàn bộ phiên xác thực hợp lệ vào localStorage
  */
 export function saveAuthSession(
   token: string,
   expiresAtIso?: string | null,
-  user?: AuthUser | null
+  user?: AuthUser | null,
+  permissions?: CurrentPermissions | null
 ): void {
   if (typeof window === "undefined") return;
 
@@ -145,6 +169,10 @@ export function saveAuthSession(
   if (user) {
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
   }
+
+  if (permissions) {
+    saveStoredPermissions(permissions);
+  }
 }
 
 /**
@@ -155,6 +183,7 @@ export function clearAuthSession(): void {
   localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
   localStorage.removeItem(STORAGE_KEYS.USER);
+  localStorage.removeItem(STORAGE_KEYS.PERMISSIONS);
   localStorage.removeItem(STORAGE_KEYS.SESSION_HINT);
   sessionStorage.removeItem(STORAGE_KEYS.DEMO_SESSION);
 }

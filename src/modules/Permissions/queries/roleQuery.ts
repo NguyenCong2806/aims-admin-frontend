@@ -33,6 +33,14 @@ export function usePermissionModules() {
   });
 }
 
+export function useMyPermissions() {
+  return useQuery({
+    queryKey: ["current-permissions"],
+    queryFn: () => services.permission.getMyPermissions(),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 export function useUpdateRolePermissions() {
   const queryClient = useQueryClient();
 

@@ -11,19 +11,22 @@ import axios from "axios";
 import { toast } from "sonner";
 import { APP_MESSAGES } from "../common/AppMessages";
 import { extractApiErrorMessage } from "../common/httpErrorHelper";
-import { login as apiLogin, logout as apiLogout, refreshSession as apiRefresh } from "../api/auth.api";
+import { login as apiLogin, logout as apiLogout, refreshSession as apiRefresh, getMyPermissions } from "../api/auth.api";
 import { registerAuthCallbacks, setAccessToken } from "../library/axios";
 import {
   clearAuthSession,
   getStoredAccessToken,
+  getStoredPermissions,
   getStoredTokenExpiresAt,
   getStoredUser,
   getTokenExpiresAtIso,
   isTokenValid,
   saveAuthSession,
+  saveStoredPermissions,
 } from "../library/tokenHelper";
 import { AuthContextValue, AuthResponse, AuthState, LoginCredentials } from "../types/auth";
 import { UserRole } from "../modules/Users/models/userAccount";
+import { CurrentPermissions, hasPermission as hasPermissionHelper } from "../modules/Permissions/models/permissionModel";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -31,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [state, setState] = useState<AuthState>({
     user: null,
     accessToken: null,
+    currentPermissions: null,
     isAuthenticated: false,
     isLoading: false,
     isInitializing: true, // Đang kiểm tra token khi tải app
@@ -125,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {
         user: null,
         accessToken: null,
+        currentPermissions: null,
         isAuthenticated: false,
         isLoading: false,
         isInitializing: false,
@@ -183,6 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setState({
               user: demoUser,
               accessToken: "mock_demo_session_token",
+              currentPermissions: null,
               isAuthenticated: true,
               isLoading: false,
               isInitializing: false,
@@ -199,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storedToken = getStoredAccessToken();
       const storedExp = getStoredTokenExpiresAt();
       const storedUser = getStoredUser();
+      const storedPermissions = getStoredPermissions();
 
       // Trường hợp: Không có AccessToken -> hiển thị login
       if (!storedToken) {
@@ -209,6 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAuthenticated: false,
           user: null,
           accessToken: null,
+          currentPermissions: null,
         }));
         return;
       }
@@ -221,11 +229,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setState({
           user: storedUser,
           accessToken: storedToken,
+          currentPermissions: storedPermissions,
           isAuthenticated: true,
           isLoading: false,
           isInitializing: false,
           error: null,
         });
+
+        // Đồng bộ quyền mới nhất từ máy chủ (GET /api/v1/permissions/me)
+        getMyPermissions()
+          .then((fresh) => {
+            if (fresh) {
+              saveStoredPermissions(fresh);
+              setState((prev) => ({ ...prev, currentPermissions: fresh }));
+            }
+          })
+          .catch((err) => {
+            console.warn("[Auth]: Không thể nạp quyền từ /permissions/me khi khởi động:", err);
+          });
 
         // Lên lịch gia hạn chủ động trước khi token hết hạn
         scheduleProactiveRefresh(storedExp || getTokenExpiresAtIso(storedToken) || undefined);
@@ -238,9 +259,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const res = await apiRefresh();
             if (res?.accessToken) {
               hasHadSessionRef.current = true;
+              let refreshedPerms: CurrentPermissions | null = storedPermissions;
+              try {
+                refreshedPerms = await getMyPermissions();
+                if (refreshedPerms) {
+                  saveStoredPermissions(refreshedPerms);
+                }
+              } catch {
+                // Ignore
+              }
+
               setState({
                 user: res.user || storedUser,
                 accessToken: res.accessToken,
+                currentPermissions: refreshedPerms,
                 isAuthenticated: true,
                 isLoading: false,
                 isInitializing: false,
@@ -266,6 +298,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isAuthenticated: false,
             user: null,
             accessToken: null,
+            currentPermissions: null,
           }));
         })();
       }
@@ -306,13 +339,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error(errMsg);
         }
 
-        saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user);
+        // 2. Tự động lấy danh sách quyền hạn hiện tại (GET /api/v1/permissions/me)
+        let currentPermissions: CurrentPermissions | null = null;
+        try {
+          currentPermissions = await getMyPermissions();
+          if (currentPermissions) {
+            saveStoredPermissions(currentPermissions);
+          }
+        } catch (permErr) {
+          console.warn("[Auth]: Không thể nạp quyền từ /permissions/me sau khi đăng nhập:", permErr);
+        }
+
+        saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user, currentPermissions);
         setAccessToken(res.accessToken, res.accessTokenExpiresAt);
         hasHadSessionRef.current = true;
 
         setState({
           user: res.user,
           accessToken: res.accessToken,
+          currentPermissions,
           isAuthenticated: true,
           isLoading: false,
           isInitializing: false,
@@ -334,6 +379,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...prev,
           user: null,
           accessToken: null,
+          currentPermissions: null,
           isAuthenticated: false,
           isLoading: false,
           error: errorMsg,
@@ -358,6 +404,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState({
         user: null,
         accessToken: null,
+        currentPermissions: null,
         isAuthenticated: false,
         isLoading: false,
         isInitializing: false,
@@ -374,6 +421,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res?.accessToken) {
         saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user);
         setAccessToken(res.accessToken, res.accessTokenExpiresAt);
+
+        // Đồng bộ quyền mới nhất sau khi làm mới token
+        getMyPermissions()
+          .then((fresh) => {
+            if (fresh) {
+              saveStoredPermissions(fresh);
+              setState((prev) => ({ ...prev, currentPermissions: fresh }));
+            }
+          })
+          .catch((e) => console.warn("[Auth]: Không thể cập nhật quyền khi refresh:", e));
 
         setState((prev) => ({
           ...prev,
@@ -399,29 +456,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const hasRole = useCallback(
     (role: UserRole | string): boolean => {
       if (!state.user?.roles) return false;
-      if (state.user.roles.includes("SuperAdmin")) return true;
-      return state.user.roles.includes(role as UserRole);
+      const roles = state.user.roles as (UserRole | string)[];
+      if (roles.includes("SuperAdmin") || roles.includes("SUPER_ADMIN")) return true;
+      return roles.includes(role);
     },
     [state.user]
   );
 
   const hasAnyRole = useCallback(
-    (roles: (UserRole | string)[]): boolean => {
+    (targetRoles: (UserRole | string)[]): boolean => {
       if (!state.user?.roles) return false;
-      if (state.user.roles.includes("SuperAdmin")) return true;
-      return roles.some((r) => state.user?.roles?.includes(r as UserRole));
+      const roles = state.user.roles as (UserRole | string)[];
+      if (roles.includes("SuperAdmin") || roles.includes("SUPER_ADMIN")) return true;
+      return targetRoles.some((r) => roles.includes(r));
     },
     [state.user]
   );
 
+  /**
+   * Kiểm tra quyền theo chuẩn định dạng {module_key}.{action}
+   * Ví dụ: hasPermission("units.view"), hasPermission("units.create")
+   * SUPER_ADMIN luôn được toàn quyền.
+   */
   const hasPermission = useCallback(
-    (permission: string): boolean => {
-      if (!state.user?.permissions) return false;
-      if (state.user.permissions.includes("*")) return true;
-      return state.user.permissions.includes(permission);
+    (code: string): boolean => {
+      // 1. Kiểm tra qua CurrentPermissions từ /permissions/me
+      if (hasPermissionHelper(state.currentPermissions, code)) {
+        return true;
+      }
+      // 2. Fallback kiểm tra qua user.permissions nếu có
+      if (state.user?.permissions) {
+        if (state.user.permissions.includes("*")) return true;
+        if (state.user.permissions.includes(code)) return true;
+      }
+      // 3. Fallback cho vai trò SuperAdmin
+      if (state.user?.roles?.some((r) => String(r).toUpperCase().includes("ADMIN"))) {
+        return true;
+      }
+      return false;
     },
-    [state.user]
+    [state.currentPermissions, state.user]
   );
+
+  /**
+   * Gọi lại GET /api/v1/permissions/me để cập nhật trạng thái hiển thị frontend
+   */
+  const fetchCurrentPermissions = useCallback(async (): Promise<CurrentPermissions | null> => {
+    try {
+      const perms = await getMyPermissions();
+      if (perms) {
+        saveStoredPermissions(perms);
+        setState((prev) => ({ ...prev, currentPermissions: perms }));
+        return perms;
+      }
+      return null;
+    } catch (err) {
+      console.warn("[Auth]: fetchCurrentPermissions failed:", err);
+      return null;
+    }
+  }, []);
 
   const clearError = useCallback(() => {
     setState((prev) => ({ ...prev, error: null }));
@@ -435,6 +528,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasRole,
     hasAnyRole,
     hasPermission,
+    fetchCurrentPermissions,
     clearError,
   };
 
