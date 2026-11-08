@@ -2,6 +2,7 @@ import axios, {
   type AxiosError,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { toast } from "sonner";
 import { ENV } from "../config/env";
 import { API_ENDPOINTS } from "../common/ApiEndpoints";
 import { APP_MESSAGES } from "../common/AppMessages";
@@ -160,6 +161,18 @@ api.interceptors.response.use(
       const friendlyMessage = extractApiErrorMessage(error);
       error.message = friendlyMessage;
       (error as unknown as Record<string, unknown>).userFriendlyMessage = friendlyMessage;
+    }
+
+    // Xử lý thông điệp lỗi 403 Forbidden: Hiển thị toast thông báo không có quyền
+    if (error.response?.status === 403) {
+      const forbiddenMessage =
+        extractApiErrorMessage(error) || "Bạn không có quyền thực hiện chức năng này (403 Forbidden).";
+      if (typeof window !== "undefined") {
+        toast.error(forbiddenMessage, {
+          id: "http-403-forbidden",
+          duration: 4000,
+        });
+      }
     }
 
     const originalRequest = error.config as RetryConfig | undefined;

@@ -8,7 +8,7 @@ export const APP_MESSAGES = {
   HTTP_STATUS: {
     400: "Dữ liệu không hợp lệ",
     401: "Token hết hạn, token bị thu hồi, tài khoản bị khóa",
-    403: "Đã đăng nhập nhưng không có quyền chức năng",
+    403: "Bạn không có quyền thực hiện chức năng này (403 Forbidden)",
     404: "Không tìm thấy dữ liệu",
     409: "Trùng dữ liệu",
     500: "Lỗi hệ thống",

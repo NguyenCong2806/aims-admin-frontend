@@ -34,7 +34,14 @@ export const WorkstationMonitoringPage: React.FC = () => {
     [pageIndex, pageSize, keyword]
   );
 
-  const { data, isPending, isFetching, isError, refetch } = useComputerAuditsParams(filter);
+  const { data, isPending, isFetching, isError, error, refetch } = useComputerAuditsParams(filter);
+
+  const is403 =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.response?.status === 403 ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.status === 403 ||
+    (error instanceof Error && (error.message.includes("403") || error.message.toLowerCase().includes("quyền")));
 
 
   // Hiển thị trực tiếp danh sách máy trạm từ backend
@@ -378,14 +385,28 @@ export const WorkstationMonitoringPage: React.FC = () => {
                             <span className="text-xs text-gray-500">Đang tải dữ liệu telemetry từ hệ thống...</span>
                           </div>
                         ) : isError ? (
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <span className="text-rose-500 text-sm">Không thể kết nối đến API máy trạm!</span>
-                            <button
-                              onClick={() => refetch()}
-                              className="px-3 py-1 text-xs bg-brand-50 text-brand-600 rounded-md hover:bg-brand-100 cursor-pointer"
-                            >
-                              Thử lại
-                            </button>
+                          <div className="flex flex-col items-center justify-center gap-2 py-10">
+                            <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center text-rose-600 dark:text-rose-400 text-2xl mb-1">
+                              {is403 ? "🚫" : "⚠️"}
+                            </div>
+                            <span className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                              {is403
+                                ? "Bạn không có quyền thực hiện chức năng này (403 Forbidden)"
+                                : "Không thể kết nối đến API máy trạm!"}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 max-w-md text-center">
+                              {is403
+                                ? "Tài khoản của bạn chưa được cấp quyền truy cập dữ liệu máy trạm. Vui lòng liên hệ Quản trị viên để được phân quyền."
+                                : "Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau."}
+                            </span>
+                            {!is403 && (
+                              <button
+                                onClick={() => refetch()}
+                                className="px-3 py-1 text-xs bg-brand-50 text-brand-600 rounded-md hover:bg-brand-100 cursor-pointer mt-1"
+                              >
+                                Thử lại
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <div className="flex flex-col items-center justify-center gap-1">
@@ -403,7 +424,31 @@ export const WorkstationMonitoringPage: React.FC = () => {
           ) : (
             /* ==================== 2. GRID / CARDS VIEW ==================== */
             <div className="flex-1 overflow-auto p-4 bg-gray-50/60 dark:bg-gray-950/40">
-              {items.length > 0 ? (
+              {isError ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center text-rose-600 dark:text-rose-400 text-2xl mb-1">
+                    {is403 ? "🚫" : "⚠️"}
+                  </div>
+                  <span className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                    {is403
+                      ? "Bạn không có quyền thực hiện chức năng này (403 Forbidden)"
+                      : "Không thể kết nối đến API máy trạm!"}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 max-w-md text-center">
+                    {is403
+                      ? "Tài khoản của bạn chưa được cấp quyền truy cập dữ liệu máy trạm. Vui lòng liên hệ Quản trị viên để được phân quyền."
+                      : "Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau."}
+                  </span>
+                  {!is403 && (
+                    <button
+                      onClick={() => refetch()}
+                      className="px-3 py-1 text-xs bg-brand-50 text-brand-600 rounded-md hover:bg-brand-100 cursor-pointer mt-2"
+                    >
+                      Thử lại
+                    </button>
+                  )}
+                </div>
+              ) : items.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {items.map((item) => {
                   const isSelected = selectedIds.has(item.id);

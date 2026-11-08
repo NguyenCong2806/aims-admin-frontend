@@ -79,8 +79,16 @@ export const WorkstationInstalledSoftwarePage: React.FC = () => {
     data: softwareListData,
     isLoading: isLoadingSoftwares,
     isError,
+    error,
     refetch,
   } = useComputerAuditSoftware(targetAuditId);
+
+  const is403 =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.response?.status === 403 ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.status === 403 ||
+    (error instanceof Error && (error.message.includes("403") || error.message.toLowerCase().includes("quyền")));
 
 
   // Danh sách phần mềm gốc từ API backend
@@ -324,16 +332,28 @@ export const WorkstationInstalledSoftwarePage: React.FC = () => {
         isLoading={isLoading}
       >
         {isError ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center gap-3">
-            <span className="text-rose-500 text-sm font-semibold">
-              Không thể tải danh sách phần mềm từ API hệ thống!
+          <div className="flex flex-col items-center justify-center p-12 text-center gap-2">
+            <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center text-rose-600 dark:text-rose-400 text-2xl mb-1">
+              {is403 ? "🚫" : "⚠️"}
+            </div>
+            <span className="text-sm font-bold text-rose-600 dark:text-rose-400">
+              {is403
+                ? "Bạn không có quyền thực hiện chức năng này (403 Forbidden)"
+                : "Không thể tải danh sách phần mềm từ API hệ thống!"}
             </span>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300 cursor-pointer"
-            >
-              Thử lại
-            </button>
+            <span className="text-xs text-gray-500 dark:text-gray-400 max-w-md text-center">
+              {is403
+                ? "Tài khoản của bạn chưa được cấp quyền xem dữ liệu phần mềm máy trạm. Vui lòng liên hệ Quản trị viên để được phân quyền."
+                : "Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau."}
+            </span>
+            {!is403 && (
+              <button
+                onClick={() => refetch()}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300 cursor-pointer mt-2"
+              >
+                Thử lại
+              </button>
+            )}
           </div>
         ) : viewMode === "list" ? (
           /* ==================== BẢNG DANH SÁCH (TABLE) ==================== */
