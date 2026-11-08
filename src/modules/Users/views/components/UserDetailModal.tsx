@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UserAccount } from "../../models/userAccount";
-import { USER_ROLE_META, USER_STATUS_META, getInitials, getAvatarColor } from "../userHelper";
+import { USER_STATUS_META, getInitials, getAvatarColor, getRoleMeta } from "../userHelper";
 
 interface UserDetailModalProps {
   isOpen: boolean;
@@ -169,7 +169,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {(user.roles || []).map((role: any) => {
-                    const roleMeta = (USER_ROLE_META as any)[role] || USER_ROLE_META.Staff;
+                    const roleMeta = getRoleMeta(role);
                     return (
                       <div
                         key={role}

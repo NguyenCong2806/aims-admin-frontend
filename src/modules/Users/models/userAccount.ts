@@ -1,12 +1,19 @@
 // Model thông tin Tài khoản người dùng (User Account & Permissions)
 
 export type UserRole =
-  | "SuperAdmin"       // Quản trị viên tối cao
-  | "AssetManager"     // Quản lý tài sản IT
-  | "ITSupport"        // Kỹ thuật viên IT / Helpdesk
-  | "Auditor"          // Kiểm toán & Kế toán
-  | "DepartmentHead"   // Trưởng phòng ban
-  | "Staff";           // Nhân viên
+  | "SuperAdmin"
+  | "SUPER_ADMIN"
+  | "AssetManager"
+  | "ASSET_MANAGER"
+  | "ITSupport"
+  | "IT_SUPPORT"
+  | "Auditor"
+  | "AUDITOR"
+  | "DepartmentHead"
+  | "DEPARTMENT_HEAD"
+  | "Staff"
+  | "STAFF"
+  | string;
 
 export type UserStatus =
   | "ACTIVE"    // Đang hoạt động

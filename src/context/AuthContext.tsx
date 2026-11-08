@@ -21,6 +21,7 @@ import {
   getStoredUser,
   getTokenExpiresAtIso,
   isTokenValid,
+  parseJwtPayload,
   saveAuthSession,
   saveStoredPermissions,
 } from "../library/tokenHelper";
@@ -226,10 +227,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // • CÒN HẠN: Dùng tiếp AccessToken hiện tại, KHÔNG gọi /auth/refresh bắt buộc
         setAccessToken(storedToken, storedExp);
         hasHadSessionRef.current = true;
+
+        let effectivePermissions = storedPermissions;
+        if (!effectivePermissions && storedToken) {
+          const jwtPayload = parseJwtPayload<Record<string, unknown>>(storedToken);
+          if (jwtPayload) {
+            const jwtPerms =
+              (jwtPayload.permission as string[] | string) ||
+              (jwtPayload.permissions as string[] | string);
+            if (jwtPerms) {
+              const rawRoles = storedUser?.roles || [];
+              effectivePermissions = {
+                roles: Array.isArray(rawRoles) ? (rawRoles as string[]) : [String(rawRoles)],
+                permissionCodes: Array.isArray(jwtPerms) ? jwtPerms : [jwtPerms],
+                modules: [],
+              };
+            }
+          }
+        }
+
         setState({
           user: storedUser,
           accessToken: storedToken,
-          currentPermissions: storedPermissions,
+          currentPermissions: effectivePermissions,
           isAuthenticated: true,
           isLoading: false,
           isInitializing: false,
@@ -339,6 +359,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error(errMsg);
         }
 
+        // 1.5. Trích xuất thông tin roles & permissions từ JWT payload làm fallback tức thì
+        const jwtPayload = parseJwtPayload<Record<string, unknown>>(res.accessToken);
+        if (jwtPayload) {
+          const jwtRoles =
+            (jwtPayload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] as string[] | string) ||
+            (jwtPayload.role as string[] | string) ||
+            (jwtPayload.roles as string[] | string);
+          if (jwtRoles && (!res.user.roles || res.user.roles.length === 0)) {
+            res.user.roles = Array.isArray(jwtRoles) ? jwtRoles : [jwtRoles];
+          }
+
+          const jwtPerms =
+            (jwtPayload.permission as string[] | string) ||
+            (jwtPayload.permissions as string[] | string);
+          if (jwtPerms) {
+            res.user.permissions = Array.isArray(jwtPerms) ? jwtPerms : [jwtPerms];
+          }
+        }
+
         // 2. Tự động lấy danh sách quyền hạn hiện tại (GET /api/v1/permissions/me)
         let currentPermissions: CurrentPermissions | null = null;
         try {
@@ -348,6 +387,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } catch (permErr) {
           console.warn("[Auth]: Không thể nạp quyền từ /permissions/me sau khi đăng nhập:", permErr);
+        }
+
+        // Nếu /permissions/me chưa nạp được, sử dụng permissions và roles từ JWT token
+        if (!currentPermissions && jwtPayload) {
+          const jwtPerms =
+            (jwtPayload.permission as string[] | string) ||
+            (jwtPayload.permissions as string[] | string);
+          if (jwtPerms) {
+            const rawRoles = res.user.roles || [];
+            currentPermissions = {
+              roles: Array.isArray(rawRoles) ? (rawRoles as string[]) : [String(rawRoles)],
+              permissionCodes: Array.isArray(jwtPerms) ? jwtPerms : [jwtPerms],
+              modules: [],
+            };
+            saveStoredPermissions(currentPermissions);
+          }
         }
 
         saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user, currentPermissions);

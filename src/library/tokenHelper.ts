@@ -11,9 +11,9 @@ export const STORAGE_KEYS = {
 } as const;
 
 /**
- * Trích xuất thời điểm hết hạn (ms) từ claim `exp` trong payload JWT
+ * Trích xuất toàn bộ payload JSON từ JWT Token
  */
-export function parseJwtExp(token: string): number | null {
+export function parseJwtPayload<T = Record<string, unknown>>(token: string): T | null {
   try {
     const parts = token.split(".");
     if (parts.length === 3) {
@@ -27,13 +27,21 @@ export function parseJwtExp(token: string): number | null {
           .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
           .join("")
       );
-      const parsed = JSON.parse(json);
-      if (typeof parsed.exp === "number") {
-        return parsed.exp * 1000; // Đổi giây sang milliseconds
-      }
+      return JSON.parse(json) as T;
     }
   } catch {
     // Không phải JWT chuẩn hoặc không decode được
+  }
+  return null;
+}
+
+/**
+ * Trích xuất thời điểm hết hạn (ms) từ claim `exp` trong payload JWT
+ */
+export function parseJwtExp(token: string): number | null {
+  const payload = parseJwtPayload<{ exp?: number }>(token);
+  if (payload && typeof payload.exp === "number") {
+    return payload.exp * 1000; // Đổi giây sang milliseconds
   }
   return null;
 }

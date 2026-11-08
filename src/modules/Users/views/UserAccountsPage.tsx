@@ -18,10 +18,10 @@ import { UserDetailModal } from "./components/UserDetailModal";
 import { UserFormModal } from "./components/UserFormModal";
 import { ResetPasswordModal } from "./components/ResetPasswordModal";
 import {
-  USER_ROLE_META,
   USER_STATUS_META,
   getInitials,
   getAvatarColor,
+  getRoleMeta,
 } from "./userHelper";
 
 export const UserAccountsPage: React.FC = () => {
@@ -541,7 +541,7 @@ export const UserAccountsPage: React.FC = () => {
                             <div className="flex flex-wrap gap-1 max-w-xs">
                               {(user.roles || []).length > 0 ? (
                                 user.roles!.map((r) => {
-                                  const rMeta = USER_ROLE_META[r] || USER_ROLE_META.Staff;
+                                  const rMeta = getRoleMeta(r);
                                   return (
                                     <span
                                       key={r}
@@ -741,7 +741,7 @@ export const UserAccountsPage: React.FC = () => {
                     <div className="flex flex-wrap gap-1">
                       {(user.roles || []).length > 0 ? (
                         user.roles!.map((r) => {
-                          const rMeta = USER_ROLE_META[r] || USER_ROLE_META.Staff;
+                          const rMeta = getRoleMeta(r);
                           return (
                             <span
                               key={r}

@@ -4,10 +4,16 @@ import { UserRole, UserStatus } from "../models/userAccount";
  * Metadata cho Vai trò người dùng (Roles)
  */
 export const USER_ROLE_META: Record<
-  UserRole,
+  string,
   { label: string; badgeClass: string; icon: string; description: string }
 > = {
   SuperAdmin: {
+    label: "Quản trị tối cao",
+    badgeClass: "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border-red-200 dark:border-red-800",
+    icon: "🛡️",
+    description: "Toàn quyền hệ thống, cấu hình và kiểm toán bảo mật",
+  },
+  SUPER_ADMIN: {
     label: "Quản trị tối cao",
     badgeClass: "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border-red-200 dark:border-red-800",
     icon: "🛡️",
@@ -19,7 +25,19 @@ export const USER_ROLE_META: Record<
     icon: "📦",
     description: "Nhập xuất, cấp phát, điều chuyển và thanh lý tài sản",
   },
+  ASSET_MANAGER: {
+    label: "Quản lý Tài sản",
+    badgeClass: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+    icon: "📦",
+    description: "Nhập xuất, cấp phát, điều chuyển và thanh lý tài sản",
+  },
   ITSupport: {
+    label: "Kỹ thuật IT / Helpdesk",
+    badgeClass: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800",
+    icon: "💻",
+    description: "Tiếp nhận bảo trì, giám sát máy trạm và hỗ trợ kỹ thuật",
+  },
+  IT_SUPPORT: {
     label: "Kỹ thuật IT / Helpdesk",
     badgeClass: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800",
     icon: "💻",
@@ -31,7 +49,19 @@ export const USER_ROLE_META: Record<
     icon: "📊",
     description: "Xem nhật ký kiểm toán, báo cáo tài chính và khấu hao",
   },
+  AUDITOR: {
+    label: "Kiểm toán & Kế toán",
+    badgeClass: "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+    icon: "📊",
+    description: "Xem nhật ký kiểm toán, báo cáo tài chính và khấu hao",
+  },
   DepartmentHead: {
+    label: "Trưởng phòng ban",
+    badgeClass: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+    icon: "👔",
+    description: "Phê duyệt yêu cầu tài sản và quản lý tài sản phòng ban",
+  },
+  DEPARTMENT_HEAD: {
     label: "Trưởng phòng ban",
     badgeClass: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800",
     icon: "👔",
@@ -43,7 +73,27 @@ export const USER_ROLE_META: Record<
     icon: "👤",
     description: "Nhận bàn giao tài sản và gửi yêu cầu cấp phát",
   },
+  STAFF: {
+    label: "Nhân viên",
+    badgeClass: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+    icon: "👤",
+    description: "Nhận bàn giao tài sản và gửi yêu cầu cấp phát",
+  },
 };
+
+export function getRoleMeta(role: string) {
+  if (!role) return USER_ROLE_META.STAFF;
+  if (USER_ROLE_META[role]) return USER_ROLE_META[role];
+  const normalized = role.toUpperCase().replace(/[\s-]/g, "_");
+  if (USER_ROLE_META[normalized]) return USER_ROLE_META[normalized];
+
+  return {
+    label: role,
+    badgeClass: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+    icon: "🔑",
+    description: `Vai trò ${role}`,
+  };
+}
 
 /**
  * Metadata cho Trạng thái tài khoản
@@ -105,13 +155,19 @@ export function getAvatarColor(name: string): string {
 /**
  * Mapping giữa UserRole và RoleId dạng số của Backend
  */
-export const ROLE_TO_ID_MAP: Record<UserRole, number> = {
+export const ROLE_TO_ID_MAP: Record<string, number> = {
   SuperAdmin: 1,
+  SUPER_ADMIN: 1,
   AssetManager: 2,
+  ASSET_MANAGER: 2,
   ITSupport: 3,
+  IT_SUPPORT: 3,
   Auditor: 4,
+  AUDITOR: 4,
   DepartmentHead: 5,
+  DEPARTMENT_HEAD: 5,
   Staff: 6,
+  STAFF: 6,
 };
 
 export const ID_TO_ROLE_MAP: Record<number, UserRole> = {
