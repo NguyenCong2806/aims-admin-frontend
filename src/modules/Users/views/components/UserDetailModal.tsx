@@ -10,6 +10,8 @@ interface UserDetailModalProps {
   onToggleLock: (id: number) => void;
   onResetPassword: (id: number) => void;
   onDelete: (id: number) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({
@@ -20,6 +22,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   onToggleLock,
   onResetPassword,
   onDelete,
+  canUpdate = true,
+  canDelete = true,
 }) => {
   const [activeTab, setActiveTab] = useState<"profile" | "assets" | "security">("profile");
 
@@ -262,18 +266,20 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
               </div>
 
               {/* SECURITY ACTIONS */}
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-850 flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <h5 className="text-sm font-bold text-gray-900 dark:text-white">Đặt lại mật khẩu</h5>
-                  <p className="text-xs text-gray-500 mt-0.5">Sinh mật khẩu ngẫu nhiên tạm thời cho nhân viên</p>
+              {canUpdate && (
+                <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-850 flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h5 className="text-sm font-bold text-gray-900 dark:text-white">Đặt lại mật khẩu</h5>
+                    <p className="text-xs text-gray-500 mt-0.5">Sinh mật khẩu ngẫu nhiên tạm thời cho nhân viên</p>
+                  </div>
+                  <button
+                    onClick={() => onResetPassword(user.id)}
+                    className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 rounded-xl border border-indigo-200 dark:border-indigo-800 transition"
+                  >
+                    Cấp lại mật khẩu mới
+                  </button>
                 </div>
-                <button
-                  onClick={() => onResetPassword(user.id)}
-                  className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 rounded-xl border border-indigo-200 dark:border-indigo-800 transition"
-                >
-                  Cấp lại mật khẩu mới
-                </button>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -281,34 +287,40 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         {/* FOOTER */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex-wrap gap-3">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onDelete(user.id)}
-              className="px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition"
-            >
-              Xóa tài khoản
-            </button>
-            <button
-              onClick={() => onToggleLock(user.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                user.status === "LOCKED"
-                  ? "text-emerald-600 hover:bg-emerald-50"
-                  : "text-amber-600 hover:bg-amber-50"
-              }`}
-            >
-              {user.status === "LOCKED" ? "🔓 Mở khóa tài khoản" : "🔒 Khóa tài khoản"}
-            </button>
+            {canDelete && (
+              <button
+                onClick={() => onDelete(user.id)}
+                className="px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition"
+              >
+                Xóa tài khoản
+              </button>
+            )}
+            {canUpdate && (
+              <button
+                onClick={() => onToggleLock(user.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                  user.status === "LOCKED"
+                    ? "text-emerald-600 hover:bg-emerald-50"
+                    : "text-amber-600 hover:bg-amber-50"
+                }`}
+              >
+                {user.status === "LOCKED" ? "🔓 Mở khóa tài khoản" : "🔒 Khóa tài khoản"}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                onEdit(user);
-                onClose();
-              }}
-              className="px-4 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-xl transition"
-            >
-              Chỉnh sửa thông tin
-            </button>
+            {canUpdate && (
+              <button
+                onClick={() => {
+                  onEdit(user);
+                  onClose();
+                }}
+                className="px-4 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-xl transition"
+              >
+                Chỉnh sửa thông tin
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 rounded-xl transition"

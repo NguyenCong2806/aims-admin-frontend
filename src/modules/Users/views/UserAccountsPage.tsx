@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
 import PageMeta from "../../../components/common/PageMeta";
 import { UserAccount, UserRole, UserStatus } from "../models/userAccount";
@@ -24,7 +25,11 @@ import {
 } from "./userHelper";
 
 export const UserAccountsPage: React.FC = () => {
-  const { user: currentUser, logout } = useAuth();
+  const { user: currentUser, logout, hasPermission } = useAuth();
+  const canCreate = hasPermission("accounts.create");
+  const canUpdate = hasPermission("accounts.update");
+  const canDelete = hasPermission("accounts.delete");
+
   const [keyword, setKeyword] = useState<string>("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<string>("");
   const [selectedFilter, setSelectedFilter] = useState<string | number | null>("all");
@@ -241,27 +246,49 @@ export const UserAccountsPage: React.FC = () => {
   };
 
   const handleToggleLock = async (id: number) => {
+    const targetUser = users.find((u) => u.id === id);
+    const isCurrentlyActive = targetUser?.isActive ?? (targetUser?.status === "ACTIVE");
+
+    const confirmResult = await Swal.fire({
+      title: isCurrentlyActive ? "Khóa tài khoản?" : "Mở khóa tài khoản?",
+      text: isCurrentlyActive
+        ? `Tài khoản [@${targetUser?.username || id}] sẽ bị khóa ngay lập tức và người dùng sẽ bị đăng xuất khỏi hệ thống.`
+        : `Tài khoản [@${targetUser?.username || id}] sẽ được mở khóa để có thể đăng nhập bình thường.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: isCurrentlyActive ? "Khóa tài khoản" : "Mở khóa",
+      cancelButtonText: "Hủy",
+      confirmButtonColor: isCurrentlyActive ? "#d97706" : "#10b981",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
     try {
       await toggleLockMutation.mutateAsync(id);
-      toast.success("Đã khóa tài khoản thành công!");
+      toast.success(
+        isCurrentlyActive
+          ? `Đã khóa tài khoản [@${targetUser?.username || id}] thành công!`
+          : `Đã mở khóa tài khoản [@${targetUser?.username || id}] thành công!`
+      );
       refetch();
 
       // Nếu tài khoản vừa bị khóa chính là tài khoản đang đăng nhập -> Đăng xuất ngay lập tức!
-      const targetUser = users.find((u) => u.id === id);
       const isCurrentAccount =
         currentUser &&
         (Number(currentUser.id) === id ||
           (targetUser &&
             currentUser.username?.toLowerCase() === targetUser.username?.toLowerCase()));
 
-      if (isCurrentAccount) {
+      if (isCurrentAccount && isCurrentlyActive) {
         toast.error("Tài khoản của bạn đã bị khóa! Đang đăng xuất khỏi hệ thống...");
         setTimeout(() => {
           logout();
         }, 1000);
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Thao tác khóa tài khoản thất bại!");
+      toast.error(err instanceof Error ? err.message : "Thao tác khóa/mở khóa tài khoản thất bại!");
     }
   };
 
@@ -278,6 +305,7 @@ export const UserAccountsPage: React.FC = () => {
       id: resetModalUser.id,
       newPassword,
     });
+    refetch();
   };
 
   const handleExport = () => {
@@ -304,9 +332,9 @@ export const UserAccountsPage: React.FC = () => {
           </svg>
         }
         moduleTabs={[
-          { name: "Tài khoản", path: "/tai-khoan", badge: totalRecords },
-          { name: "Phân quyền (RBAC)", path: "/phan-quyen" },
-          { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong" },
+          { name: "Tài khoản", path: "/tai-khoan", badge: totalRecords, permission: "accounts.view" },
+          { name: "Phân quyền (RBAC)", path: "/phan-quyen", permission: "roles.view" },
+          { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", permission: "settings.view" },
         ]}
         title="Tài khoản người dùng"
         subtitle="Quản lý danh sách tài khoản nhân viên, thiết lập vai trò phân quyền (RBAC) và theo dõi tài sản CNTT bàn giao"
@@ -319,8 +347,8 @@ export const UserAccountsPage: React.FC = () => {
           setKeyword(val);
           setPageIndex(1);
         }}
-        onAddNew={handleAddNew}
-        addNewLabel="+ Thêm tài khoản"
+        onAddNew={canCreate ? handleAddNew : undefined}
+        addNewLabel={canCreate ? "+ Thêm tài khoản" : undefined}
         onExportExcel={handleExport}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
@@ -579,42 +607,50 @@ export const UserAccountsPage: React.FC = () => {
                               >
                                 Xem
                               </button>
-                              <button
-                                onClick={() => handleEdit(user)}
-                                className="p-1 text-gray-500 hover:text-indigo-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-                                title="Chỉnh sửa"
-                              >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleToggleLock(user.id)}
-                                className={`p-1 rounded-lg transition ${
-                                  !isAct
-                                    ? "text-emerald-600 hover:bg-emerald-50"
-                                    : "text-amber-600 hover:bg-amber-50"
-                                }`}
-                                title={!isAct ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-                              >
-                                {!isAct ? "🔓" : "🔒"}
-                              </button>
-                              <button
-                                onClick={() => handleResetPassword(user.id)}
-                                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-                                title="Đặt lại mật khẩu"
-                              >
-                                🔑
-                              </button>
-                              <button
-                                onClick={() => handleDelete(user.id)}
-                                className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
-                                title="Xóa tài khoản"
-                              >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
+                              {canUpdate && (
+                                <button
+                                  onClick={() => handleEdit(user)}
+                                  className="p-1 text-gray-500 hover:text-indigo-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                                  title="Chỉnh sửa"
+                                >
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                  </svg>
+                                </button>
+                              )}
+                              {canUpdate && (
+                                <button
+                                  onClick={() => handleToggleLock(user.id)}
+                                  className={`p-1 rounded-lg transition ${
+                                    !isAct
+                                      ? "text-emerald-600 hover:bg-emerald-50"
+                                      : "text-amber-600 hover:bg-amber-50"
+                                  }`}
+                                  title={!isAct ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                                >
+                                  {!isAct ? "🔓" : "🔒"}
+                                </button>
+                              )}
+                              {canUpdate && (
+                                <button
+                                  onClick={() => handleResetPassword(user.id)}
+                                  className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                  title="Đặt lại mật khẩu"
+                                >
+                                  🔑
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDelete(user.id)}
+                                  className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                                  title="Xóa tài khoản"
+                                >
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -724,19 +760,25 @@ export const UserAccountsPage: React.FC = () => {
 
                     {/* CARD ACTIONS */}
                     <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                      <button
-                        onClick={() => handleResetPassword(user.id)}
-                        className="text-xs font-medium text-gray-500 hover:text-indigo-600 flex items-center gap-1"
-                      >
-                        🔑 Reset MK
-                      </button>
-                      <div className="flex items-center gap-1.5">
+                      {canUpdate ? (
                         <button
-                          onClick={() => handleEdit(user)}
-                          className="px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 rounded-lg transition"
+                          onClick={() => handleResetPassword(user.id)}
+                          className="text-xs font-medium text-gray-500 hover:text-indigo-600 flex items-center gap-1"
                         >
-                          Sửa
+                          🔑 Reset MK
                         </button>
+                      ) : (
+                        <span />
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        {canUpdate && (
+                          <button
+                            onClick={() => handleEdit(user)}
+                            className="px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 rounded-lg transition"
+                          >
+                            Sửa
+                          </button>
+                        )}
                         <button
                           onClick={() => handleOpenDetail(user)}
                           className="px-3 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-lg transition"
@@ -764,6 +806,8 @@ export const UserAccountsPage: React.FC = () => {
           onToggleLock={handleToggleLock}
           onResetPassword={handleResetPassword}
           onDelete={handleDelete}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
         />
 
         {/* MODAL FORM TẠO MỚI / SỬA */}
