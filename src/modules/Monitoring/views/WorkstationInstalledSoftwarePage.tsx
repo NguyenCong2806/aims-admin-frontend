@@ -390,9 +390,8 @@ export const WorkstationInstalledSoftwarePage: React.FC = () => {
                       <tr
                         key={`${item.name}-${idx}`}
                         onClick={() => setInspectingSoftware(item)}
-                        className={`group hover:bg-brand-50/40 dark:hover:bg-brand-950/20 transition-colors cursor-pointer ${
-                          isSelected ? "bg-brand-50/70 dark:bg-brand-950/40" : ""
-                        }`}
+                        className={`group hover:bg-brand-50/40 dark:hover:bg-brand-950/20 transition-colors cursor-pointer ${isSelected ? "bg-brand-50/70 dark:bg-brand-950/40" : ""
+                          }`}
                       >
                         {/* Checkbox */}
                         <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
@@ -475,11 +474,10 @@ export const WorkstationInstalledSoftwarePage: React.FC = () => {
                   <div
                     key={`${item.name}-${idx}`}
                     onClick={() => setInspectingSoftware(item)}
-                    className={`p-4 rounded-xl border bg-white dark:bg-gray-800 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? "border-brand-500 ring-2 ring-brand-500/20"
-                        : "border-gray-200 dark:border-gray-700"
-                    }`}
+                    className={`p-4 rounded-xl border bg-white dark:bg-gray-800 shadow-2xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between ${isSelected
+                      ? "border-brand-500 ring-2 ring-brand-500/20"
+                      : "border-gray-200 dark:border-gray-700"
+                      }`}
                   >
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-2">

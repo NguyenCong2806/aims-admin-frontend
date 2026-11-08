@@ -323,8 +323,8 @@ export const HardwareAssetsPage: React.FC = () => {
                           key={item.id}
                           onClick={() => setSelectedItemForDetail(item)}
                           className={`transition-colors group cursor-pointer ${isSelected
-                              ? "bg-indigo-50/80 dark:bg-indigo-950/40 font-medium text-indigo-950 dark:text-indigo-100"
-                              : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300"
+                            ? "bg-indigo-50/80 dark:bg-indigo-950/40 font-medium text-indigo-950 dark:text-indigo-100"
+                            : "hover:bg-gray-50/80 dark:hover:bg-gray-800/40 text-gray-700 dark:text-gray-300"
                             }`}
                         >
                           {/* Checkbox */}
