@@ -70,7 +70,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           ⛔
         </div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-          Không có quyền truy cập (403 Forbidden)
+          Đã đăng nhập nhưng không có quyền chức năng (403 Forbidden)
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6">
           Tài khoản <span className="font-semibold text-gray-700 dark:text-gray-200">@{user?.username}</span> không có quyền hạn truy cập chức năng này.

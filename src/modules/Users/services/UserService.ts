@@ -1,128 +1,282 @@
+import { API_ENDPOINTS } from "../../../common/ApiEndpoints";
+import { APP_MESSAGES } from "../../../common/AppMessages";
+import { toast } from "sonner";
+import Swal from "sweetalert2";
+import { api } from "../../../library/axios";
+import { PagedResult } from "../../base/models/PagedResult";
+import { PaginationFilter } from "../../base/models/PaginationFilter";
+import { Result } from "../../base/models/Result";
+import { Service } from "../../base/Service";
 import {
+  CreateUserAccountDto,
+  UpdateUserAccountDto,
   UserAccount,
-  UserAccountFilter,
   UserRole,
-  UserStatus,
 } from "../models/userAccount";
-import { INITIAL_USER_ACCOUNTS } from "./userMockData";
+import { IUserService } from "./IUserService";
 
-class UserService {
-  private users: UserAccount[] = [...INITIAL_USER_ACCOUNTS];
-
-  /**
-   * Lấy danh sách tài khoản theo bộ lọc và tìm kiếm
-   */
-  async getUsers(filter?: UserAccountFilter): Promise<UserAccount[]> {
-    await new Promise((resolve) => setTimeout(resolve, 60));
-
-    let result = [...this.users];
-
-    if (!filter) return result;
-
-    if (filter.keyword && filter.keyword.trim()) {
-      const q = filter.keyword.toLowerCase().trim();
-      result = result.filter(
-        (u) =>
-          u.username.toLowerCase().includes(q) ||
-          u.fullName.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q) ||
-          (u.phone && u.phone.includes(q)) ||
-          (u.departmentName && u.departmentName.toLowerCase().includes(q)) ||
-          (u.positionName && u.positionName.toLowerCase().includes(q))
-      );
-    }
-
-    if (filter.role && filter.role !== "all") {
-      result = result.filter((u) => u.roles.includes(filter.role as UserRole));
-    }
-
-    if (filter.status && filter.status !== "all") {
-      result = result.filter((u) => u.status === filter.status);
-    }
-
-    if (filter.department && filter.department !== "all") {
-      result = result.filter((u) => u.departmentName === filter.department);
-    }
-
-    if (filter.mfa && filter.mfa !== "all") {
-      result = result.filter((u) =>
-        filter.mfa === "enabled" ? u.mfaEnabled : !u.mfaEnabled
-      );
-    }
-
-    return result;
+export class UserService
+  extends Service<UserAccount, CreateUserAccountDto, UpdateUserAccountDto, number>
+  implements IUserService
+{
+  constructor(endpoint = API_ENDPOINTS.USERS.BASE) {
+    super(endpoint);
   }
 
   /**
-   * Lấy chi tiết tài khoản theo ID
+   * Tạo mới người dùng kèm gán vai trò
+   * Endpoint: POST /api/v1/accounts/with-roles
    */
-  async getById(id: number): Promise<UserAccount | null> {
-    const user = this.users.find((u) => u.id === id);
-    return user ? { ...user } : null;
-  }
-
-  /**
-   * Tạo tài khoản mới
-   */
-  async create(user: Omit<UserAccount, "id" | "createdAt" | "updatedAt">): Promise<UserAccount> {
-    const newId = this.users.length > 0 ? Math.max(...this.users.map((u) => u.id)) + 1 : 1;
-    const newEntry: UserAccount = {
-      ...user,
-      id: newId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  override async create(request: CreateUserAccountDto): Promise<Result<UserAccount>> {
+    const payload = {
+      username: request.username,
+      email: request.email,
+      fullName: request.fullName,
+      passwordhash: request.passwordhash,
+      phoneNumber: request.phoneNumber ?? request.phonennumber ?? null,
+      avatarUrl: request.avatarUrl ?? request.avatarurl ?? null,
+      departmentid: request.departmentid,
+      positionid: request.positionid ?? null,
+      isActive: request.isActive,
+      roleids: request.roleids && request.roleids.length > 0 ? request.roleids : [1],
     };
-    this.users.unshift(newEntry);
-    return newEntry;
+
+    const response = await api.post<Result<UserAccount>>(
+      API_ENDPOINTS.USERS.WITH_ROLES,
+      payload
+    );
+    toast.success(APP_MESSAGES.COMMON.CREATE_SUCCESS);
+    return response.data;
   }
 
   /**
-   * Cập nhật thông tin tài khoản
+   * Cập nhật thông tin tài khoản kèm gán vai trò
+   * Endpoint: PUT /api/v1/accounts/{id}/with-roles
    */
-  async update(id: number, updates: Partial<UserAccount>): Promise<UserAccount> {
-    const index = this.users.findIndex((u) => u.id === id);
-    if (index === -1) throw new Error("Không tìm thấy tài khoản người dùng");
-
-    this.users[index] = {
-      ...this.users[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
+  override async update(id: number, request: UpdateUserAccountDto): Promise<Result<UserAccount>> {
+    const payload = {
+      username: request.username,
+      email: request.email,
+      fullName: request.fullName,
+      phoneNumber: request.phoneNumber ?? request.phonennumber ?? null,
+      avatarUrl: request.avatarUrl ?? request.avatarurl ?? null,
+      departmentid: request.departmentid,
+      positionid: request.positionid ?? null,
+      isActive: request.isActive,
+      roleids: request.roleids && request.roleids.length > 0 ? request.roleids : [1],
     };
-    return { ...this.users[index] };
+
+    const response = await api.put<Result<UserAccount> | void>(
+      API_ENDPOINTS.USERS.UPDATE_WITH_ROLES(id),
+      payload
+    );
+
+    const resData = response.data as Result<UserAccount> | undefined;
+    return (
+      resData ||
+      ({
+        isSuccess: true,
+        statusCode: response.status || 204,
+        message: APP_MESSAGES.COMMON.UPDATE_SUCCESS,
+        data: { id, ...payload },
+      } as unknown as Result<UserAccount>)
+    );
   }
 
   /**
-   * Khóa / Mở khóa tài khoản
+   * Lấy danh sách tài khoản phân trang từ cơ sở dữ liệu
+   * Endpoint: GET /api/v1/accounts/paged-db
    */
-  async toggleLock(id: number): Promise<UserAccount> {
-    const user = await this.getById(id);
-    if (!user) throw new Error("Không tìm thấy người dùng");
-
-    const newStatus: UserStatus = user.status === "LOCKED" ? "ACTIVE" : "LOCKED";
-    return this.update(id, { status: newStatus });
-  }
-
-  /**
-   * Xóa tài khoản
-   */
-  async delete(id: number): Promise<boolean> {
-    const prevLen = this.users.length;
-    this.users = this.users.filter((u) => u.id !== id);
-    return this.users.length < prevLen;
-  }
-
-  /**
-   * Đặt lại mật khẩu
-   */
-  async resetPassword(id: number): Promise<{ tempPassword: string }> {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
-    let tempPassword = "";
-    for (let i = 0; i < 10; i++) {
-      tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+  async getPagedDb(params?: PaginationFilter): Promise<PagedResult<UserAccount>> {
+    const queryParams: Record<string, unknown> = {};
+    if (params) {
+      if (params.PageIndex !== undefined) {
+        queryParams.pageIndex = params.PageIndex;
+        queryParams.PageIndex = params.PageIndex;
+      }
+      if (params.PageSize !== undefined) {
+        queryParams.pageSize = params.PageSize;
+        queryParams.PageSize = params.PageSize;
+      }
+      if (params.Keyword) {
+        queryParams.keyword = params.Keyword;
+        queryParams.Keyword = params.Keyword;
+      }
     }
-    // Cập nhật timestamp
-    await this.update(id, { updatedAt: new Date().toISOString() });
-    return { tempPassword };
+
+    const response = await api.get<PagedResult<UserAccount> | { data: PagedResult<UserAccount> }>(
+      API_ENDPOINTS.USERS.PAGED_DB,
+      { params: queryParams }
+    );
+
+    const raw = response.data as unknown as Record<string, unknown>;
+    let pagedData: PagedResult<UserAccount>;
+
+    if (raw && "items" in raw && Array.isArray(raw.items)) {
+      pagedData = raw as unknown as PagedResult<UserAccount>;
+    } else if (
+      raw &&
+      "data" in raw &&
+      typeof raw.data === "object" &&
+      raw.data &&
+      "items" in (raw.data as Record<string, unknown>)
+    ) {
+      pagedData = (raw.data as unknown) as PagedResult<UserAccount>;
+    } else {
+      pagedData = {
+        items: [],
+        pagination: {
+          pageIndex: params?.PageIndex || 1,
+          pageSize: params?.PageSize || 10,
+          totalRecords: 0,
+          totalPages: 0,
+          hasPreviousPage: false,
+          hasNextPage: false,
+        },
+      };
+    }
+
+    // Chuẩn hóa dữ liệu trả về từ backend
+    const normalizedItems: UserAccount[] = (pagedData.items || []).map((u) => {
+      const isAct = u.isActive ?? (u.status === "ACTIVE");
+      return {
+        ...u,
+        phone: u.phone || u.phoneNumber || null,
+        phoneNumber: u.phoneNumber || u.phone || null,
+        status: u.status || (isAct ? "ACTIVE" : "INACTIVE"),
+        isActive: isAct,
+        roles:
+          u.roles && u.roles.length > 0
+            ? u.roles
+            : u.username === "admin"
+            ? (["SuperAdmin"] as UserRole[])
+            : (["Staff"] as UserRole[]),
+        mfaEnabled: u.mfaEnabled ?? false,
+        assignedAssets: u.assignedAssets || [],
+      };
+    });
+
+    return {
+      items: normalizedItems,
+      pagination: pagedData.pagination || {
+        pageIndex: params?.PageIndex || 1,
+        pageSize: params?.PageSize || 10,
+        totalRecords: normalizedItems.length,
+        totalPages: 1,
+        hasPreviousPage: false,
+        hasNextPage: false,
+      },
+    };
+  }
+
+  /**
+   * Khóa tài khoản người dùng
+   * Endpoint: POST /api/v1/accounts/{id}/lock
+   */
+  async lock(id: number): Promise<Result<UserAccount>> {
+    const response = await api.post<Result<UserAccount> | void>(
+      API_ENDPOINTS.USERS.LOCK(id)
+    );
+    const resData = response.data as Result<UserAccount> | undefined;
+    return (
+      resData ||
+      ({
+        isSuccess: true,
+        statusCode: response.status || 204,
+        message: "Đã cập nhật trạng thái khóa tài khoản!",
+        data: { id } as UserAccount,
+      } as unknown as Result<UserAccount>)
+    );
+  }
+
+  async toggleLock(id: number): Promise<Result<UserAccount>> {
+    return this.lock(id);
+  }
+
+  /**
+   * Xóa mềm tài khoản người dùng theo Procedure
+   * Endpoint: DELETE /api/v1/accounts/{id}/soft
+   */
+  override async delete(id: number): Promise<Result<UserAccount> | null> {
+    const result = await Swal.fire({
+      title: APP_MESSAGES.COMMON.DELETE_CONFIRM_TITLE,
+      text: "Tài khoản người dùng sẽ bị xóa khỏi hệ thống.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: APP_MESSAGES.COMMON.CONFIRM_DELETE_BTN,
+      cancelButtonText: APP_MESSAGES.COMMON.CANCEL_BTN,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) {
+      return null;
+    }
+
+    const response = await api.delete<Result<UserAccount> | void>(
+      API_ENDPOINTS.USERS.SOFT_DELETE(id)
+    );
+
+    Swal.fire({
+      title: APP_MESSAGES.COMMON.DELETE_HEADER,
+      text: APP_MESSAGES.COMMON.DELETE_SUCCESS,
+      icon: "success",
+    });
+
+    const resData = response.data as Result<UserAccount> | undefined;
+    return (
+      resData ||
+      ({
+        isSuccess: true,
+        statusCode: response.status || 204,
+        message: APP_MESSAGES.COMMON.DELETE_SUCCESS,
+        data: { id } as UserAccount,
+      } as unknown as Result<UserAccount>)
+    );
+  }
+
+  /**
+   * Đổi mật khẩu tài khoản qua Procedure
+   * Endpoint: POST /api/v1/accounts/{id}/password
+   */
+  async changePassword(id: number, newPassword: string): Promise<Result<void>> {
+    const payload = {
+      newPassword,
+      NewPassword: newPassword,
+    };
+
+    const response = await api.post<Result<void> | void>(
+      API_ENDPOINTS.USERS.PASSWORD(id),
+      payload
+    );
+
+    const resData = response.data as Result<void> | undefined;
+    return (
+      resData ||
+      ({
+        isSuccess: true,
+        statusCode: response.status || 204,
+        message: APP_MESSAGES.AUTH.CHANGE_PASSWORD_SUCCESS,
+      } as unknown as Result<void>)
+    );
+  }
+
+  /**
+   * Đặt lại mật khẩu tài khoản (tự động sinh mật khẩu tạm ngẫu nhiên và gửi lên Backend)
+   */
+  async resetPassword(id: number, customPassword?: string): Promise<{ tempPassword: string }> {
+    let passwordToSet = customPassword;
+    if (!passwordToSet) {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+      passwordToSet = "";
+      for (let i = 0; i < 10; i++) {
+        passwordToSet += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+    }
+
+    await this.changePassword(id, passwordToSet);
+    return { tempPassword: passwordToSet };
   }
 
   /**
@@ -150,11 +304,11 @@ class UserService {
       `"${u.username}"`,
       `"${u.fullName}"`,
       `"${u.email}"`,
-      `"${u.phone || ""}"`,
+      `"${u.phone || u.phoneNumber || ""}"`,
       `"${u.departmentName || ""}"`,
       `"${u.positionName || ""}"`,
-      `"${u.roles.join(", ")}"`,
-      `"${u.status}"`,
+      `"${(u.roles || []).join(", ")}"`,
+      `"${u.status || (u.isActive ? "ACTIVE" : "INACTIVE")}"`,
       `"${u.mfaEnabled ? "Bật" : "Tắt"}"`,
       `"${(u.assignedAssets || []).length}"`,
       `"${u.lastLoginAt || "Chưa đăng nhập"}"`,

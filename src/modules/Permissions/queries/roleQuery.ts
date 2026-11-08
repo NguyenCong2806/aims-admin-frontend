@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { services } from "../../../di/ServiceContainer";
-import { AppRole } from "../models/permissionModel";
+import { AppRole, UpdatePermissionDto } from "../models/permissionModel";
 
 export const roleKeys = {
   all: ["roles"] as const,
@@ -30,6 +30,14 @@ export function usePermissionModules() {
     queryKey: roleKeys.modules,
     queryFn: () => services.permission.getModules(),
     staleTime: 1000 * 60 * 5, // 5 minutes (ít khi đổi)
+  });
+}
+
+export function useMyPermissions() {
+  return useQuery({
+    queryKey: ["current-permissions"],
+    queryFn: () => services.permission.getMyPermissions(),
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -82,6 +90,44 @@ export function useToggleModulePermissions() {
         if (!old) return [updatedRole];
         return old.map((r) => (r.id === updatedRole.id ? updatedRole : r));
       });
+    },
+  });
+}
+
+/**
+ * Mutation cập nhật thông tin quyền hạn
+ * Endpoint: PUT /api/v1/permissions/{permissionId}
+ */
+export function useUpdatePermissionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      permissionId,
+      dto,
+    }: {
+      permissionId: string | number;
+      dto: UpdatePermissionDto;
+    }) => services.permission.updatePermission(permissionId, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: roleKeys.modules });
+    },
+  });
+}
+
+/**
+ * Mutation xóa quyền hạn khỏi hệ thống
+ * Endpoint: DELETE /api/v1/permissions/{permissionId}
+ */
+export function useDeletePermissionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (permissionId: string | number) =>
+      services.permission.deletePermission(permissionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: roleKeys.modules });
+      queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
     },
   });
 }

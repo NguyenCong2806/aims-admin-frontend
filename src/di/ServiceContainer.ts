@@ -29,7 +29,8 @@ import {
   AuditLogService,
 } from "../modules/System/services";
 
-import { PermissionService } from "../modules/Users/services";
+import { PermissionService } from "../modules/Permissions/services";
+import { UserService } from "../modules/Users/services";
 import { HardwareService } from "../modules/Hardware/services";
 
 export class ServiceContainer {
@@ -53,6 +54,7 @@ export class ServiceContainer {
   public readonly auditLog: AuditLogService;
   public readonly permission: PermissionService;
   public readonly hardware: HardwareService;
+  public readonly user: UserService;
 
   constructor() {
     this.brand = new BrandService();
@@ -75,6 +77,7 @@ export class ServiceContainer {
     this.auditLog = new AuditLogService();
     this.permission = new PermissionService();
     this.hardware = new HardwareService();
+    this.user = new UserService();
   }
 }
 

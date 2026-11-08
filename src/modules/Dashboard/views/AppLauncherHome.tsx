@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
 import NotificationDropdown from "../../../components/header/NotificationDropdown";
 import UserDropdown from "../../../components/header/UserDropdown";
-
+import { useAuth } from "../../../context/AuthContext";
 
 interface AppModule {
   id: string;
@@ -13,10 +13,12 @@ interface AppModule {
   badge?: string;
   badgeColor?: string;
   description: string;
+  permission?: string;
   renderIcon: () => React.ReactNode;
 }
 
 export default function AppLauncherHome() {
+  const { hasPermission } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [companyName, setCompanyName] = useState("AIMS Enterprise (Hà Nội)");
@@ -54,6 +56,7 @@ export default function AppLauncherHome() {
       badge: "Chính",
       badgeColor: "bg-blue-500",
       description: "Quản lý phần mềm, dữ liệu & tài nguyên số",
+      permission: "digital.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(37,99,235,0.25)]">
           <defs>
@@ -105,6 +108,7 @@ export default function AppLauncherHome() {
       path: "/thiet-bi-phan-cung",
       category: "asset",
       description: "Máy chủ, laptop, máy trạm và linh kiện IT",
+      permission: "hardware_assets.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(99,102,241,0.25)]">
           <defs>
@@ -149,6 +153,7 @@ export default function AppLauncherHome() {
       path: "/giam-sat-may-tram",
       category: "asset",
       description: "Theo dõi tình trạng hoạt động các máy trạm",
+      permission: "monitoring.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(14,165,233,0.3)]">
           <defs>
@@ -193,6 +198,7 @@ export default function AppLauncherHome() {
       path: "/danh-muc-san-pham",
       category: "lookup",
       description: "Phân nhóm tài sản CNTT & thiết bị văn phòng",
+      permission: "asset-categories.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(245,158,11,0.3)]">
           <defs>
@@ -236,6 +242,7 @@ export default function AppLauncherHome() {
       path: "/hang-san-xuat",
       category: "lookup",
       description: "Thương hiệu sản xuất thiết bị (Dell, HP, Apple...)",
+      permission: "brands.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(249,115,22,0.3)]">
           <defs>
@@ -277,6 +284,7 @@ export default function AppLauncherHome() {
       path: "/loai-tai-san",
       category: "lookup",
       description: "Định nghĩa phân loại tài sản vô hình / hữu hình",
+      permission: "asset-types.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_12px_rgba(244,63,94,0.32)]">
           <defs>
@@ -323,6 +331,7 @@ export default function AppLauncherHome() {
       path: "/trang-thai-tai-san",
       category: "lookup",
       description: "Đang sử dụng, bảo dưỡng, hỏng hóc, thanh lý",
+      permission: "asset-status.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_12px_rgba(16,185,129,0.35)]">
           <defs>
@@ -379,6 +388,7 @@ export default function AppLauncherHome() {
       path: "/phong-ban",
       category: "org",
       description: "Cơ cấu phòng ban, đơn vị thành viên",
+      permission: "department.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_12px_rgba(139,92,246,0.3)]">
           <defs>
@@ -426,6 +436,7 @@ export default function AppLauncherHome() {
       path: "/chuc-vu",
       category: "org",
       description: "Chức danh, vai trò quản lý trong tổ chức",
+      permission: "positions.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_12px_rgba(59,130,246,0.32)]">
           <defs>
@@ -472,6 +483,7 @@ export default function AppLauncherHome() {
       path: "/dia-diem",
       category: "org",
       description: "Tòa nhà, văn phòng, kho bãi & chi nhánh",
+      permission: "locations.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_12px_rgba(239,68,68,0.35)]">
           <defs>
@@ -524,6 +536,7 @@ export default function AppLauncherHome() {
       path: "/trung-tam-chi-phi",
       category: "org",
       description: "Theo dõi hạch toán chi phí đầu tư tài sản",
+      permission: "cost-center.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_12px_rgba(217,119,6,0.35)]">
           <defs>
@@ -577,6 +590,7 @@ export default function AppLauncherHome() {
       badge: "Định kỳ",
       badgeColor: "bg-teal-500",
       description: "Bảo trì sửa chữa, kiểm định định kỳ thiết bị",
+      permission: "maintenance-type.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(13,148,136,0.3)]">
           <defs>
@@ -621,6 +635,7 @@ export default function AppLauncherHome() {
       path: "/loai-giay-phep",
       category: "operation",
       description: "Bản quyền phần mềm, License key & thời hạn",
+      permission: "license-type.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(147,51,234,0.3)]">
           <defs>
@@ -662,6 +677,7 @@ export default function AppLauncherHome() {
       path: "/nha-cung-cap",
       category: "operation",
       description: "Đối tác bán buôn, cung cấp linh kiện & dịch vụ",
+      permission: "suppliers.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(37,99,235,0.3)]">
           <defs>
@@ -710,6 +726,7 @@ export default function AppLauncherHome() {
       path: "/don-vi",
       category: "lookup",
       description: "Cái, bộ, chiếc, thiết bị, gói bản quyền",
+      permission: "units.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(234,88,12,0.3)]">
           <defs>
@@ -746,6 +763,7 @@ export default function AppLauncherHome() {
       path: "/hop-dong-bao-hanh",
       category: "operation",
       description: "Quản lý hồ sơ hợp đồng mua sắm & cam kết SLA",
+      permission: "contracts.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(5,150,105,0.3)]">
           <defs>
@@ -791,6 +809,7 @@ export default function AppLauncherHome() {
       badge: "Xu hướng",
       badgeColor: "bg-purple-600",
       description: "Biểu đồ chi phí, khấu hao tài sản và biến động",
+      permission: "reports.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(168,85,247,0.3)]">
           <defs>
@@ -838,6 +857,7 @@ export default function AppLauncherHome() {
       path: "/nhat-ky-he-thong",
       category: "system",
       description: "Lịch sử thao tác, kiểm toán bảo mật & audit trail",
+      permission: "audit.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(51,65,85,0.35)]">
           <defs>
@@ -873,6 +893,7 @@ export default function AppLauncherHome() {
       path: "/lich-bao-tri",
       category: "operation",
       description: "Kế hoạch bảo hành, kiểm tra tài sản hàng tháng",
+      permission: "maintenance.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(239,68,68,0.3)]">
           <defs>
@@ -912,6 +933,7 @@ export default function AppLauncherHome() {
       path: "/tai-khoan",
       category: "system",
       description: "Danh sách người dùng, cán bộ quản lý tài sản",
+      permission: "accounts.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(99,102,241,0.3)]">
           <defs>
@@ -948,6 +970,7 @@ export default function AppLauncherHome() {
       path: "/phan-quyen",
       category: "system",
       description: "Phân quyền theo vai trò & quyền hạn truy cập",
+      permission: "roles.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(245,158,11,0.35)]">
           <defs>
@@ -995,6 +1018,7 @@ export default function AppLauncherHome() {
       path: "/cau-hinh-he-thong",
       category: "system",
       description: "Thiết lập tham số chung, mẫu in ấn & thông báo",
+      permission: "settings.view",
       renderIcon: () => (
         <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_10px_rgba(71,85,105,0.3)]">
           <defs>
@@ -1037,9 +1061,14 @@ export default function AppLauncherHome() {
     },
   ];
 
+  // Lọc danh sách module theo quyền hạn (RBAC) của người dùng
+  const visibleModules = useMemo(() => {
+    return appModules.filter((mod) => !mod.permission || hasPermission(mod.permission));
+  }, [appModules, hasPermission]);
+
   // Filtering by search term and category
   const filteredModules = useMemo(() => {
-    return appModules.filter((mod) => {
+    return visibleModules.filter((mod) => {
       const matchSearch =
         mod.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         mod.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -1047,9 +1076,9 @@ export default function AppLauncherHome() {
         selectedCategory === "all" || mod.category === selectedCategory;
       return matchSearch && matchCat;
     });
-  }, [appModules, searchTerm, selectedCategory]);
+  }, [visibleModules, searchTerm, selectedCategory]);
 
-  const categories = [
+  const allCategories = [
     { id: "all", label: "Tất cả ứng dụng" },
     { id: "asset", label: "Tài sản IT" },
     { id: "org", label: "Tổ chức & Địa điểm" },
@@ -1057,6 +1086,14 @@ export default function AppLauncherHome() {
     { id: "operation", label: "Vận hành & Bảo trì" },
     { id: "system", label: "Quản trị" },
   ];
+
+  // Chỉ hiển thị các tab danh mục có ít nhất 1 module người dùng có quyền truy cập
+  const categories = useMemo(() => {
+    return allCategories.filter((cat) => {
+      if (cat.id === "all") return true;
+      return visibleModules.some((m) => m.category === cat.id);
+    });
+  }, [visibleModules]);
 
   return (
     <>

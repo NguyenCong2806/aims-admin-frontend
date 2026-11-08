@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
+import { useAuth } from "../context/AuthContext";
 
 // Assume these icons are imported from an icon library
 import {
@@ -21,7 +22,8 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  permission?: string;
+  subItems?: { name: string; path: string; pro?: boolean; new?: boolean; permission?: string }[];
 };
 
 const navItems: NavItem[] = [
@@ -33,14 +35,13 @@ const navItems: NavItem[] = [
   {
     name: "Quản lý Tài sản IT",
     icon: <ListIcon />,
-    subItems: 
-    [
-      { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", pro: false },
-      { name: "Thêm mới thiết bị", path: "/thiet-bi-phan-cung/tao-moi", pro: false },
-      { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", pro: false },
-      { name: "Phần mềm theo máy", path: "/giam-sat-may-tram/phan-mem", pro: false },
-      { name: "Tài nguyên số", path: "/tai-nguyen-so", pro: false },
-      { name: "Tạo mới tài nguyên số", path: "/tai-nguyen-so/tao-moi", pro: false },
+    subItems: [
+      { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", pro: false, permission: "hardware_assets.view" },
+      { name: "Thêm mới thiết bị", path: "/thiet-bi-phan-cung/tao-moi", pro: false, permission: "hardware_assets.create" },
+      { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", pro: false, permission: "monitoring.view" },
+      { name: "Phần mềm theo máy", path: "/giam-sat-may-tram/phan-mem", pro: false, permission: "installed_software.view" },
+      { name: "Tài nguyên số", path: "/tai-nguyen-so", pro: false, permission: "digital.view" },
+      { name: "Tạo mới tài nguyên số", path: "/tai-nguyen-so/tao-moi", pro: false, permission: "digital.create" },
       { name: "Mẫu", path: "/form-elements", pro: false },
     ],
   },
@@ -48,17 +49,16 @@ const navItems: NavItem[] = [
     name: "Hợp đồng & Đối tác",
     icon: <DocsIcon />,
     subItems: [
-      { name: "Hợp đồng & Bảo hành", path: "/hop-dong-bao-hanh", pro: false },
-      { name: "Nhà cung cấp", path: "/nha-cung-cap", pro: false },
+      { name: "Hợp đồng & Bảo hành", path: "/hop-dong-bao-hanh", pro: false, permission: "contracts.view" },
+      { name: "Nhà cung cấp", path: "/nha-cung-cap", pro: false, permission: "suppliers.view" },
     ],
   },
   {
     name: "Báo cáo & Thống kê",
     icon: <PieChartIcon />,
-    subItems: 
-    [
-      { name: "Báo cáo & Phân tích", path: "/bao-cao-thong-ke", pro: false },
-      { name: "Nhật ký hệ thống", path: "/nhat-ky-he-thong", pro: false }
+    subItems: [
+      { name: "Báo cáo & Phân tích", path: "/bao-cao-thong-ke", pro: false, permission: "reports.view" },
+      { name: "Nhật ký hệ thống", path: "/nhat-ky-he-thong", pro: false, permission: "audit.view" },
     ],
   },
 ];
@@ -68,45 +68,45 @@ const othersItems: NavItem[] = [
     icon: <GroupIcon />,
     name: "Tổ chức & Vị trí",
     subItems: [
-      { name: "Phòng ban", path: "/phong-ban", pro: false },
-      { name: "Chức vụ", path: "/chuc-vu", pro: false },
-      { name: "Địa điểm", path: "/dia-diem", pro: false },
-      { name: "Trung tâm chi phí", path: "/trung-tam-chi-phi", pro: false },
+      { name: "Phòng ban", path: "/phong-ban", pro: false, permission: "department.view" },
+      { name: "Chức vụ", path: "/chuc-vu", pro: false, permission: "positions.view" },
+      { name: "Địa điểm", path: "/dia-diem", pro: false, permission: "locations.view" },
+      { name: "Trung tâm chi phí", path: "/trung-tam-chi-phi", pro: false, permission: "cost-center.view" },
     ],
   },
   {
     icon: <BoxCubeIcon />,
     name: "Tài sản & Phần cứng",
     subItems: [
-      { name: "Danh mục sản phẩm", path: "/danh-muc-san-pham", pro: false },
-      { name: "Hãng sản xuất", path: "/hang-san-xuat", pro: false },
-      { name: "Loại tài sản", path: "/loai-tai-san", pro: false },
-      { name: "Trạng thái tài sản", path: "/trang-thai-tai-san", pro: false },
+      { name: "Danh mục sản phẩm", path: "/danh-muc-san-pham", pro: false, permission: "asset-categories.view" },
+      { name: "Hãng sản xuất", path: "/hang-san-xuat", pro: false, permission: "brands.view" },
+      { name: "Loại tài sản", path: "/loai-tai-san", pro: false, permission: "asset-types.view" },
+      { name: "Trạng thái tài sản", path: "/trang-thai-tai-san", pro: false, permission: "asset-status.view" },
     ],
   },
   {
     icon: <PlugInIcon />,
     name: "Phần mềm & Giấy phép",
     subItems: [
-      { name: "Loại giấy phép", path: "/loai-giay-phep", pro: false },
+      { name: "Loại giấy phép", path: "/loai-giay-phep", pro: false, permission: "license-type.view" },
     ],
   },
   {
     icon: <TaskIcon />,
     name: "Vận hành & Bảo trì",
     subItems: [
-      { name: "Lịch bảo trì", path: "/lich-bao-tri", pro: false },
-      { name: "Loại bảo trì", path: "/loai-bao-tri", pro: false },
-      { name: "Đơn vị", path: "/don-vi", pro: false },
+      { name: "Lịch bảo trì", path: "/lich-bao-tri", pro: false, permission: "maintenance.view" },
+      { name: "Loại bảo trì", path: "/loai-bao-tri", pro: false, permission: "maintenance-type.view" },
+      { name: "Đơn vị", path: "/don-vi", pro: false, permission: "units.view" },
     ],
   },
   {
     icon: <UserIcon />,
     name: "Người dùng",
     subItems: [
-      { name: "Tài khoản", path: "/tai-khoan", pro: false },
-      { name: "Phân quyền", path: "/phan-quyen", pro: false },
-      { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", pro: false },
+      { name: "Tài khoản", path: "/tai-khoan", pro: false, permission: "accounts.view" },
+      { name: "Phân quyền", path: "/phan-quyen", pro: false, permission: "roles.view" },
+      { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", pro: false, permission: "settings.view" },
     ],
   },
   {
@@ -122,6 +122,33 @@ const othersItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+  const { hasPermission } = useAuth();
+
+  // Lọc danh sách menu dựa trên quyền hạn tài khoản (chỉ hiện khi có quyền .view tương ứng)
+  const filterNavList = useCallback(
+    (items: NavItem[]): NavItem[] => {
+      return items
+        .map((item) => {
+          if (item.subItems) {
+            const filteredSubs = item.subItems.filter((sub) => {
+              if (!sub.permission) return true;
+              return hasPermission(sub.permission);
+            });
+            if (filteredSubs.length === 0) return null;
+            return { ...item, subItems: filteredSubs };
+          }
+          if (item.permission && !hasPermission(item.permission)) {
+            return null;
+          }
+          return item;
+        })
+        .filter(Boolean) as NavItem[];
+    },
+    [hasPermission]
+  );
+
+  const visibleNavItems = useMemo(() => filterNavList(navItems), [filterNavList]);
+  const visibleOthersItems = useMemo(() => filterNavList(othersItems), [filterNavList]);
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -141,7 +168,7 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     let submenuMatched = false;
     ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
+      const items = menuType === "main" ? visibleNavItems : visibleOthersItems;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
@@ -160,7 +187,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [location, isActive]);
+  }, [location, isActive, visibleNavItems, visibleOthersItems]);
 
   useEffect(() => {
     if (openSubmenu !== null) {
@@ -375,7 +402,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots className="size-6" />
                 )}
               </h2>
-              {renderMenuItems(navItems, "main")}
+              {renderMenuItems(visibleNavItems, "main")}
             </div>
             <div className="">
               <h2
@@ -391,7 +418,7 @@ const AppSidebar: React.FC = () => {
                   <HorizontaLDots />
                 )}
               </h2>
-              {renderMenuItems(othersItems, "others")}
+              {renderMenuItems(visibleOthersItems, "others")}
             </div>
           </div>
         </nav>

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { UserAccount, UserRole, UserStatus } from "../../models/userAccount";
-import { USER_ROLE_META } from "../userHelper";
+import { USER_ROLE_META, ROLE_TO_ID_MAP, ID_TO_ROLE_MAP } from "../userHelper";
+import { useDepartmentSelectList } from "../../../Lookups/queries/departmentsQuery";
+import { usePositionSelectList } from "../../../Lookups/queries/positionsQuery";
+import Select from "../../../../components/form/Select";
+import { SelectListItem } from "../../../base/IService";
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -19,56 +23,125 @@ const ALL_ROLES: UserRole[] = [
   "Staff",
 ];
 
-const DEPARTMENTS = [
-  "Phòng Công nghệ & IT",
-  "Phòng Hành chính - Nhân sự",
-  "Phòng Kế toán & Tài chính",
-  "Phòng Trí tuệ Nhân tạo (AI & Data)",
-  "Phòng Kinh doanh & Tiếp thị",
-  "Ban Giám đốc Điều hành",
-];
-
 export const UserFormModal: React.FC<UserFormModalProps> = ({
   isOpen,
   onClose,
   initialData,
   onSave,
 }) => {
+  // Lấy dữ liệu Lookup Select-List từ API backend
+  const { data: departmentSelectList, isLoading: isLoadingDepts } = useDepartmentSelectList();
+  const { data: positionSelectList, isLoading: isLoadingPositions } = usePositionSelectList();
+
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [departmentName, setDepartmentName] = useState(DEPARTMENTS[0]);
-  const [positionName, setPositionName] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [departmentId, setDepartmentId] = useState<number | undefined>(undefined);
+  const [departmentName, setDepartmentName] = useState<string>("");
+  const [positionId, setPositionId] = useState<number | null | undefined>(undefined);
+  const [positionName, setPositionName] = useState<string>("");
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>(["Staff"]);
   const [status, setStatus] = useState<UserStatus>("ACTIVE");
-  const [mfaEnabled, setMfaEnabled] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setUsername(initialData.username || "");
       setFullName(initialData.fullName || "");
       setEmail(initialData.email || "");
-      setPhone(initialData.phone || "");
-      setDepartmentName(initialData.departmentName || DEPARTMENTS[0]);
-      setPositionName(initialData.positionName || "");
-      setSelectedRoles(initialData.roles || ["Staff"]);
-      setStatus(initialData.status || "ACTIVE");
-      setMfaEnabled(initialData.mfaEnabled || false);
+      setPhone(initialData.phoneNumber || initialData.phone || "");
+      setPassword("");
+      setShowPassword(false);
+
+      // Phòng ban
+      let deptId = initialData.departmentId || undefined;
+      const deptNm = initialData.departmentName || "";
+      if (!deptId && deptNm && departmentSelectList) {
+        const found = departmentSelectList.find(
+          (d: SelectListItem) => String(d.value).toLowerCase() === deptNm.toLowerCase()
+        );
+        if (found) deptId = Number(found.key);
+      }
+      setDepartmentId(deptId);
+      setDepartmentName(deptNm);
+
+      // Chức vụ
+      let posId = initialData.positionId || undefined;
+      const posNm = initialData.positionName || "";
+      if (!posId && posNm && positionSelectList) {
+        const found = positionSelectList.find(
+          (p: SelectListItem) => String(p.value).toLowerCase() === posNm.toLowerCase()
+        );
+        if (found) posId = Number(found.key);
+      }
+      setPositionId(posId);
+      setPositionName(posNm);
+
+      if (initialData.roleids && initialData.roleids.length > 0) {
+        const mapped = initialData.roleids
+          .map((id) => ID_TO_ROLE_MAP[id])
+          .filter(Boolean) as UserRole[];
+        setSelectedRoles(mapped.length > 0 ? mapped : ["Staff"]);
+      } else if (initialData.roles && initialData.roles.length > 0) {
+        setSelectedRoles(initialData.roles);
+      } else {
+        setSelectedRoles(["Staff"]);
+      }
+
+      const isAct = initialData.isActive ?? (initialData.status === "ACTIVE");
+      setStatus(initialData.status || (isAct ? "ACTIVE" : "INACTIVE"));
     } else {
       setUsername("");
       setFullName("");
       setEmail("");
       setPhone("");
-      setDepartmentName(DEPARTMENTS[0]);
-      setPositionName("");
-      setSelectedRoles(["Staff"]);
+      setPassword("");
+      setShowPassword(false);
+      setDepartmentId(
+        departmentSelectList && departmentSelectList.length > 0
+          ? Number(departmentSelectList[0].key)
+          : undefined
+      );
+      setDepartmentName(departmentSelectList?.[0]?.value || "");
+      setPositionId(
+        positionSelectList && positionSelectList.length > 0
+          ? Number(positionSelectList[0].key)
+          : undefined
+      );
+      setPositionName(positionSelectList?.[0]?.value || "");
+      setSelectedRoles(["SuperAdmin"]);
       setStatus("ACTIVE");
-      setMfaEnabled(false);
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, departmentSelectList, positionSelectList]);
 
   if (!isOpen) return null;
+
+  const handleGenerateRandomPassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+    let gen = "";
+    for (let i = 0; i < 10; i++) {
+      gen += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setPassword(gen);
+    setShowPassword(true);
+    toast.success("Đã sinh mật khẩu ngẫu nhiên: " + gen);
+  };
+
+  const handleDepartmentChange = (val: string) => {
+    const num = val ? Number(val) : undefined;
+    setDepartmentId(num);
+    const matched = departmentSelectList?.find((d: SelectListItem) => String(d.key) === val);
+    setDepartmentName(matched ? matched.value : "");
+  };
+
+  const handlePositionChange = (val: string) => {
+    const num = val ? Number(val) : null;
+    setPositionId(num);
+    const matched = positionSelectList?.find((p: SelectListItem) => String(p.key) === val);
+    setPositionName(matched ? matched.value : "");
+  };
 
   const toggleRole = (role: UserRole) => {
     setSelectedRoles((prev) => {
@@ -91,17 +164,39 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       return;
     }
 
+    if (!initialData) {
+      if (!password.trim()) {
+        toast.error("Vui lòng nhập mật khẩu khởi tạo cho tài khoản mới!");
+        return;
+      }
+      if (password.length < 6) {
+        toast.error("Mật khẩu khởi tạo phải có độ dài tối thiểu 6 ký tự!");
+        return;
+      }
+    }
+
+    const roleids = selectedRoles.map((r) => ROLE_TO_ID_MAP[r] ?? 1);
+
     onSave({
       id: initialData?.id,
       username: username.trim().toLowerCase(),
       fullName: fullName.trim(),
       email: email.trim(),
-      phone: phone.trim(),
-      departmentName,
-      positionName: positionName.trim() || "Nhân viên",
+      phone: phone.trim() || null,
+      phoneNumber: phone.trim() || null,
+      avatarUrl: null,
+      password: password.trim() || undefined,
+      passwordhash: password.trim() || undefined,
+      departmentId,
+      departmentid: departmentId,
+      departmentName: departmentName || undefined,
+      positionId,
+      positionid: positionId,
+      positionName: positionName || undefined,
       roles: selectedRoles,
+      roleids: roleids.length > 0 ? roleids : [1],
       status,
-      mfaEnabled,
+      isActive: status === "ACTIVE",
       assignedAssets: initialData?.assignedAssets || [],
     });
 
@@ -196,34 +291,71 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
 
+          {/* MẬT KHẨU KHỞI TẠO (CHỈ HIỂN THỊ KHI TẠO MỚI) */}
+          {!initialData && (
+            <div className="p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-950/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">🔑</span>
+                  <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                    Mật khẩu khởi tạo <span className="text-rose-500">*</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGenerateRandomPassword}
+                  className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 flex items-center gap-1"
+                >
+                  ⚡ Tạo mật khẩu ngẫu nhiên
+                </button>
+              </div>
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Nhập mật khẩu khởi tạo (tối thiểu 6 ký tự)..."
+                  className="w-full h-10 pl-3 pr-10 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-sm"
+                  title={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* LOOKUPS SELECT LIST: PHÒNG BAN & CHỨC VỤ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Phòng ban trực thuộc
               </label>
-              <select
-                value={departmentName}
-                onChange={(e) => setDepartmentName(e.target.value)}
-                className="w-full h-10 px-3 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
-              >
-                {DEPARTMENTS.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
+              <Select
+                options={departmentSelectList || []}
+                value={departmentId !== undefined ? String(departmentId) : ""}
+                onChange={(val: string) => handleDepartmentChange(val)}
+                placeholder={isLoadingDepts ? "Đang tải danh sách phòng ban..." : "-- Chọn phòng ban --"}
+                disabled={isLoadingDepts}
+              />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Chức vụ / Vị trí
               </label>
-              <input
-                type="text"
-                value={positionName}
-                onChange={(e) => setPositionName(e.target.value)}
-                placeholder="VD: Chuyên viên IT..."
-                className="w-full h-10 px-3 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none"
+              <Select
+                options={positionSelectList || []}
+                value={positionId !== undefined && positionId !== null ? String(positionId) : ""}
+                onChange={(val: string) => handlePositionChange(val)}
+                placeholder={isLoadingPositions ? "Đang tải danh sách chức vụ..." : "-- Chọn chức vụ --"}
+                disabled={isLoadingPositions}
               />
             </div>
           </div>
@@ -236,7 +368,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {ALL_ROLES.map((role) => {
                 const isSelected = selectedRoles.includes(role);
-                const roleMeta = (USER_ROLE_META as any)[role];
+                const roleMeta = (USER_ROLE_META as Record<string, any>)[role] || USER_ROLE_META.Staff;
                 return (
                   <label
                     key={role}
@@ -268,8 +400,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
 
-          {/* STATUS & 2FA */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+          {/* STATUS */}
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
                 Trạng thái tài khoản
@@ -284,19 +416,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 <option value="PENDING">🟡 Chờ xác nhận (Pending)</option>
                 <option value="INACTIVE">⚪ Ngừng sử dụng (Inactive)</option>
               </select>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-850 border border-gray-200 dark:border-gray-800 mt-5">
-              <div>
-                <p className="text-xs font-bold text-gray-900 dark:text-white">Bảo mật 2 yếu tố (2FA)</p>
-                <p className="text-[11px] text-gray-400">Yêu cầu mã OTP qua ứng dụng Authenticator</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={mfaEnabled}
-                onChange={(e) => setMfaEnabled(e.target.checked)}
-                className="w-5 h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
-              />
             </div>
           </div>
 

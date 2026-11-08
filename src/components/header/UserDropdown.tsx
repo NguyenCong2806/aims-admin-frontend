@@ -53,8 +53,11 @@ export default function UserDropdown() {
           <span className="block font-semibold text-xs text-gray-800 dark:text-gray-200 leading-tight">
             {displayName}
           </span>
-          <span className="block text-[10px] text-gray-400 font-mono">
-            {user?.roles?.[0] || "SUPER_ADMIN"}
+          <span
+            className="block text-[10px] text-gray-400 font-mono truncate max-w-[160px]"
+            title={user?.roles?.join(", ")}
+          >
+            {user?.roles && user.roles.length > 0 ? user.roles.join(", ") : "SUPER_ADMIN"}
           </span>
         </div>
 
@@ -84,13 +87,26 @@ export default function UserDropdown() {
         className="absolute right-0 mt-[17px] flex w-[280px] flex-col rounded-2xl border border-gray-200 bg-white p-3.5 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
       >
         <div className="pb-3 border-b border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-col gap-1 mb-1.5">
             <span className="block font-bold text-gray-900 text-theme-sm dark:text-white truncate">
               {displayName}
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300">
-              {user?.roles?.[0] || "SUPER_ADMIN"}
-            </span>
+            <div className="flex flex-wrap gap-1">
+              {user?.roles && user.roles.length > 0 ? (
+                user.roles.map((r) => (
+                  <span
+                    key={r}
+                    className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200/50 dark:border-brand-800/40"
+                  >
+                    {r}
+                  </span>
+                ))
+              ) : (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300">
+                  SUPER_ADMIN
+                </span>
+              )}
+            </div>
           </div>
           <span className="block text-theme-xs text-gray-500 dark:text-gray-400 truncate">
             {displayEmail}

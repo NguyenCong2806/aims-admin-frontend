@@ -223,19 +223,38 @@ export const AimsBasePageLayout: React.FC<AimsBasePageLayoutProps> = ({
 
   // Global error state
   if (error) {
-    const errorMsg = typeof error === "string" ? error : error.message || "Đã xảy ra lỗi không mong muốn.";
+    const is403 =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (error as any)?.response?.status === 403 ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (error as any)?.status === 403 ||
+      (typeof error === "string" && (error.includes("403") || error.toLowerCase().includes("quyền") || error.toLowerCase().includes("forbidden"))) ||
+      (error instanceof Error && (error.message.includes("403") || error.message.toLowerCase().includes("quyền") || error.message.toLowerCase().includes("forbidden")));
+
+    const errorMsg =
+      typeof error === "string"
+        ? error
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        : (error as any)?.response?.data?.message || error.message || "Đã xảy ra lỗi không mong muốn.";
+
     return (
       <div className="flex flex-col flex-1 w-full min-h-[400px] items-center justify-center bg-white dark:bg-gray-900 p-6">
         <div className="max-w-md w-full p-6 text-center rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/50">
-          <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+          <div className="w-14 h-14 mx-auto mb-3 flex items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400 text-2xl">
+            {is403 ? "🚫" : (
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            )}
           </div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-            Không thể tải dữ liệu
+          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+            {is403 ? "Bạn không có quyền thực hiện chức năng này" : "Không thể tải dữ liệu"}
           </h3>
-          <p className="text-sm text-red-600 dark:text-red-400">{errorMsg}</p>
+          <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+            {is403
+              ? "Tài khoản của bạn chưa được cấp quyền thao tác trên mô-đun này (403 Forbidden). Vui lòng liên hệ Quản trị viên để được phân quyền."
+              : errorMsg}
+          </p>
         </div>
       </div>
     );

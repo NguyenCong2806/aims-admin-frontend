@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from "react";
-import { AppRole } from "../../models/permissionModel";
+import React, { useState, useMemo, useEffect } from "react";
+import { AppRole, RoleMember } from "../../models/permissionModel";
 import { permissionService } from "../../services/permissionService";
-import { USER_STATUS_META, getInitials, getAvatarColor } from "../userHelper";
+import { USER_STATUS_META, getInitials, getAvatarColor } from "../../../Users/views/userHelper";
 
 interface RoleMembersModalProps {
   isOpen: boolean;
@@ -15,20 +15,40 @@ export const RoleMembersModal: React.FC<RoleMembersModalProps> = ({
   role,
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [members, setMembers] = useState<RoleMember[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const members = useMemo(() => {
-    if (!role) return [];
-    return permissionService.getRoleMembers(role.code);
-  }, [role]);
+  useEffect(() => {
+    if (isOpen && role) {
+      let isMounted = true;
+      setLoading(true);
+      permissionService
+        .getRoleMembers(role.id || role.code)
+        .then((data) => {
+          if (isMounted) setMembers(data);
+        })
+        .catch(() => {
+          if (isMounted) setMembers([]);
+        })
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+      return () => {
+        isMounted = false;
+      };
+    } else {
+      setMembers([]);
+    }
+  }, [isOpen, role]);
 
   const filteredMembers = useMemo(() => {
     if (!searchTerm.trim()) return members;
     const q = searchTerm.toLowerCase().trim();
     return members.filter(
       (m: any) =>
-        m.fullName.toLowerCase().includes(q) ||
-        m.username.toLowerCase().includes(q) ||
-        m.email.toLowerCase().includes(q) ||
+        (m.fullName && m.fullName.toLowerCase().includes(q)) ||
+        (m.username && m.username.toLowerCase().includes(q)) ||
+        (m.email && m.email.toLowerCase().includes(q)) ||
         (m.departmentName && m.departmentName.toLowerCase().includes(q))
     );
   }, [members, searchTerm]);
@@ -99,7 +119,15 @@ export const RoleMembersModal: React.FC<RoleMembersModalProps> = ({
 
         {/* Member list */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2.5 divide-y divide-gray-100 dark:divide-gray-800">
-          {filteredMembers.length === 0 ? (
+          {loading ? (
+            <div className="py-12 text-center text-gray-500">
+              <svg className="w-6 h-6 animate-spin text-indigo-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <p className="text-xs">Đang tải danh sách thành viên...</p>
+            </div>
+          ) : filteredMembers.length === 0 ? (
             <div className="py-12 text-center">
               <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 flex items-center justify-center mx-auto mb-3">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

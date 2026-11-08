@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { toast } from "sonner";
 import { UserAccount } from "../../models/userAccount";
-import { USER_ROLE_META, USER_STATUS_META, getInitials, getAvatarColor } from "../userHelper";
+import { USER_STATUS_META, getInitials, getAvatarColor, getRoleMeta } from "../userHelper";
 
 interface UserDetailModalProps {
   isOpen: boolean;
@@ -11,6 +10,8 @@ interface UserDetailModalProps {
   onToggleLock: (id: number) => void;
   onResetPassword: (id: number) => void;
   onDelete: (id: number) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({
@@ -21,12 +22,16 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   onToggleLock,
   onResetPassword,
   onDelete,
+  canUpdate = true,
+  canDelete = true,
 }) => {
   const [activeTab, setActiveTab] = useState<"profile" | "assets" | "security">("profile");
 
   if (!isOpen || !user) return null;
 
-  const statusMeta = (USER_STATUS_META as any)[user.status] || USER_STATUS_META.ACTIVE;
+  const isAct = user.isActive ?? (user.status === "ACTIVE");
+  const statusKey = user.status || (isAct ? "ACTIVE" : "INACTIVE");
+  const statusMeta = (USER_STATUS_META as Record<string, any>)[statusKey] || USER_STATUS_META.ACTIVE;
   const assignedAssets = user.assignedAssets || [];
 
   return (
@@ -62,11 +67,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dotClass}`}></span>
                   {statusMeta.label}
                 </span>
-                {user.mfaEnabled && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    🔒 2FA Bật
-                  </span>
-                )}
               </div>
 
               <p className="text-sm text-indigo-200 mt-1 flex items-center gap-2 flex-wrap">
@@ -132,7 +132,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                     </div>
                     <div className="flex justify-between py-1 border-b border-gray-200/60 dark:border-gray-800">
                       <span className="text-gray-500">Số điện thoại:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{user.phone || "-"}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{user.phoneNumber || user.phone || "-"}</span>
                     </div>
                     <div className="flex justify-between py-1">
                       <span className="text-gray-500">Mã User ID:</span>
@@ -155,7 +155,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                     <div className="flex justify-between py-1">
                       <span className="text-gray-500">Ngày tạo tài khoản:</span>
                       <span className="text-xs text-gray-700 dark:text-gray-300">
-                        {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString("vi-VN") : "Hệ thống"}
                       </span>
                     </div>
                   </div>
@@ -168,8 +168,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                   Các vai trò đã được cấp quyền (Roles)
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {user.roles.map((role: any) => {
-                    const roleMeta = (USER_ROLE_META as any)[role] || USER_ROLE_META.Staff;
+                  {(user.roles || []).map((role: any) => {
+                    const roleMeta = getRoleMeta(role);
                     return (
                       <div
                         key={role}
@@ -251,12 +251,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-gray-800">
-                    <span className="text-gray-500">Xác thực 2 yếu tố (2FA / MFA):</span>
-                    <span className={`font-semibold ${user.mfaEnabled ? "text-emerald-600" : "text-amber-600"}`}>
-                      {user.mfaEnabled ? "Đã bật (Bảo mật cao)" : "Chưa kích hoạt"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1.5 border-b border-gray-200/60 dark:border-gray-800">
                     <span className="text-gray-500">Lần đăng nhập gần nhất:</span>
                     <span className="text-gray-900 dark:text-white font-medium">
                       {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString("vi-VN") : "Chưa từng đăng nhập"}
@@ -272,18 +266,20 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
               </div>
 
               {/* SECURITY ACTIONS */}
-              <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-850 flex items-center justify-between flex-wrap gap-3">
-                <div>
-                  <h5 className="text-sm font-bold text-gray-900 dark:text-white">Đặt lại mật khẩu</h5>
-                  <p className="text-xs text-gray-500 mt-0.5">Sinh mật khẩu ngẫu nhiên tạm thời cho nhân viên</p>
+              {canUpdate && (
+                <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-850 flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h5 className="text-sm font-bold text-gray-900 dark:text-white">Đặt lại mật khẩu</h5>
+                    <p className="text-xs text-gray-500 mt-0.5">Sinh mật khẩu ngẫu nhiên tạm thời cho nhân viên</p>
+                  </div>
+                  <button
+                    onClick={() => onResetPassword(user.id)}
+                    className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 rounded-xl border border-indigo-200 dark:border-indigo-800 transition"
+                  >
+                    Cấp lại mật khẩu mới
+                  </button>
                 </div>
-                <button
-                  onClick={() => onResetPassword(user.id)}
-                  className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 rounded-xl border border-indigo-200 dark:border-indigo-800 transition"
-                >
-                  Cấp lại mật khẩu mới
-                </button>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -291,45 +287,40 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         {/* FOOTER */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex-wrap gap-3">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                onDelete(user.id);
-                onClose();
-                toast.success("Đã xóa tài khoản người dùng");
-              }}
-              className="px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition"
-            >
-              Xóa tài khoản
-            </button>
-            <button
-              onClick={() => {
-                onToggleLock(user.id);
-                toast.success(
+            {canDelete && (
+              <button
+                onClick={() => onDelete(user.id)}
+                className="px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition"
+              >
+                Xóa tài khoản
+              </button>
+            )}
+            {canUpdate && (
+              <button
+                onClick={() => onToggleLock(user.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                   user.status === "LOCKED"
-                    ? `Đã mở khóa tài khoản [${user.username}]`
-                    : `Đã khóa tài khoản [${user.username}]`
-                );
-              }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                user.status === "LOCKED"
-                  ? "text-emerald-600 hover:bg-emerald-50"
-                  : "text-amber-600 hover:bg-amber-50"
-              }`}
-            >
-              {user.status === "LOCKED" ? "🔓 Mở khóa tài khoản" : "🔒 Khóa tài khoản"}
-            </button>
+                    ? "text-emerald-600 hover:bg-emerald-50"
+                    : "text-amber-600 hover:bg-amber-50"
+                }`}
+              >
+                {user.status === "LOCKED" ? "🔓 Mở khóa tài khoản" : "🔒 Khóa tài khoản"}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                onEdit(user);
-                onClose();
-              }}
-              className="px-4 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-xl transition"
-            >
-              Chỉnh sửa thông tin
-            </button>
+            {canUpdate && (
+              <button
+                onClick={() => {
+                  onEdit(user);
+                  onClose();
+                }}
+                className="px-4 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 rounded-xl transition"
+              >
+                Chỉnh sửa thông tin
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 rounded-xl transition"

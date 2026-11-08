@@ -29,5 +29,11 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      sourcemap: false, // Tắt source maps để không lộ cấu trúc mã nguồn khi F12 trên production
+    },
+    esbuild: {
+      drop: mode === "production" ? ["console", "debugger"] : [], // Tự động xóa sạch toàn bộ log debug trên production
+    },
   };
 });

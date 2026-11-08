@@ -124,6 +124,12 @@ export const API_ENDPOINTS = {
   // Quản trị người dùng & Phân quyền (Users & RBAC)
   USERS: {
     BASE: "/accounts",
+    PAGED_DB: "/accounts/paged-db",
+    WITH_ROLES: "/accounts/with-roles",
+    UPDATE_WITH_ROLES: (id: string | number) => `/accounts/${id}/with-roles`,
+    LOCK: (id: string | number) => `/accounts/${id}/lock`,
+    SOFT_DELETE: (id: string | number) => `/accounts/${id}/soft`,
+    PASSWORD: (id: string | number) => `/accounts/${id}/password`,
     USERS_FALLBACK: "/users",
   },
   ROLES: {
@@ -135,6 +141,8 @@ export const API_ENDPOINTS = {
   PERMISSIONS: {
     BASE: "/permissions",
     MODULES: "/permissions/modules",
+    ME: "/permissions/me",
+    BY_ID: (permissionId: string | number) => `/permissions/${permissionId}`,
   },
 
   // Hệ thống & Cấu hình (System Logs & Configs)

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import UserDropdown from "../components/header/UserDropdown";
+import { useAuth } from "../context/AuthContext";
 
 interface SearchableItem {
   name: string;
@@ -10,45 +11,47 @@ interface SearchableItem {
   category: string;
   keywords?: string;
   badge?: string;
+  permission?: string;
 }
 
 const SEARCHABLE_MODULES: SearchableItem[] = [
   // Tài sản IT
-  { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", category: "Tài sản IT", keywords: "hardware laptop pc server may tinh phan cung", badge: "Chính" },
-  { name: "Thêm mới thiết bị phần cứng", path: "/thiet-bi-phan-cung/tao-moi", category: "Tài sản IT", keywords: "tao moi hardware create device" },
-  { name: "Tài nguyên số & Cloud", path: "/tai-nguyen-so", category: "Tài sản IT", keywords: "digital asset cloud domain ssl license ip", badge: "Cloud" },
-  { name: "Thêm tài nguyên số mới", path: "/tai-nguyen-so/tao-moi", category: "Tài sản IT", keywords: "tao moi digital asset cloud" },
-  { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", category: "Giám sát IT", keywords: "workstation agent ram cpu disk online offline", badge: "Live" },
-  { name: "Phần mềm cài đặt máy trạm", path: "/giam-sat-may-tram/phan-mem", category: "Giám sát IT", keywords: "installed software audit agent app" },
+  { name: "Thiết bị phần cứng", path: "/thiet-bi-phan-cung", category: "Tài sản IT", keywords: "hardware laptop pc server may tinh phan cung", badge: "Chính", permission: "hardware_assets.view" },
+  { name: "Thêm mới thiết bị phần cứng", path: "/thiet-bi-phan-cung/tao-moi", category: "Tài sản IT", keywords: "tao moi hardware create device", permission: "hardware_assets.create" },
+  { name: "Tài nguyên số & Cloud", path: "/tai-nguyen-so", category: "Tài sản IT", keywords: "digital asset cloud domain ssl license ip", badge: "Cloud", permission: "digital.view" },
+  { name: "Thêm tài nguyên số mới", path: "/tai-nguyen-so/tao-moi", category: "Tài sản IT", keywords: "tao moi digital asset cloud", permission: "digital.create" },
+  { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", category: "Giám sát IT", keywords: "workstation agent ram cpu disk online offline", badge: "Live", permission: "monitoring.view" },
+  { name: "Phần mềm cài đặt máy trạm", path: "/giam-sat-may-tram/phan-mem", category: "Giám sát IT", keywords: "installed software audit agent app", permission: "monitoring.view" },
   
   // Vận hành & Bảo trì
-  { name: "Hợp đồng & Bảo hành", path: "/hop-dong-bao-hanh", category: "Vận hành", keywords: "contracts warranty bao hanh hop dong ncc", badge: "Hợp đồng" },
-  { name: "Lịch bảo trì & Kiểm định", path: "/lich-bao-tri", category: "Vận hành", keywords: "maintenance schedule lich bao tri ke hoach", badge: "Lịch" },
-  { name: "Báo cáo & Thống kê", path: "/line-chart", category: "Báo cáo", keywords: "analytics reports dashboard chart thong ke", badge: "BI" },
+  { name: "Hợp đồng & Bảo hành", path: "/hop-dong-bao-hanh", category: "Vận hành", keywords: "contracts warranty bao hanh hop dong ncc", badge: "Hợp đồng", permission: "contracts.view" },
+  { name: "Lịch bảo trì & Kiểm định", path: "/lich-bao-tri", category: "Vận hành", keywords: "maintenance schedule lich bao tri ke hoach", badge: "Lịch", permission: "maintenance.view" },
+  { name: "Báo cáo & Thống kê", path: "/line-chart", category: "Báo cáo", keywords: "analytics reports dashboard chart thong ke", badge: "BI", permission: "reports.view" },
 
   // Danh mục tham chiếu
-  { name: "Phòng ban", path: "/phong-ban", category: "Tổ chức", keywords: "department phong ban don vi" },
-  { name: "Chức vụ", path: "/chuc-vu", category: "Tổ chức", keywords: "position chuc vu vai tro" },
-  { name: "Địa điểm & Tòa nhà", path: "/dia-diem", category: "Tổ chức", keywords: "location dia diem chi nhanh kho tang" },
-  { name: "Trung tâm chi phí", path: "/trung-tam-chi-phi", category: "Tổ chức", keywords: "cost center trung tam chi phi ngan sach" },
-  { name: "Hãng sản xuất", path: "/hang-san-xuat", category: "Danh mục", keywords: "brand hang san xuat dell apple lenovo hp" },
-  { name: "Danh mục sản phẩm", path: "/danh-muc-san-pham", category: "Danh mục", keywords: "category danh muc loai" },
-  { name: "Loại tài sản", path: "/loai-tai-san", category: "Danh mục", keywords: "asset type loai tai san" },
-  { name: "Trạng thái tài sản", path: "/trang-thai-tai-san", category: "Danh mục", keywords: "asset status trang thai su dung hong thanh ly" },
-  { name: "Loại giấy phép", path: "/loai-giay-phep", category: "Danh mục", keywords: "license type loai giay phep ban quyen" },
-  { name: "Loại bảo trì", path: "/loai-bao-tri", category: "Danh mục", keywords: "maintenance type loai bao tri dinh ky sua chua" },
-  { name: "Đơn vị tính", path: "/don-vi", category: "Danh mục", keywords: "unit don vi tinh cai bo may" },
-  { name: "Nhà cung cấp", path: "/nha-cung-cap", category: "Đối tác", keywords: "supplier nha cung cap phong vu fpt cmc" },
+  { name: "Phòng ban", path: "/phong-ban", category: "Tổ chức", keywords: "department phong ban don vi", permission: "department.view" },
+  { name: "Chức vụ", path: "/chuc-vu", category: "Tổ chức", keywords: "position chuc vu vai tro", permission: "positions.view" },
+  { name: "Địa điểm & Tòa nhà", path: "/dia-diem", category: "Tổ chức", keywords: "location dia diem chi nhanh kho tang", permission: "locations.view" },
+  { name: "Trung tâm chi phí", path: "/trung-tam-chi-phi", category: "Tổ chức", keywords: "cost center trung tam chi phi ngan sach", permission: "cost-center.view" },
+  { name: "Hãng sản xuất", path: "/hang-san-xuat", category: "Danh mục", keywords: "brand hang san xuat dell apple lenovo hp", permission: "brands.view" },
+  { name: "Danh mục sản phẩm", path: "/danh-muc-san-pham", category: "Danh mục", keywords: "category danh muc loai", permission: "asset-categories.view" },
+  { name: "Loại tài sản", path: "/loai-tai-san", category: "Danh mục", keywords: "asset type loai tai san", permission: "asset-types.view" },
+  { name: "Trạng thái tài sản", path: "/trang-thai-tai-san", category: "Danh mục", keywords: "asset status trang thai su dung hong thanh ly", permission: "asset-status.view" },
+  { name: "Loại giấy phép", path: "/loai-giay-phep", category: "Danh mục", keywords: "license type loai giay phep ban quyen", permission: "license-type.view" },
+  { name: "Loại bảo trì", path: "/loai-bao-tri", category: "Danh mục", keywords: "maintenance type loai bao tri dinh ky sua chua", permission: "maintenance-type.view" },
+  { name: "Đơn vị tính", path: "/don-vi", category: "Danh mục", keywords: "unit don vi tinh cai bo may", permission: "units.view" },
+  { name: "Nhà cung cấp", path: "/nha-cung-cap", category: "Đối tác", keywords: "supplier nha cung cap phong vu fpt cmc", permission: "suppliers.view" },
 
   // Hệ thống & Quản trị
-  { name: "Tài khoản người dùng", path: "/tai-khoan", category: "Hệ thống", keywords: "users account nguoi dung nhan vien" },
-  { name: "Phân quyền & Vai trò", path: "/phan-quyen", category: "Hệ thống", keywords: "permissions roles ma tran phan quyen rbac" },
-  { name: "Nhật ký hệ thống (Audit Trail)", path: "/nhat-ky-he-thong", category: "Hệ thống", keywords: "system logs audit trail nhat ky hoat dong" },
-  { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", category: "Hệ thống", keywords: "system settings cau hinh backup security" },
+  { name: "Tài khoản người dùng", path: "/tai-khoan", category: "Hệ thống", keywords: "users account nguoi dung nhan vien", permission: "accounts.view" },
+  { name: "Phân quyền & Vai trò", path: "/phan-quyen", category: "Hệ thống", keywords: "permissions roles ma tran phan quyen rbac", permission: "roles.view" },
+  { name: "Nhật ký hệ thống (Audit Trail)", path: "/nhat-ky-he-thong", category: "Hệ thống", keywords: "system logs audit trail nhat ky hoat dong", permission: "audit.view" },
+  { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", category: "Hệ thống", keywords: "system settings cau hinh backup security", permission: "settings.view" },
 ];
 
 const AppHeader: React.FC = () => {
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -78,11 +81,12 @@ const AppHeader: React.FC = () => {
     const q = searchTerm.toLowerCase().trim();
     return SEARCHABLE_MODULES.filter(
       (m) =>
-        m.name.toLowerCase().includes(q) ||
-        m.category.toLowerCase().includes(q) ||
-        (m.keywords && m.keywords.toLowerCase().includes(q))
+        (!m.permission || hasPermission(m.permission)) &&
+        (m.name.toLowerCase().includes(q) ||
+          m.category.toLowerCase().includes(q) ||
+          (m.keywords && m.keywords.toLowerCase().includes(q)))
     ).slice(0, 8);
-  }, [searchTerm]);
+  }, [searchTerm, hasPermission]);
 
   // Global Keyboard Shortcuts (Ctrl+K or / to focus search, Esc to close)
   useEffect(() => {

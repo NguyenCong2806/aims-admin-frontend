@@ -44,6 +44,29 @@ export const PERMISSION_ACTION_META: Record<PermissionAction, ActionMeta> = {
   },
 };
 
+/**
+ * Bản đồ icon của phân hệ hệ thống (Module Icons)
+ */
+export const MODULE_ICON_MAP: Record<string, string> = {
+  shield: "🛡️",
+  cloud: "☁️",
+  computer: "💻",
+  wrench: "🔧",
+  activity: "📡",
+  "bar-chart": "📊",
+  building: "🏢",
+  users: "👥",
+};
+
+export function getModuleIcon(iconName: string): string {
+  if (!iconName) return "📁";
+  const lower = iconName.toLowerCase().trim();
+  if (MODULE_ICON_MAP[lower]) {
+    return MODULE_ICON_MAP[lower];
+  }
+  return iconName;
+}
+
 export interface RoleColorOption {
   color: string;
   badgeClass: string;

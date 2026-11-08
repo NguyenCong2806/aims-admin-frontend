@@ -31,7 +31,8 @@ import {
   SuppliersPage,
   UnitsPage,
 } from "./modules/Lookups";
-import { UserAccountsPage, PermissionsPage } from "./modules/Users";
+import { UserAccountsPage } from "./modules/Users";
+import { PermissionsPage } from "./modules/Permissions";
 import { MaintenanceSchedulePage } from "./modules/Maintenance";
 import { SystemLogsPage, SystemSettingsPage } from "./modules/System";
 import { AnalyticsReportsPage } from "./modules/Reports";

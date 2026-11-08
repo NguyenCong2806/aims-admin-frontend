@@ -7,28 +7,44 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import axios from "axios";
 import { toast } from "sonner";
-import { login as apiLogin, logout as apiLogout, refreshSession as apiRefresh } from "../api/auth.api";
+import { APP_MESSAGES } from "../common/AppMessages";
+import { extractApiErrorMessage } from "../common/httpErrorHelper";
+import { login as apiLogin, logout as apiLogout, refreshSession as apiRefresh, getMyPermissions } from "../api/auth.api";
 import { registerAuthCallbacks, setAccessToken } from "../library/axios";
+import {
+  clearAuthSession,
+  getStoredAccessToken,
+  getStoredPermissions,
+  getStoredTokenExpiresAt,
+  getStoredUser,
+  getTokenExpiresAtIso,
+  isTokenValid,
+  parseJwtPayload,
+  saveAuthSession,
+  saveStoredPermissions,
+} from "../library/tokenHelper";
 import { AuthContextValue, AuthResponse, AuthState, LoginCredentials } from "../types/auth";
 import { UserRole } from "../modules/Users/models/userAccount";
+import { CurrentPermissions, hasPermission as hasPermissionHelper } from "../modules/Permissions/models/permissionModel";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-const SESSION_HINT_KEY = "aims_has_session";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
     accessToken: null,
+    currentPermissions: null,
     isAuthenticated: false,
     isLoading: false,
-    isInitializing: true, // Đang chạy Silent Refresh khi tải app
+    isInitializing: true, // Đang kiểm tra token khi tải app
     error: null,
   });
 
   // Guard tránh gọi kép initializeAuth trong React 18+ StrictMode
   const hasInitializedRef = useRef(false);
+  const hasHadSessionRef = useRef(false);
 
   // Timer tự động gia hạn token trước khi hết hạn (Proactive Refresh)
   const proactiveRefreshTimerRef = useRef<number | null>(null);
@@ -40,7 +56,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Lên lịch tự động làm mới token trước khi hết hạn 1 phút (hoặc sau 80% thời gian sống)
+  /**
+   * Lên lịch tự động làm mới token trước khi hết hạn
+   */
   const scheduleProactiveRefresh = useCallback((expiresAtIso?: string) => {
     clearProactiveTimer();
 
@@ -51,15 +69,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const now = Date.now();
       const timeRemainingMs = expiresTime - now;
 
-      // Gia hạn trước 60 giây (hoặc tối thiểu sau 5 giây nếu thời gian ngắn)
-      const refreshDelayMs = Math.max(timeRemainingMs - 60 * 1000, 5000);
-
+      // Chỉ lên lịch nếu còn hạn ít nhất 10 giây
       if (timeRemainingMs > 10000) {
+        // Làm mới trước khi hết hạn 60 giây (hoặc giữa chừng nếu thời hạn còn ít)
+        const refreshDelayMs =
+          timeRemainingMs > 90000
+            ? timeRemainingMs - 60000
+            : Math.max(Math.floor(timeRemainingMs * 0.7), 5000);
+
         proactiveRefreshTimerRef.current = window.setTimeout(async () => {
           try {
             console.log("[Auth Proactive]: Đang tự động làm mới token trước khi hết hạn...");
             const res = await apiRefresh();
             if (res?.accessToken) {
+              hasHadSessionRef.current = true;
               setState((prev) => ({
                 ...prev,
                 accessToken: res.accessToken,
@@ -67,8 +90,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }));
               scheduleProactiveRefresh(res.accessTokenExpiresAt);
             }
-          } catch (err) {
-            console.warn("[Auth Proactive]: Gia hạn chủ động không thành công, sẽ chờ interceptor.", err);
+          } catch (err: unknown) {
+            console.warn("[Auth Proactive]: Gia hạn chủ động không thành công:", err);
+            // Nếu backend trả về 401 (e.g. phiên bị thay thế bởi thiết bị khác hoặc token bị thu hồi)
+            if (axios.isAxiosError(err) && err.response?.status === 401) {
+              const msg =
+                extractApiErrorMessage(err) ||
+                APP_MESSAGES.HTTP_STATUS[401];
+              handleSessionExpired(msg);
+            }
           }
         }, refreshDelayMs);
       }
@@ -77,38 +107,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Xử lý khi phiên làm việc hết hạn từ Axios Interceptor (401 không thể refresh)
-  const handleSessionExpired = useCallback(() => {
+  /**
+   * Xử lý khi phiên làm việc hết hạn hoặc bị hủy (đặc biệt khi session bị thay thế bởi thiết bị khác):
+   * - Xóa AccessToken khỏi local storage / state management.
+   * - Xóa thông tin user trong state.
+   * - Dừng retry tự động.
+   * - Hiển thị toast thông báo lỗi rõ ràng.
+   * - Chuyển về trang login.
+   */
+  const handleSessionExpired = useCallback((customMessage?: string) => {
     clearProactiveTimer();
     setAccessToken(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(SESSION_HINT_KEY);
-    }
+    clearAuthSession();
+
+    const messageToShow = customMessage || APP_MESSAGES.HTTP_STATUS[401];
+
     setState((prev) => {
-      if (prev.isAuthenticated) {
-        toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.");
+      if (prev.isAuthenticated || hasHadSessionRef.current) {
+        hasHadSessionRef.current = false;
+        toast.error(messageToShow);
       }
       return {
         user: null,
         accessToken: null,
+        currentPermissions: null,
         isAuthenticated: false,
         isLoading: false,
         isInitializing: false,
-        error: "Session expired",
+        error: messageToShow,
       };
     });
   }, []);
 
-  // Đăng ký callbacks với Axios Interceptor
+  // Đăng ký callbacks với Axios Interceptor & sự kiện hệ thống
   useEffect(() => {
     registerAuthCallbacks({
       onSessionExpired: handleSessionExpired,
-      onTokenRefreshed: (_newToken) => {
-        setState((prev) => ({ ...prev, accessToken: _newToken }));
+      onTokenRefreshed: (newToken) => {
+        setState((prev) => ({ ...prev, accessToken: newToken }));
       },
     });
 
-    const handleAuthExpiredEvent = () => handleSessionExpired();
+    const handleAuthExpiredEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ message?: string }>;
+      const msg = customEvent.detail?.message;
+      handleSessionExpired(msg);
+    };
     window.addEventListener("aims:auth-expired", handleAuthExpiredEvent);
 
     return () => {
@@ -117,76 +161,166 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [handleSessionExpired]);
 
-  // Khởi tạo: Silent Refresh khi người dùng mở trang hoặc F5
+  /**
+   * [Nguyên tắc 1]: Khi khởi động ứng dụng
+   * Front-end đọc AccessToken đã lưu:
+   * • Nếu AccessToken vẫn còn hạn:
+   *   - Dùng tiếp AccessToken hiện tại.
+   *   - KHÔNG gọi /auth/refresh bắt buộc.
+   *   - Sử dụng bình thường.
+   * • Nếu AccessToken đã hết hạn:
+   *   - KHÔNG cố refresh bằng cookie.
+   *   - Xóa AccessToken đã lưu.
+   *   - Chuyển người dùng về màn hình login.
+   * • Nếu không có AccessToken:
+   *   - Hiển thị màn hình login.
+   */
   useEffect(() => {
-    // Tránh gọi lặp lại 2 lần trong React StrictMode
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
 
-    const initializeAuth = async () => {
-      // 1. Kiểm tra Session Hint: nếu chưa từng đăng nhập hoặc đã logout thì bỏ qua gọi API refresh
-      const hasSessionHint =
-        typeof window !== "undefined" &&
-        localStorage.getItem(SESSION_HINT_KEY) === "true";
-      const hasDemoSession =
-        typeof window !== "undefined" &&
-        Boolean(sessionStorage.getItem("aims_demo_session"));
+    const initializeAuth = () => {
+      // 1. Kiểm tra tài khoản Demo phát triển (nếu đang bật)
+      if (typeof window !== "undefined") {
+        const demoUserStr = sessionStorage.getItem("aims_demo_session");
+        if (demoUserStr) {
+          try {
+            const demoUser = JSON.parse(demoUserStr);
+            setState({
+              user: demoUser,
+              accessToken: "mock_demo_session_token",
+              currentPermissions: null,
+              isAuthenticated: true,
+              isLoading: false,
+              isInitializing: false,
+              error: null,
+            });
+            return;
+          } catch {
+            sessionStorage.removeItem("aims_demo_session");
+          }
+        }
+      }
 
-      if (!hasSessionHint && !hasDemoSession) {
+      // 2. Đọc AccessToken và dữ liệu xác thực đã lưu
+      const storedToken = getStoredAccessToken();
+      const storedExp = getStoredTokenExpiresAt();
+      const storedUser = getStoredUser();
+      const storedPermissions = getStoredPermissions();
+
+      // Trường hợp: Không có AccessToken -> hiển thị login
+      if (!storedToken) {
+        clearAuthSession();
         setState((prev) => ({
           ...prev,
           isInitializing: false,
           isAuthenticated: false,
           user: null,
           accessToken: null,
+          currentPermissions: null,
         }));
         return;
       }
 
-      try {
-        // Có cờ phiên: Gọi /auth/refresh với timeout an toàn 6 giây để không bao giờ bị treo loading
-        const refreshPromise = apiRefresh();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout khôi phục phiên")), 6000)
-        );
+      // Trường hợp: Có AccessToken -> Kiểm tra hạn sử dụng
+      if (isTokenValid(storedToken, storedExp)) {
+        // • CÒN HẠN: Dùng tiếp AccessToken hiện tại, KHÔNG gọi /auth/refresh bắt buộc
+        setAccessToken(storedToken, storedExp);
+        hasHadSessionRef.current = true;
 
-        const res = await Promise.race([refreshPromise, timeoutPromise]);
-
-        if (
-          res?.accessToken &&
-          res.accessToken.trim() !== "" &&
-          res.isSuccess !== false &&
-          !res.isError
-        ) {
-          if (typeof window !== "undefined") {
-            localStorage.setItem(SESSION_HINT_KEY, "true");
+        let effectivePermissions = storedPermissions;
+        if (!effectivePermissions && storedToken) {
+          const jwtPayload = parseJwtPayload<Record<string, unknown>>(storedToken);
+          if (jwtPayload) {
+            const jwtPerms =
+              (jwtPayload.permission as string[] | string) ||
+              (jwtPayload.permissions as string[] | string);
+            if (jwtPerms) {
+              const rawRoles = storedUser?.roles || [];
+              effectivePermissions = {
+                roles: Array.isArray(rawRoles) ? (rawRoles as string[]) : [String(rawRoles)],
+                permissionCodes: Array.isArray(jwtPerms) ? jwtPerms : [jwtPerms],
+                modules: [],
+              };
+            }
           }
-          setState({
-            user: res.user,
-            accessToken: res.accessToken,
-            isAuthenticated: true,
-            isLoading: false,
-            isInitializing: false,
-            error: null,
-          });
-          scheduleProactiveRefresh(res.accessTokenExpiresAt);
-        } else {
-          throw new Error("Không nhận được token hợp lệ");
         }
-      } catch (err) {
-        console.warn("[Auth]: Không thể khôi phục phiên khi tải trang:", err);
-        // Cookie không tồn tại hoặc đã hết hạn -> Xóa cờ và đặt về unauthenticated
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(SESSION_HINT_KEY);
-          sessionStorage.removeItem("aims_demo_session");
-        }
-        setState((prev) => ({
-          ...prev,
+
+        setState({
+          user: storedUser,
+          accessToken: storedToken,
+          currentPermissions: effectivePermissions,
+          isAuthenticated: true,
+          isLoading: false,
           isInitializing: false,
-          isAuthenticated: false,
-          user: null,
-          accessToken: null,
-        }));
+          error: null,
+        });
+
+        // Đồng bộ quyền mới nhất từ máy chủ (GET /api/v1/permissions/me)
+        getMyPermissions()
+          .then((fresh) => {
+            if (fresh) {
+              saveStoredPermissions(fresh);
+              setState((prev) => ({ ...prev, currentPermissions: fresh }));
+            }
+          })
+          .catch((err) => {
+            console.warn("[Auth]: Không thể nạp quyền từ /permissions/me khi khởi động:", err);
+          });
+
+        // Lên lịch gia hạn chủ động trước khi token hết hạn
+        scheduleProactiveRefresh(storedExp || getTokenExpiresAtIso(storedToken) || undefined);
+      } else {
+        // • HẾT HẠN: Gửi Access Token hiện tại lên /auth/refresh để làm mới phiên nếu cookie còn hiệu lực
+        (async () => {
+          try {
+            console.log("[Auth]: AccessToken đã hết hạn khi mở app. Đang gửi AccessToken hiện tại để làm mới phiên...");
+            setAccessToken(storedToken, storedExp);
+            const res = await apiRefresh();
+            if (res?.accessToken) {
+              hasHadSessionRef.current = true;
+              let refreshedPerms: CurrentPermissions | null = storedPermissions;
+              try {
+                refreshedPerms = await getMyPermissions();
+                if (refreshedPerms) {
+                  saveStoredPermissions(refreshedPerms);
+                }
+              } catch {
+                // Ignore
+              }
+
+              setState({
+                user: res.user || storedUser,
+                accessToken: res.accessToken,
+                currentPermissions: refreshedPerms,
+                isAuthenticated: true,
+                isLoading: false,
+                isInitializing: false,
+                error: null,
+              });
+              scheduleProactiveRefresh(res.accessTokenExpiresAt);
+              return;
+            }
+          } catch (err: unknown) {
+            console.warn("[Auth]: Không thể làm mới phiên từ backend:", err);
+            if (axios.isAxiosError(err) && err.response?.status === 401) {
+              const msg =
+                extractApiErrorMessage(err) ||
+                APP_MESSAGES.HTTP_STATUS[401];
+              toast.error(msg);
+            }
+          }
+          clearAuthSession();
+          setAccessToken(null);
+          setState((prev) => ({
+            ...prev,
+            isInitializing: false,
+            isAuthenticated: false,
+            user: null,
+            accessToken: null,
+            currentPermissions: null,
+          }));
+        })();
       }
     };
 
@@ -200,8 +334,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const res = await apiLogin(credentials);
 
-        // Kiểm tra chặt chẽ điều kiện thành công:
-        // isSuccess phải khác false, isError không được true, và phải có accessToken hợp lệ
         if (
           !res ||
           res.isSuccess === false ||
@@ -217,7 +349,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error(errMsg);
         }
 
-        // Kiểm tra thông tin người dùng: không được là người dùng rỗng (id: 0 và username: "")
         if (
           !res.user ||
           (res.user.id === 0 && (!res.user.username || res.user.username.trim() === ""))
@@ -228,13 +359,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error(errMsg);
         }
 
-        if (typeof window !== "undefined") {
-          localStorage.setItem(SESSION_HINT_KEY, "true");
+        // 1.5. Trích xuất thông tin roles & permissions từ JWT payload làm fallback tức thì
+        const jwtPayload = parseJwtPayload<Record<string, unknown>>(res.accessToken);
+        if (jwtPayload) {
+          const jwtRoles =
+            (jwtPayload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] as string[] | string) ||
+            (jwtPayload.role as string[] | string) ||
+            (jwtPayload.roles as string[] | string);
+          if (jwtRoles && (!res.user.roles || res.user.roles.length === 0)) {
+            res.user.roles = Array.isArray(jwtRoles) ? jwtRoles : [jwtRoles];
+          }
+
+          const jwtPerms =
+            (jwtPayload.permission as string[] | string) ||
+            (jwtPayload.permissions as string[] | string);
+          if (jwtPerms) {
+            res.user.permissions = Array.isArray(jwtPerms) ? jwtPerms : [jwtPerms];
+          }
         }
+
+        // 2. Tự động lấy danh sách quyền hạn hiện tại (GET /api/v1/permissions/me)
+        let currentPermissions: CurrentPermissions | null = null;
+        try {
+          currentPermissions = await getMyPermissions();
+          if (currentPermissions) {
+            saveStoredPermissions(currentPermissions);
+          }
+        } catch (permErr) {
+          console.warn("[Auth]: Không thể nạp quyền từ /permissions/me sau khi đăng nhập:", permErr);
+        }
+
+        // Nếu /permissions/me chưa nạp được, sử dụng permissions và roles từ JWT token
+        if (!currentPermissions && jwtPayload) {
+          const jwtPerms =
+            (jwtPayload.permission as string[] | string) ||
+            (jwtPayload.permissions as string[] | string);
+          if (jwtPerms) {
+            const rawRoles = res.user.roles || [];
+            currentPermissions = {
+              roles: Array.isArray(rawRoles) ? (rawRoles as string[]) : [String(rawRoles)],
+              permissionCodes: Array.isArray(jwtPerms) ? jwtPerms : [jwtPerms],
+              modules: [],
+            };
+            saveStoredPermissions(currentPermissions);
+          }
+        }
+
+        saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user, currentPermissions);
+        setAccessToken(res.accessToken, res.accessTokenExpiresAt);
+        hasHadSessionRef.current = true;
 
         setState({
           user: res.user,
           accessToken: res.accessToken,
+          currentPermissions,
           isAuthenticated: true,
           isLoading: false,
           isInitializing: false,
@@ -249,17 +427,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ? err.message
             : "Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản và mật khẩu.";
 
-        // Xóa token và cờ phiên khi đăng nhập thất bại
         setAccessToken(null);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(SESSION_HINT_KEY);
-          sessionStorage.removeItem("aims_demo_session");
-        }
+        clearAuthSession();
 
         setState((prev) => ({
           ...prev,
           user: null,
           accessToken: null,
+          currentPermissions: null,
           isAuthenticated: false,
           isLoading: false,
           error: errorMsg,
@@ -274,10 +449,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async (): Promise<void> => {
     setState((prev) => ({ ...prev, isLoading: true }));
     clearProactiveTimer();
-
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(SESSION_HINT_KEY);
-    }
+    hasHadSessionRef.current = false;
+    clearAuthSession();
+    setAccessToken(null);
 
     try {
       await apiLogout();
@@ -285,6 +459,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState({
         user: null,
         accessToken: null,
+        currentPermissions: null,
         isAuthenticated: false,
         isLoading: false,
         isInitializing: false,
@@ -294,14 +469,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Hàm làm mới phiên thủ công
+  // Hàm làm mới phiên thủ công (chỉ hoạt động khi AccessToken còn hạn)
   const refreshSession = useCallback(async (): Promise<AuthResponse | null> => {
     try {
       const res = await apiRefresh();
       if (res?.accessToken) {
+        saveAuthSession(res.accessToken, res.accessTokenExpiresAt, res.user);
+        setAccessToken(res.accessToken, res.accessTokenExpiresAt);
+
+        // Đồng bộ quyền mới nhất sau khi làm mới token
+        getMyPermissions()
+          .then((fresh) => {
+            if (fresh) {
+              saveStoredPermissions(fresh);
+              setState((prev) => ({ ...prev, currentPermissions: fresh }));
+            }
+          })
+          .catch((e) => console.warn("[Auth]: Không thể cập nhật quyền khi refresh:", e));
+
         setState((prev) => ({
           ...prev,
-          user: res.user,
+          user: res.user || prev.user,
           accessToken: res.accessToken,
           isAuthenticated: true,
         }));
@@ -309,8 +497,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return res;
       }
       return null;
-    } catch {
-      handleSessionExpired();
+    } catch (err: unknown) {
+      const msg =
+        axios.isAxiosError(err) && err.response?.status === 401
+          ? extractApiErrorMessage(err) || APP_MESSAGES.HTTP_STATUS[401]
+          : undefined;
+      handleSessionExpired(msg);
       return null;
     }
   }, [scheduleProactiveRefresh, handleSessionExpired]);
@@ -319,29 +511,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const hasRole = useCallback(
     (role: UserRole | string): boolean => {
       if (!state.user?.roles) return false;
-      if (state.user.roles.includes("SuperAdmin")) return true; // SuperAdmin có mọi quyền
-      return state.user.roles.includes(role as UserRole);
+      const roles = state.user.roles as (UserRole | string)[];
+      if (roles.includes("SuperAdmin") || roles.includes("SUPER_ADMIN")) return true;
+      return roles.includes(role);
     },
     [state.user]
   );
 
   const hasAnyRole = useCallback(
-    (roles: (UserRole | string)[]): boolean => {
+    (targetRoles: (UserRole | string)[]): boolean => {
       if (!state.user?.roles) return false;
-      if (state.user.roles.includes("SuperAdmin")) return true;
-      return roles.some((r) => state.user?.roles?.includes(r as UserRole));
+      const roles = state.user.roles as (UserRole | string)[];
+      if (roles.includes("SuperAdmin") || roles.includes("SUPER_ADMIN")) return true;
+      return targetRoles.some((r) => roles.includes(r));
     },
     [state.user]
   );
 
+  /**
+   * Kiểm tra quyền theo chuẩn định dạng {module_key}.{action}
+   * Ví dụ: hasPermission("units.view"), hasPermission("units.create")
+   * SUPER_ADMIN luôn được toàn quyền.
+   */
   const hasPermission = useCallback(
-    (permission: string): boolean => {
-      if (!state.user?.permissions) return false;
-      if (state.user.permissions.includes("*")) return true;
-      return state.user.permissions.includes(permission);
+    (code: string): boolean => {
+      // 1. Kiểm tra qua CurrentPermissions từ /permissions/me
+      if (hasPermissionHelper(state.currentPermissions, code)) {
+        return true;
+      }
+      // 2. Fallback kiểm tra qua user.permissions nếu có
+      if (state.user?.permissions) {
+        if (state.user.permissions.includes("*")) return true;
+        if (state.user.permissions.includes(code)) return true;
+      }
+      // 3. Fallback cho vai trò SuperAdmin
+      if (state.user?.roles?.some((r) => String(r).toUpperCase().includes("ADMIN"))) {
+        return true;
+      }
+      return false;
     },
-    [state.user]
+    [state.currentPermissions, state.user]
   );
+
+  /**
+   * Gọi lại GET /api/v1/permissions/me để cập nhật trạng thái hiển thị frontend
+   */
+  const fetchCurrentPermissions = useCallback(async (): Promise<CurrentPermissions | null> => {
+    try {
+      const perms = await getMyPermissions();
+      if (perms) {
+        saveStoredPermissions(perms);
+        setState((prev) => ({ ...prev, currentPermissions: perms }));
+        return perms;
+      }
+      return null;
+    } catch (err) {
+      console.warn("[Auth]: fetchCurrentPermissions failed:", err);
+      return null;
+    }
+  }, []);
 
   const clearError = useCallback(() => {
     setState((prev) => ({ ...prev, error: null }));
@@ -355,6 +583,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasRole,
     hasAnyRole,
     hasPermission,
+    fetchCurrentPermissions,
     clearError,
   };
 

@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Link, useLocation } from "react-router";
+import { useAuth } from "../../context/AuthContext";
 
 export interface NavTabItem {
   name: string;
   path: string;
   badge?: number | string;
+  permission?: string;
 }
 
 interface AimsModuleNavProps {
@@ -19,8 +21,13 @@ export const AimsModuleNav: React.FC<AimsModuleNavProps> = ({
   tabs = [],
 }) => {
   const location = useLocation();
+  const { hasPermission } = useAuth();
 
-  if (!tabs.length && !moduleName) return null;
+  const visibleTabs = useMemo(() => {
+    return tabs.filter((tab) => !tab.permission || hasPermission(tab.permission));
+  }, [tabs, hasPermission]);
+
+  if (!visibleTabs.length && !moduleName) return null;
 
   return (
     <div className="flex items-center justify-between border-b border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xs px-4 sm:px-6 py-2 transition-colors">
@@ -38,9 +45,9 @@ export const AimsModuleNav: React.FC<AimsModuleNavProps> = ({
         </div>
 
         {/* Module Tabs */}
-        {tabs.length > 0 && (
+        {visibleTabs.length > 0 && (
           <nav className="flex items-center gap-1 sm:gap-2">
-            {tabs.map((tab) => {
+            {visibleTabs.map((tab) => {
               const isActive = location.pathname === tab.path;
               return (
                 <Link

@@ -357,14 +357,25 @@ export const DigitalAssetsPages: React.FC = () => {
       >
         {(currentViewMode) => {
           if (isError) {
+            const is403 =
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (error as any)?.response?.status === 403 ||
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (error as any)?.status === 403 ||
+              (error instanceof Error && (error.message.includes("403") || error.message.toLowerCase().includes("quyền")));
+
             return (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-gray-900">
-                <span className="text-4xl mb-2">⚠️</span>
-                <p className="text-base font-semibold text-rose-600 dark:text-rose-400">
-                  Không thể tải danh sách tài nguyên số
+                <span className="text-4xl mb-2">{is403 ? "🚫" : "⚠️"}</span>
+                <p className="text-base font-bold text-rose-600 dark:text-rose-400">
+                  {is403 ? "Bạn không có quyền thực hiện chức năng này (403 Forbidden)" : "Không thể tải danh sách tài nguyên số"}
                 </p>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <p className="text-xs text-gray-500 mt-1">{(error as any)?.message || "Vui lòng kiểm tra lại kết nối"}</p>
+                <p className="text-xs text-gray-500 mt-1 max-w-md">
+                  {is403
+                    ? "Tài khoản của bạn chưa được cấp quyền xem dữ liệu tài nguyên số. Vui lòng liên hệ Quản trị viên để được phân quyền."
+                    : (error as any)?.message || "Vui lòng kiểm tra lại kết nối"}
+                </p>
               </div>
             );
           }
