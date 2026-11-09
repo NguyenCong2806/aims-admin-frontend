@@ -28,6 +28,7 @@ import {
 import { AuthContextValue, AuthResponse, AuthState, LoginCredentials } from "../types/auth";
 import { UserRole } from "../modules/Users/models/userAccount";
 import { CurrentPermissions, hasPermission as hasPermissionHelper } from "../modules/Permissions/models/permissionModel";
+import { queryClient } from "../library/queryClient";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -119,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearProactiveTimer();
     setAccessToken(null);
     clearAuthSession();
+    queryClient.clear();
 
     const messageToShow = customMessage || APP_MESSAGES.HTTP_STATUS[401];
 
@@ -452,6 +454,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasHadSessionRef.current = false;
     clearAuthSession();
     setAccessToken(null);
+    queryClient.clear();
 
     try {
       await apiLogout();

@@ -26,9 +26,10 @@ import {
 
 export const UserAccountsPage: React.FC = () => {
   const { user: currentUser, logout, hasPermission } = useAuth();
-  const canCreate = hasPermission("accounts.create");
-  const canUpdate = hasPermission("accounts.update");
-  const canDelete = hasPermission("accounts.delete");
+  const canView = hasPermission("accounts.view") || hasPermission("users.view");
+  const canCreate = canView && (hasPermission("accounts.create") || hasPermission("users.create"));
+  const canUpdate = canView && (hasPermission("accounts.update") || hasPermission("users.update"));
+  const canDelete = canView && (hasPermission("accounts.delete") || hasPermission("users.delete"));
 
   const [keyword, setKeyword] = useState<string>("");
   const [debouncedKeyword, setDebouncedKeyword] = useState<string>("");
@@ -61,6 +62,8 @@ export const UserAccountsPage: React.FC = () => {
   const {
     data: pagedData,
     isLoading,
+    isError,
+    error,
     refetch,
   } = useUserAccountsPaged({
     PageIndex: pageIndex,
@@ -69,8 +72,20 @@ export const UserAccountsPage: React.FC = () => {
     Keyword: debouncedKeyword || undefined,
   });
 
-  const users: UserAccount[] = useMemo(() => pagedData?.items || [], [pagedData]);
-  const totalRecords: number = pagedData?.pagination?.totalRecords ?? users.length;
+  const is403 =
+    !canView ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.response?.status === 403 ||
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (error as any)?.status === 403 ||
+    (error instanceof Error && (error.message.includes("403") || error.message.toLowerCase().includes("quyền")));
+
+  const users: UserAccount[] = useMemo(() => {
+    if (isError || is403) return [];
+    return pagedData?.items || [];
+  }, [pagedData, isError, is403]);
+
+  const totalRecords: number = isError || is403 ? 0 : (pagedData?.pagination?.totalRecords ?? users.length);
 
   // React Query Mutations
   const createMutation = useCreateUserAccount();
@@ -339,6 +354,13 @@ export const UserAccountsPage: React.FC = () => {
         title="Tài khoản người dùng"
         subtitle="Quản lý danh sách tài khoản nhân viên, thiết lập vai trò phân quyền (RBAC) và theo dõi tài sản CNTT bàn giao"
         totalRecords={totalRecords}
+        error={
+          !canView || is403
+            ? "Bạn không có quyền thực hiện chức năng này (403 Forbidden)"
+            : isError
+              ? (error as any)
+              : null
+        }
         pageIndex={pageIndex}
         pageSize={pageSize}
         onPageChange={setPageIndex}

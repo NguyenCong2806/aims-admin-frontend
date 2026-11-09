@@ -6,7 +6,7 @@ import { UserRole } from "../../modules/Users/models/userAccount";
 interface ProtectedRouteProps {
   children?: React.ReactNode;
   requiredRoles?: (UserRole | string)[];
-  requiredPermission?: string;
+  requiredPermission?: string | string[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
@@ -65,42 +65,72 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // 3. Kiểm tra phân quyền Vai trò (RBAC)
   if (requiredRoles && requiredRoles.length > 0 && !hasAnyRole(requiredRoles)) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center text-3xl mb-4">
-          ⛔
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center text-3xl mb-4 shadow-xs">
+          🚫
         </div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-          Đã đăng nhập nhưng không có quyền chức năng (403 Forbidden)
+          Bạn không có quyền truy cập chức năng này (403 Forbidden)
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6 leading-relaxed">
           Tài khoản <span className="font-semibold text-gray-700 dark:text-gray-200">@{user?.username}</span> không có quyền hạn truy cập chức năng này.
           Yêu cầu vai trò: <span className="font-mono text-xs font-semibold text-brand-600">{requiredRoles.join(", ")}</span>.
         </p>
-        <button
-          onClick={() => window.history.back()}
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
-        >
-          &larr; Quay lại trang trước
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+          >
+            &larr; Quay lại trang trước
+          </button>
+          <button
+            onClick={() => (window.location.href = "/")}
+            className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition-colors cursor-pointer shadow-xs"
+          >
+            Về trang chủ AIMS
+          </button>
+        </div>
       </div>
     );
   }
 
   // 4. Kiểm tra Permission
-  if (requiredPermission && !hasPermission(requiredPermission)) {
-    return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-3xl mb-4">
-          🔒
+  if (requiredPermission) {
+    const permissionsToCheck = Array.isArray(requiredPermission)
+      ? requiredPermission
+      : [requiredPermission];
+
+    const hasAnyPermission = permissionsToCheck.some((p) => hasPermission(p));
+
+    if (!hasAnyPermission) {
+      return (
+        <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+          <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center text-3xl mb-4 shadow-xs">
+            🚫
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Bạn không có quyền truy cập chức năng này (403 Forbidden)
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6 leading-relaxed">
+            Tài khoản <span className="font-semibold text-gray-700 dark:text-gray-200">@{user?.username}</span> chưa được phân quyền truy cập chức năng này. Vui lòng liên hệ Quản trị viên để được cấp quyền.
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => window.history.back()}
+              className="px-4 py-2 text-xs font-semibold rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+            >
+              &larr; Quay lại trang trước
+            </button>
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="px-4 py-2 text-xs font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white transition-colors cursor-pointer shadow-xs"
+            >
+              Về trang chủ AIMS
+            </button>
+          </div>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-          Hạn chế quyền thao tác
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6">
-          Bạn cần quyền <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{requiredPermission}</code> để sử dụng tính năng này.
-        </p>
-      </div>
-    );
+      );
+    }
   }
 
   return children ? <>{children}</> : <Outlet />;

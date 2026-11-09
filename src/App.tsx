@@ -70,23 +70,31 @@ export default function App() {
               <Route path="/blank" element={<Blank />} />
 
               {/* IT Asset Management */}
-              <Route path="/thiet-bi-phan-cung" element={<HardwareAssetsPage />} />
-              <Route path="/thiet-bi-phan-cung/tao-moi" element={<CreateHardwareAssetPage />} />
-              <Route path="/thiet-bi-phan-cung/:id/chinh-sua" element={<CreateHardwareAssetPage />} />
-              <Route path="/giam-sat-may-tram" element={<WorkstationMonitoringPage />} />
-              <Route path="/giam-sat-may-tram/phan-mem" element={<WorkstationInstalledSoftwarePage />} />
-              <Route path="/giam-sat-may-tram/phan-mem/:id" element={<WorkstationInstalledSoftwarePage />} />
-              <Route path="/giam-sat-may-tram/:id/phan-mem" element={<WorkstationInstalledSoftwarePage />} />
+              <Route element={<ProtectedRoute requiredPermission={["hardware.view", "hardware_assets.view"]} />}>
+                <Route path="/thiet-bi-phan-cung" element={<HardwareAssetsPage />} />
+                <Route path="/thiet-bi-phan-cung/tao-moi" element={<CreateHardwareAssetPage />} />
+                <Route path="/thiet-bi-phan-cung/:id/chinh-sua" element={<CreateHardwareAssetPage />} />
+              </Route>
 
-              {/* Forms */}
-              <Route path="/tai-nguyen-so" element={<DigitalAssetsPage />} />
-              <Route path="/tai-nguyen-so/tao-moi" element={<CreateDigitalAssetsPage />} />
-              <Route path="/tai-nguyen-so/:id/chinh-sua" element={<CreateDigitalAssetsPage />} />
+              {/* Workstation Monitoring */}
+              <Route element={<ProtectedRoute requiredPermission="monitoring.view" />}>
+                <Route path="/giam-sat-may-tram" element={<WorkstationMonitoringPage />} />
+                <Route path="/giam-sat-may-tram/phan-mem" element={<WorkstationInstalledSoftwarePage />} />
+                <Route path="/giam-sat-may-tram/phan-mem/:id" element={<WorkstationInstalledSoftwarePage />} />
+                <Route path="/giam-sat-may-tram/:id/phan-mem" element={<WorkstationInstalledSoftwarePage />} />
+              </Route>
+
+              {/* Digital Assets */}
+              <Route element={<ProtectedRoute requiredPermission={["digital.view", "digital_assets.view"]} />}>
+                <Route path="/tai-nguyen-so" element={<DigitalAssetsPage />} />
+                <Route path="/tai-nguyen-so/tao-moi" element={<CreateDigitalAssetsPage />} />
+                <Route path="/tai-nguyen-so/:id/chinh-sua" element={<CreateDigitalAssetsPage />} />
+              </Route>
 
               {/* Tables */}
               <Route path="/tao-moi-tai-nguyen-so" element={<BasicTables />} />
 
-              {/* Ui Elements */}
+              {/* Ui Elements / Lookups */}
               <Route path="/hang-san-xuat" element={<BrandsPage />} />
               <Route path="/danh-muc-san-pham" element={<AssetCategorysPage />} />
               <Route path="/loai-tai-san" element={<AssetTypesPage />} />
@@ -105,12 +113,25 @@ export default function App() {
               <Route path="/don-vi" element={<UnitsPage />} />
 
               <Route path="/form-elements" element={<FormElements />} />
-              <Route path="/tai-khoan" element={<UserAccountsPage />} />
-              <Route path="/alerts" element={<UserAccountsPage />} />
-              <Route path="/phan-quyen" element={<PermissionsPage />} />
-              <Route path="/badges" element={<PermissionsPage />} />
-              <Route path="/cau-hinh-he-thong" element={<SystemSettingsPage />} />
-              <Route path="/settings" element={<SystemSettingsPage />} />
+
+              {/* User Accounts Management - BẢO VỆ CHẶT CHẼ */}
+              <Route element={<ProtectedRoute requiredPermission={["users.view", "accounts.view"]} />}>
+                <Route path="/tai-khoan" element={<UserAccountsPage />} />
+                <Route path="/alerts" element={<UserAccountsPage />} />
+              </Route>
+
+              {/* Permissions & Roles Management - BẢO VỆ CHẶT CHẼ */}
+              <Route element={<ProtectedRoute requiredPermission={["roles.view", "permissions.view"]} />}>
+                <Route path="/phan-quyen" element={<PermissionsPage />} />
+                <Route path="/badges" element={<PermissionsPage />} />
+              </Route>
+
+              {/* System Settings - BẢO VỆ CHẶT CHẼ */}
+              <Route element={<ProtectedRoute requiredPermission={["system.view", "settings.view"]} />}>
+                <Route path="/cau-hinh-he-thong" element={<SystemSettingsPage />} />
+                <Route path="/settings" element={<SystemSettingsPage />} />
+              </Route>
+
               <Route path="/images" element={<Images />} />
               <Route path="/videos" element={<Videos />} />
 
