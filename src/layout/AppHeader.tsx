@@ -357,11 +357,23 @@ const AppHeader: React.FC = () => {
                   </button>
                 </div>
                 <div className="space-y-2 text-xs">
-                  <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                  <div
+                    onClick={() => {
+                      setIsChatOpen(false);
+                      navigate("/thiet-bi-phan-cung");
+                    }}
+                    className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                  >
                     <p className="font-medium text-gray-800 dark:text-gray-200">Kế toán IT: Bàn giao máy chủ mới</p>
                     <p className="text-gray-500 dark:text-gray-400 mt-0.5">Vừa nhận được 5 biên bản từ phòng Kho...</p>
                   </div>
-                  <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                  <div
+                    onClick={() => {
+                      setIsChatOpen(false);
+                      navigate("/tai-nguyen-so");
+                    }}
+                    className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                  >
                     <p className="font-medium text-gray-800 dark:text-gray-200">Phòng Hành chính: Yêu cầu License</p>
                     <p className="text-gray-500 dark:text-gray-400 mt-0.5">Cần cấp thêm 10 key Adobe Photoshop...</p>
                   </div>
@@ -395,15 +407,33 @@ const AppHeader: React.FC = () => {
                   </button>
                 </div>
                 <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300">
+                  <div
+                    onClick={() => {
+                      setIsActivitiesOpen(false);
+                      navigate("/lich-bao-tri");
+                    }}
+                    className="flex items-center justify-between p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-900/40 text-red-700 dark:text-red-300 transition-colors cursor-pointer"
+                  >
                     <span>12 Tài sản đến hạn bảo trì định kỳ</span>
                     <span className="font-bold">Hôm nay</span>
                   </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300">
+                  <div
+                    onClick={() => {
+                      setIsActivitiesOpen(false);
+                      navigate("/tai-nguyen-so");
+                    }}
+                    className="flex items-center justify-between p-2 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 transition-colors cursor-pointer"
+                  >
                     <span>8 Giấy phép sắp hết hạn (30 ngày)</span>
                     <span className="font-bold">Gấp</span>
                   </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
+                  <div
+                    onClick={() => {
+                      setIsActivitiesOpen(false);
+                      navigate("/giam-sat-may-tram");
+                    }}
+                    className="flex items-center justify-between p-2 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 transition-colors cursor-pointer"
+                  >
                     <span>12 Yêu cầu cấp phát máy trạm</span>
                     <span className="font-bold">Đang chờ</span>
                   </div>

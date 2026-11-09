@@ -4,6 +4,7 @@ import PageMeta from "../../../components/common/PageMeta";
 import NotificationDropdown from "../../../components/header/NotificationDropdown";
 import UserDropdown from "../../../components/header/UserDropdown";
 import { useAuth } from "../../../context/AuthContext";
+import DashboardActionCenter from "./components/DashboardActionCenter";
 
 interface AppModule {
   id: string;
@@ -1224,17 +1225,29 @@ export default function AppLauncherHome() {
                     <span className="font-semibold text-sm">Tin nhắn nội bộ (7)</span>
                     <button
                       onClick={() => setIsChatOpen(false)}
-                      className="text-xs text-brand-600 hover:underline"
+                      className="text-xs text-brand-600 hover:underline cursor-pointer"
                     >
                       Đóng
                     </button>
                   </div>
                   <div className="space-y-2 text-xs">
-                    <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                    <div
+                      onClick={() => {
+                        setIsChatOpen(false);
+                        navigate("/thiet-bi-phan-cung");
+                      }}
+                      className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                    >
                       <p className="font-medium text-gray-800 dark:text-gray-200">Kế toán IT: Bàn giao máy chủ mới</p>
                       <p className="text-gray-500 dark:text-gray-400 mt-0.5">Vừa nhận được 5 biên bản từ phòng Kho...</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                    <div
+                      onClick={() => {
+                        setIsChatOpen(false);
+                        navigate("/tai-nguyen-so");
+                      }}
+                      className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                    >
                       <p className="font-medium text-gray-800 dark:text-gray-200">Phòng Hành chính: Yêu cầu License</p>
                       <p className="text-gray-500 dark:text-gray-400 mt-0.5">Cần cấp thêm 10 key Adobe Photoshop...</p>
                     </div>
@@ -1247,7 +1260,7 @@ export default function AppLauncherHome() {
             <div className="relative">
               <button
                 onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
-                className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+                className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
                 title="Hoạt động & Công việc cần xử lý"
                 aria-label="Activities"
               >
@@ -1266,21 +1279,39 @@ export default function AppLauncherHome() {
                     <span className="font-semibold text-sm">Công việc cần xử lý (32)</span>
                     <button
                       onClick={() => setIsActivitiesOpen(false)}
-                      className="text-xs text-brand-600 hover:underline"
+                      className="text-xs text-brand-600 hover:underline cursor-pointer"
                     >
                       Đóng
                     </button>
                   </div>
                   <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300">
+                    <div
+                      onClick={() => {
+                        setIsActivitiesOpen(false);
+                        navigate("/lich-bao-tri");
+                      }}
+                      className="flex items-center justify-between p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-900/40 text-red-700 dark:text-red-300 transition-colors cursor-pointer"
+                    >
                       <span>12 Tài sản đến hạn bảo trì định kỳ</span>
                       <span className="font-bold">Hôm nay</span>
                     </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300">
+                    <div
+                      onClick={() => {
+                        setIsActivitiesOpen(false);
+                        navigate("/tai-nguyen-so");
+                      }}
+                      className="flex items-center justify-between p-2 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 transition-colors cursor-pointer"
+                    >
                       <span>8 Giấy phép sắp hết hạn (30 ngày)</span>
                       <span className="font-bold">Gấp</span>
                     </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
+                    <div
+                      onClick={() => {
+                        setIsActivitiesOpen(false);
+                        navigate("/giam-sat-may-tram");
+                      }}
+                      className="flex items-center justify-between p-2 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 transition-colors cursor-pointer"
+                    >
                       <span>12 Yêu cầu cấp phát máy trạm</span>
                       <span className="font-bold">Đang chờ</span>
                     </div>
@@ -1363,6 +1394,9 @@ export default function AppLauncherHome() {
         {/* MAIN BODY: APP LAUNCHER GRID */}
         <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
           
+          {/* Dashboard Action Center: Công việc & Cảnh báo cần xử lý */}
+          {!searchTerm && <DashboardActionCenter />}
+
           {/* Category Filter Tabs */}
           <div className="flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto py-2 mb-8 scrollbar-none">
             {categories.map((cat) => (
