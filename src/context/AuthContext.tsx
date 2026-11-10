@@ -46,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Guard tránh gọi kép initializeAuth trong React 18+ StrictMode
   const hasInitializedRef = useRef(false);
   const hasHadSessionRef = useRef(false);
+  const isLoggingOutRef = useRef(false);
 
   // Timer tự động gia hạn token trước khi hết hạn (Proactive Refresh)
   const proactiveRefreshTimerRef = useRef<number | null>(null);
@@ -117,6 +118,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * - Chuyển về trang login.
    */
   const handleSessionExpired = useCallback((customMessage?: string) => {
+    // Nếu người dùng đang chủ động bấm Đăng xuất, tuyệt đối không báo lỗi phiên hết hạn
+    if (isLoggingOutRef.current) {
+      return;
+    }
+
     clearProactiveTimer();
     setAccessToken(null);
     clearAuthSession();
@@ -127,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState((prev) => {
       if (prev.isAuthenticated || hasHadSessionRef.current) {
         hasHadSessionRef.current = false;
-        toast.error(messageToShow);
+        toast.error(messageToShow, { id: "auth-session-expired" });
       }
       return {
         user: null,
@@ -139,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error: messageToShow,
       };
     });
-  }, []);
+  }, [clearProactiveTimer]);
 
   // Đăng ký callbacks với Axios Interceptor & sự kiện hệ thống
   useEffect(() => {
@@ -449,16 +455,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Hàm Đăng xuất
   const logout = useCallback(async (): Promise<void> => {
+    isLoggingOutRef.current = true;
     setState((prev) => ({ ...prev, isLoading: true }));
     clearProactiveTimer();
     hasHadSessionRef.current = false;
-    clearAuthSession();
-    setAccessToken(null);
-    queryClient.clear();
 
     try {
       await apiLogout();
+    } catch (err) {
+      console.warn("[Auth]: Backend logout error (safely ignored):", err);
     } finally {
+      clearAuthSession();
+      setAccessToken(null);
+      queryClient.clear();
       setState({
         user: null,
         accessToken: null,
@@ -468,9 +477,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isInitializing: false,
         error: null,
       });
+
+      // Tắt triệt để toast cảnh báo phiên và hiển thị toast đăng xuất thành công
+      toast.dismiss("auth-session-expired");
       toast.success("Đã đăng xuất an toàn khỏi hệ thống.");
+
+      setTimeout(() => {
+        isLoggingOutRef.current = false;
+      }, 500);
     }
-  }, []);
+  }, [clearProactiveTimer]);
 
   // Hàm làm mới phiên thủ công (chỉ hoạt động khi AccessToken còn hạn)
   const refreshSession = useCallback(async (): Promise<AuthResponse | null> => {
