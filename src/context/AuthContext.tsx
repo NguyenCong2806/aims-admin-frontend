@@ -188,29 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasInitializedRef.current = true;
 
     const initializeAuth = () => {
-      // 1. Kiểm tra tài khoản Demo phát triển (nếu đang bật)
-      if (typeof window !== "undefined") {
-        const demoUserStr = sessionStorage.getItem("aims_demo_session");
-        if (demoUserStr) {
-          try {
-            const demoUser = JSON.parse(demoUserStr);
-            setState({
-              user: demoUser,
-              accessToken: "mock_demo_session_token",
-              currentPermissions: null,
-              isAuthenticated: true,
-              isLoading: false,
-              isInitializing: false,
-              error: null,
-            });
-            return;
-          } catch {
-            sessionStorage.removeItem("aims_demo_session");
-          }
-        }
-      }
-
-      // 2. Đọc AccessToken và dữ liệu xác thực đã lưu
+      // 1. Đọc AccessToken và dữ liệu xác thực đã lưu
       const storedToken = getStoredAccessToken();
       const storedExp = getStoredTokenExpiresAt();
       const storedUser = getStoredUser();

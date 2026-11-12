@@ -11,50 +11,6 @@ import {
 import { AuthResponse, AuthUser, LoginCredentials } from "../types/auth";
 import type { CurrentPermissions } from "../modules/Permissions/models/permissionModel";
 
-// Tài khoản giả lập phục vụ chế độ phát triển (khi máy chủ backend local chưa bật)
-const DEMO_ACCOUNTS: Record<string, AuthUser> = {
-  admin: {
-    id: 1,
-    username: "admin",
-    email: "admin@aims.vn",
-    fullName: "Vũ Hoàng Long (Super Admin)",
-    avatarUrl: "/images/user/owner.jpg",
-    roles: ["SuperAdmin", "AssetManager"],
-    permissions: ["*"],
-    departmentName: "Ban Giám Đốc",
-  },
-  "hoang.it": {
-    id: 2,
-    username: "hoang.it",
-    email: "hoang.it@aims.vn",
-    fullName: "Nguyễn Huy Hoàng (IT Admin)",
-    avatarUrl: "/images/user/user-01.jpg",
-    roles: ["AssetManager", "ITSupport"],
-    permissions: ["assets:*"],
-    departmentName: "Phòng Công nghệ Thông tin",
-  },
-  "lan.hr": {
-    id: 3,
-    username: "lan.hr",
-    email: "lan.hr@aims.vn",
-    fullName: "Trần Thị Lan (HR Manager)",
-    avatarUrl: "/images/user/user-02.jpg",
-    roles: ["DepartmentHead"],
-    permissions: ["users:read", "assets:read"],
-    departmentName: "Phòng Hành chính Nhân sự",
-  },
-  staff: {
-    id: 4,
-    username: "staff",
-    email: "staff@aims.vn",
-    fullName: "Lê Văn Hùng (Nhân viên)",
-    avatarUrl: "/images/user/user-03.jpg",
-    roles: ["Staff"],
-    permissions: ["assets:read"],
-    departmentName: "Phòng Kinh doanh",
-  },
-};
-
 // Helper giải mã cấu trúc trả về từ backend (hỗ trợ cả Result<AuthResponse> và AuthResponse trực tiếp)
 function extractAuthResponse(raw: unknown): AuthResponse {
   if (raw && typeof raw === "object") {
@@ -130,38 +86,12 @@ export async function login(payload: LoginCredentials): Promise<AuthResponse> {
       }
     }
 
-    // 4. Fallback chỉ kích hoạt khi máy chủ offline hoàn toàn (Network Error) VÀ dùng tài khoản demo
+    // 4. Mất kết nối máy chủ hoàn toàn (Network Error)
     const isNetworkError =
       axios.isAxiosError(error) &&
       (!error.response || error.code === "ERR_NETWORK" || error.message.includes("Network Error"));
 
     if (isNetworkError) {
-      const normalizedUser = payload.username.toLowerCase();
-      if (DEMO_ACCOUNTS[normalizedUser]) {
-        console.warn(
-          "[Auth Offline Demo]: Không thể kết nối tới máy chủ backend tại " +
-          ENV.API_URL +
-          ". Kích hoạt tài khoản mẫu offline: " +
-          payload.username
-        );
-        const demoUser = DEMO_ACCOUNTS[normalizedUser];
-        const mockResponse: AuthResponse = {
-          accessToken: `mock_jwt_access_token_${Date.now()}`,
-          accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-          user: demoUser,
-          isSuccess: true,
-          isError: false,
-          errorMessage: "",
-          errorCode: 200,
-        };
-        setAccessToken(mockResponse.accessToken, mockResponse.accessTokenExpiresAt);
-        saveAuthSession(mockResponse.accessToken, mockResponse.accessTokenExpiresAt, mockResponse.user);
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("aims_demo_session", JSON.stringify(mockResponse.user));
-        }
-        return mockResponse;
-      }
-
       throw new Error("Không thể kết nối đến máy chủ backend. Vui lòng kiểm tra lại dịch vụ backend.");
     }
 
@@ -178,31 +108,7 @@ export async function login(payload: LoginCredentials): Promise<AuthResponse> {
  * [Nguyên tắc 4]: Cập nhật AccessToken và accessTokenExpiresAt mới sau khi refresh thành công.
  */
 export async function refreshSession(): Promise<AuthResponse> {
-  // 1. Nếu đang có phiên Demo, khôi phục tức thì mà không gửi request lên Backend
-  if (typeof window !== "undefined") {
-    const demoUserStr = sessionStorage.getItem("aims_demo_session");
-    if (demoUserStr) {
-      try {
-        const demoUser: AuthUser = JSON.parse(demoUserStr);
-        const mockResponse: AuthResponse = {
-          accessToken: `mock_refreshed_token_${Date.now()}`,
-          accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-          user: demoUser,
-          isSuccess: true,
-          isError: false,
-          errorMessage: "",
-          errorCode: 200,
-        };
-        setAccessToken(mockResponse.accessToken, mockResponse.accessTokenExpiresAt);
-        saveAuthSession(mockResponse.accessToken, mockResponse.accessTokenExpiresAt, mockResponse.user);
-        return mockResponse;
-      } catch {
-        sessionStorage.removeItem("aims_demo_session");
-      }
-    }
-  }
-
-  // 2. Phiên thật: Lấy Access Token hiện tại (kể cả đã hết hạn) để gửi lên backend làm mới
+  // Lấy Access Token hiện tại (kể cả đã hết hạn) để gửi lên backend làm mới
   const currentToken = getAccessToken() || getStoredAccessToken();
 
   if (!currentToken || currentToken.trim() === "") {

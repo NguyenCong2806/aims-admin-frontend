@@ -7,7 +7,6 @@ export const STORAGE_KEYS = {
   USER: "aims_user",
   PERMISSIONS: "aims_user_permissions",
   SESSION_HINT: "aims_has_session",
-  DEMO_SESSION: "aims_demo_session",
 } as const;
 
 /**
@@ -193,5 +192,5 @@ export function clearAuthSession(): void {
   localStorage.removeItem(STORAGE_KEYS.USER);
   localStorage.removeItem(STORAGE_KEYS.PERMISSIONS);
   localStorage.removeItem(STORAGE_KEYS.SESSION_HINT);
-  sessionStorage.removeItem(STORAGE_KEYS.DEMO_SESSION);
+  sessionStorage.removeItem("aims_demo_session");
 }
