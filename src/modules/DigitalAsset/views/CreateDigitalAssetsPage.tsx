@@ -538,27 +538,20 @@ export const CreateDigitalAssetsPage: React.FC = () => {
   const onInvalid = (fieldErrors: any) => {
     console.warn("Validation failed on fields:", fieldErrors);
 
-    const getMessages = (errObj: any): string[] => {
-      let msgs: string[] = [];
-      if (!errObj || typeof errObj !== "object") return msgs;
-      for (const key of Object.keys(errObj)) {
-        const item = errObj[key];
-        if (!item) continue;
-        if (item.message && typeof item.message === "string") {
-          msgs.push(item.message);
-        } else if (typeof item === "object") {
-          msgs = msgs.concat(getMessages(item));
+    // Không hiển thị toast lỗi vì đã có chữ đỏ validate hiển thị trực tiếp dưới từng ô nhập liệu
+    // Tự động cuộn đến ô nhập liệu bị lỗi đầu tiên để người dùng dễ nhìn thấy
+    setTimeout(() => {
+      const firstErrorEl =
+        document.querySelector(".border-error-500") ||
+        document.querySelector("[aria-invalid='true']") ||
+        document.querySelector(".text-error-500");
+      if (firstErrorEl) {
+        firstErrorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (firstErrorEl instanceof HTMLElement && typeof firstErrorEl.focus === "function") {
+          firstErrorEl.focus({ preventScroll: true });
         }
       }
-      return msgs;
-    };
-
-    const messages = getMessages(fieldErrors);
-    if (messages.length > 0) {
-      toast.error(`Chưa thể lưu: ${messages[0]}`);
-    } else {
-      toast.error("Vui lòng kiểm tra lại các trường thông tin bắt buộc.");
-    }
+    }, 50);
   };
 
   // Submit Handler
