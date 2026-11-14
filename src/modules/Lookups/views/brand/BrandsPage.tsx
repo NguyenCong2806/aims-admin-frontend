@@ -74,7 +74,6 @@ const BrandsPage: React.FC = () => {
           id: 0,
         };
         await createBrand.mutateAsync(payload);
-        toast.success("Thêm mới hãng sản xuất thành công!");
       } else {
         const payload: updatebrand = {
           name: formData.name,
@@ -85,7 +84,6 @@ const BrandsPage: React.FC = () => {
           id: brandId,
           params: payload,
         });
-        toast.success("Cập nhật hãng sản xuất thành công!");
       }
 
       handleCloseModal();

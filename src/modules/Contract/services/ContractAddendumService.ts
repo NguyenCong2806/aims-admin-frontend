@@ -1,5 +1,7 @@
 import { api } from "../../../library/axios";
 import { API_ENDPOINTS } from "../../../common/ApiEndpoints";
+import { APP_MESSAGES } from "../../../common/AppMessages";
+import { toast } from "sonner";
 import {
   ContractAddendum,
   CreateContractAddendum,
@@ -94,6 +96,7 @@ export class ContractAddendumService
     for (const ep of endpoints) {
       try {
         const response = await api.post<Result<ContractAddendum>>(ep, request);
+        toast.success(APP_MESSAGES.COMMON.CREATE_SUCCESS);
         return response.data;
       } catch (err: unknown) {
         lastError = err;
@@ -117,6 +120,7 @@ export class ContractAddendumService
     for (const ep of endpoints) {
       try {
         const response = await api.put<Result<ContractAddendum>>(ep, request);
+        toast.success(APP_MESSAGES.COMMON.UPDATE_SUCCESS);
         return response.data;
       } catch (err: unknown) {
         lastError = err;

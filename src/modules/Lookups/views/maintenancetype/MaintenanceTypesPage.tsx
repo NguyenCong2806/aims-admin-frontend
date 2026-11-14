@@ -65,13 +65,11 @@ const MaintenanceTypesPage: React.FC = () => {
     try {
       if (maintenanceTypeId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createmaintenancetype);
-        toast.success("Thêm mới loại bảo trì thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: maintenanceTypeId,
           params: { id: maintenanceTypeId, ...formData } as updatemaintenancetype,
         });
-        toast.success("Cập nhật loại bảo trì thành công!");
       }
       closeModal();
     } catch (err) {

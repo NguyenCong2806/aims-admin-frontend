@@ -689,10 +689,8 @@ export const CreateDigitalAssetsPage: React.FC = () => {
           id: assetId,
           params: payload,
         });
-        toast.success("Cập nhật tài nguyên số thành công!");
       } else {
         await addMutation.mutateAsync(payload);
-        toast.success("Thêm mới tài nguyên số thành công!");
       }
       navigate("/tai-nguyen-so");
     } catch (err: unknown) {

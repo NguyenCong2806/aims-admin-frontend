@@ -29,8 +29,8 @@ export const APP_MESSAGES = {
   // Thao tác CRUD & Hệ thống dùng chung
   COMMON: {
     SUCCESS: "Thực hiện thành công!",
-    CREATE_SUCCESS: "Thêm mới dữ liệu thành công!",
-    UPDATE_SUCCESS: "Cập nhật dữ liệu thành công!",
+    CREATE_SUCCESS: "Thêm mới thành công!",
+    UPDATE_SUCCESS: "Cập nhật thành công!",
     DELETE_SUCCESS: "Đã loại bỏ dữ liệu thành công.",
     ACTION_SUCCESS: "Thực hiện thao tác thành công!",
     DELETE_CONFIRM_TITLE: "Bạn có chắc muốn xóa?",

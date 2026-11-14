@@ -208,10 +208,8 @@ export const ContractAddendumsTab: React.FC<ContractAddendumsTabProps> = ({ cont
           id: editingAddendum.id,
           payload: { ...payload, id: editingAddendum.id },
         });
-        toast.success(`Cập nhật phụ lục ${data.addendumNumber} thành công!`);
       } else {
         await createMutation.mutateAsync(payload);
-        toast.success(`Thêm mới phụ lục ${data.addendumNumber} thành công!`);
       }
 
       setIsModalOpen(false);

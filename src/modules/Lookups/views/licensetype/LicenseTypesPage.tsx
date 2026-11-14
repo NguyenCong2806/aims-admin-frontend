@@ -65,13 +65,11 @@ const LicenseTypesPage: React.FC = () => {
     try {
       if (licenseTypeId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createlicensetype);
-        toast.success("Thêm mới loại giấy phép thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: licenseTypeId,
           params: { id: licenseTypeId, ...formData } as updatelicensetype,
         });
-        toast.success("Cập nhật loại giấy phép thành công!");
       }
       closeModal();
     } catch (err) {

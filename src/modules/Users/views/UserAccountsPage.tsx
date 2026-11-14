@@ -223,7 +223,6 @@ export const UserAccountsPage: React.FC = () => {
             roleids: userData.roleids && userData.roleids.length > 0 ? userData.roleids : [1],
           },
         });
-        toast.success(`Đã cập nhật thông tin tài khoản [${userData.username}]`);
       } else {
         await createMutation.mutateAsync({
           username: userData.username || "",
@@ -239,7 +238,6 @@ export const UserAccountsPage: React.FC = () => {
           isActive: userData.status !== undefined ? userData.status === "ACTIVE" : (userData.isActive ?? true),
           roleids: userData.roleids && userData.roleids.length > 0 ? userData.roleids : [1],
         });
-        toast.success(`Đã tạo mới tài khoản [${userData.username}] thành công!`);
       }
       setIsFormOpen(false);
       refetch();

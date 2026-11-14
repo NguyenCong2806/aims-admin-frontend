@@ -78,7 +78,6 @@ const AssetCategorysPage: React.FC = () => {
           id: 0,
         };
         await createMutation.mutateAsync(payload);
-        toast.success("Thêm mới nhóm danh mục thành công!");
       } else {
         const payload: updateassetcategorie = {
           name: formData.name,
@@ -89,7 +88,6 @@ const AssetCategorysPage: React.FC = () => {
           id: assetCategoryId,
           params: payload,
         });
-        toast.success("Cập nhật nhóm danh mục thành công!");
       }
 
       handleCloseModal();

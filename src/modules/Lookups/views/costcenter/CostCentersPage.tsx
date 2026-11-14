@@ -69,13 +69,11 @@ const CostCentersPage: React.FC = () => {
           id: 0,
           ...formData,
         } as createcostcenter);
-        toast.success("Thêm mới trung tâm chi phí thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: costCenterId,
           params: { id: costCenterId, ...formData } as updatecostcenter,
         });
-        toast.success("Cập nhật trung tâm chi phí thành công!");
       }
       closeModal();
     } catch (err) {

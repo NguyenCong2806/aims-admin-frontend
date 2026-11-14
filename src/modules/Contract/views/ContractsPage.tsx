@@ -331,10 +331,8 @@ export default function ContractsPage() {
           id: formData.id,
           params: formData as updatecontract,
         });
-        toast.success("Cập nhật hợp đồng thành công!");
       } else {
         await createMutation.mutateAsync(formData as createcontract);
-        toast.success("Thêm mới hợp đồng thành công!");
       }
       setIsModalOpen(false);
       setEditingContract(null);

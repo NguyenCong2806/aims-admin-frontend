@@ -74,7 +74,6 @@ const AssetTypesPage: React.FC = () => {
           id: 0,
         };
         await createAssetType.mutateAsync(payload);
-        toast.success("Thêm mới loại tài sản thành công!");
       } else {
         const payload: updateassettype = {
           name: formData.name,
@@ -85,7 +84,6 @@ const AssetTypesPage: React.FC = () => {
           id: assetTypeId,
           params: payload,
         });
-        toast.success("Cập nhật loại tài sản thành công!");
       }
 
       handleCloseModal();

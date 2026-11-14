@@ -129,7 +129,6 @@ const AssetStatusPage: React.FC = () => {
           id: 0,
         };
         await createAssetStatus.mutateAsync(payload);
-        toast.success("Thêm mới trạng thái tài sản thành công!");
       } else {
         const payload: updateassetstatus = {
           name: formData.name,
@@ -140,7 +139,6 @@ const AssetStatusPage: React.FC = () => {
           id: assetStatusId,
           params: payload,
         });
-        toast.success("Cập nhật trạng thái tài sản thành công!");
       }
 
       handleCloseModal();

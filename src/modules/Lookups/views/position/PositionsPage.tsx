@@ -65,13 +65,11 @@ const PositionsPage: React.FC = () => {
     try {
       if (positionId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createposition);
-        toast.success("Thêm mới chức vụ thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: positionId,
           params: { id: positionId, ...formData } as updateposition,
         });
-        toast.success("Cập nhật chức vụ thành công!");
       }
       closeModal();
     } catch (err) {

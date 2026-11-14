@@ -71,13 +71,11 @@ const DepartmentsPage: React.FC = () => {
     try {
       if (departmentId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createdepartment);
-        toast.success("Thêm mới phòng ban thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: departmentId,
           params: { id: departmentId, ...formData } as updatedepartment,
         });
-        toast.success("Cập nhật phòng ban thành công!");
       }
       closeModal();
     } catch (err) {

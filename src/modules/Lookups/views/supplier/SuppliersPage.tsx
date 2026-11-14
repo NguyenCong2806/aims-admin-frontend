@@ -66,13 +66,11 @@ const SuppliersPage: React.FC = () => {
     try {
       if (supplierId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createsupplier);
-        toast.success("Thêm mới nhà cung cấp thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: supplierId,
           params: { id: supplierId, ...formData } as updatesupplier,
         });
-        toast.success("Cập nhật nhà cung cấp thành công!");
       }
       closeModal();
     } catch (err) {

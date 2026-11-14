@@ -65,13 +65,11 @@ const UnitsPage: React.FC = () => {
     try {
       if (unitId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createunit);
-        toast.success("Thêm mới đơn vị tính thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: unitId,
           params: { id: unitId, ...formData } as updateunit,
         });
-        toast.success("Cập nhật đơn vị tính thành công!");
       }
       closeModal();
     } catch (err) {

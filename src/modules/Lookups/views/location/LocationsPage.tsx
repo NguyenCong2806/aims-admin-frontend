@@ -67,13 +67,11 @@ const LocationsPage: React.FC = () => {
     try {
       if (locationId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createlocation);
-        toast.success("Thêm mới địa điểm thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: locationId,
           params: { id: locationId, ...formData } as updatelocation,
         });
-        toast.success("Cập nhật địa điểm thành công!");
       }
       closeModal();
     } catch (err) {
