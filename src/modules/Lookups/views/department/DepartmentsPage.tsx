@@ -250,7 +250,6 @@ const DepartmentsPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu ra file Excel...")}
         templateFileName="Mau_Nhap_Phong_Ban.xlsx"
         templateCsvContent="code,name,parentId,managerName,description,isactive,displayorder\n"
         importTemplateColumns={DEPARTMENT_IMPORT_COLUMNS}

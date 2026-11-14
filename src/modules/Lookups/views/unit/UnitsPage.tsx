@@ -168,7 +168,6 @@ const UnitsPage: React.FC = () => {
             : undefined
         }
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu đơn vị tính ra file Excel...")}
         templateFileName="Mau_Nhap_Don_Vi_Tinh.csv"
         templateUrl="/templates/Mau_Nhap_Don_Vi_Tinh.csv"
         importTemplateColumns={UNIT_IMPORT_COLUMNS}

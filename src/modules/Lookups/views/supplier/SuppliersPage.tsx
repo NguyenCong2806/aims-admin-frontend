@@ -165,7 +165,6 @@ const SuppliersPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu nhà cung cấp ra file Excel...")}
         templateFileName="Mau_Nhap_Nha_Cung_Cap.csv"
         templateUrl="/templates/Mau_Nhap_Nha_Cung_Cap.csv"
         importTemplateColumns={SUPPLIER_IMPORT_COLUMNS}

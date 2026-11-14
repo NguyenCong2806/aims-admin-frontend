@@ -212,56 +212,6 @@ export default function ContractsPage() {
     });
   };
 
-  // Xuất file CSV / Excel
-  const handleExportExcel = () => {
-    if (items.length === 0) {
-      toast.info("Không có dữ liệu để xuất.");
-      return;
-    }
-
-    const headers = [
-      "ID",
-      "Số HĐ",
-      "Tên hợp đồng",
-      "Loại hợp đồng",
-      "Nhà cung cấp",
-      "Giá trị (VND)",
-      "Ngày bắt đầu",
-      "Ngày kết thúc",
-      "Bảo hành (tháng)",
-      "Trạng thái",
-      "File đính kèm",
-    ];
-
-    const rows = items.map((c) => [
-      c.id,
-      `"${c.contractNumber || c.contractCode || ""}"`,
-      `"${c.title}"`,
-      `"${CONTRACT_TYPE_LABELS[c.contractType]?.label || c.contractType}"`,
-      `"${c.supplier?.name || c.supplierName || ""}"`,
-      c.totalValue,
-      c.effectiveDate || c.startDate || "",
-      c.expiryDate || c.endDate || "",
-      c.warrantyMonths || 0,
-      `"${STATUS_CONFIG[c.status]?.label || c.status}"`,
-      `"${c.documentFileUrl || c.fileUrl || ""}"`,
-    ]);
-
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `DanhSach_HopDong_BaoHanh_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast.success("Đã xuất danh sách hợp đồng thành công!");
-  };
-
   // Cấu hình các cột nhập liệu từ Excel cho Hợp đồng
   const CONTRACT_IMPORT_COLUMNS = [
     { key: "contractNumber", label: "Số hợp đồng", sample: "HD-2026-8899", required: true },
@@ -390,7 +340,6 @@ export default function ContractsPage() {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới hợp đồng"
-        onExportExcel={handleExportExcel}
         templateFileName="Mau_Nhap_HopDong.xlsx"
         templateUrl="/templates/Mau_Nhap_HopDong.xlsx"
         importTemplateColumns={CONTRACT_IMPORT_COLUMNS}

@@ -161,7 +161,6 @@ const MaintenanceTypesPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu loại bảo trì ra file Excel...")}
         templateFileName="Mau_Nhap_Loai_Bao_Tri.xlsx"
         templateCsvContent="code,name,isPreventive,description,isactive,displayorder\n"
         importTemplateColumns={MAINTENANCE_TYPE_IMPORT_COLUMNS}

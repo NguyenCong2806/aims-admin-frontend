@@ -161,7 +161,6 @@ const LicenseTypesPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu loại giấy phép ra file Excel...")}
         templateFileName="Mau_Nhap_Loai_Giay_Phep.xlsx"
         templateCsvContent="code,name,isSubscription,description,isactive,displayorder\n"
         importTemplateColumns={LICENSE_TYPE_IMPORT_COLUMNS}

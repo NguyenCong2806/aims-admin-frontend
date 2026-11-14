@@ -5,7 +5,6 @@ import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../componen
 import PageMeta from "../../../components/common/PageMeta";
 import { UserAccount, UserRole, UserStatus } from "../models/userAccount";
 import { useAuth } from "../../../context/AuthContext";
-import { userService } from "../services/UserService";
 import {
   useUserAccountsPaged,
   useCreateUserAccount,
@@ -321,15 +320,6 @@ export const UserAccountsPage: React.FC = () => {
     refetch();
   };
 
-  const handleExport = () => {
-    const toExport =
-      selectedIds.size > 0
-        ? users.filter((u) => selectedIds.has(u.id))
-        : filteredUsers;
-    userService.exportToCsv(toExport);
-    toast.success(`Đã xuất ${toExport.length} tài khoản người dùng ra file CSV!`);
-  };
-
   return (
     <>
       <PageMeta
@@ -369,7 +359,6 @@ export const UserAccountsPage: React.FC = () => {
         }}
         onAddNew={canCreate ? handleAddNew : undefined}
         addNewLabel={canCreate ? "+ Thêm tài khoản" : undefined}
-        onExportExcel={handleExport}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         viewMode={viewMode}

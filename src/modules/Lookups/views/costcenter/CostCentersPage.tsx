@@ -167,7 +167,6 @@ const CostCentersPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu trung tâm chi phí ra file Excel...")}
         templateFileName="Mau_Nhap_Trung_Tam_Chi_Phi.xlsx"
         templateCsvContent="code,name,budgetLimit,fiscalYear,description,isactive,displayorder\n"
         importTemplateColumns={COST_CENTER_IMPORT_COLUMNS}

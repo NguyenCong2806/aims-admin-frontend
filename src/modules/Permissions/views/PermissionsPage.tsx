@@ -251,16 +251,6 @@ export const PermissionsPage: React.FC = () => {
     setIsMembersModalOpen(true);
   };
 
-  // 7. Xuất file CSV ma trận quyền
-  const handleExportCsv = () => {
-    try {
-      permissionService.exportMatrixCsv(roles);
-      toast.success("Đã xuất ma trận phân quyền ra file CSV thành công!");
-    } catch {
-      toast.error("Không thể xuất file CSV");
-    }
-  };
-
   // 8. Làm mới dữ liệu từ máy chủ
   const handleRefresh = async () => {
     try {
@@ -351,7 +341,6 @@ export const PermissionsPage: React.FC = () => {
         onSearchChange={setKeyword}
         onAddNew={handleOpenCreateRole}
         addNewLabel="+ Thêm vai trò mới"
-        onExportExcel={handleExportCsv}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         treeGroups={treeGroups}

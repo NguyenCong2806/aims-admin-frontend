@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import { AimsBasePageLayout, ViewMode, TreeFilterGroup } from "../../../components/aims";
 import PageMeta from "../../../components/common/PageMeta";
 import { AuditLogDto, AuditLogFilter } from "../models/AuditLogDto";
-import { services } from "../../../di/ServiceContainer";
 import { useAuditLogs } from "../queries/auditLogsQuery";
 import { INITIAL_SYSTEM_LOGS } from "../services/systemLogMockData";
 import { SystemLogDetailModal } from "./components/SystemLogDetailModal";
@@ -167,17 +166,6 @@ export const SystemLogsPage: React.FC = () => {
     setIsDetailOpen(true);
   };
 
-  // 7. Xuất file CSV
-  const handleExport = () => {
-    const itemsToExport =
-      selectedIds.size > 0
-        ? paginatedLogs.filter((l) => selectedIds.has(l.id))
-        : paginatedLogs;
-
-    services.auditLog.exportToCsv(itemsToExport);
-    toast.success(`Đã xuất ${itemsToExport.length} bản ghi nhật ký hệ thống ra file CSV thành công!`);
-  };
-
   // Helper render Badge Hành động
   const renderActionBadge = (action: string) => {
     switch (action.toUpperCase()) {
@@ -267,7 +255,6 @@ export const SystemLogsPage: React.FC = () => {
           setKeyword(val);
           setPageIndex(1);
         }}
-        onExportExcel={handleExport}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         viewMode={viewMode}

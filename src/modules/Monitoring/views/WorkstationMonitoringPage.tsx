@@ -120,7 +120,6 @@ export const WorkstationMonitoringPage: React.FC = () => {
           toast.info("AIMS Agent: Tải file chạy telemetry `aims-agent-setup.exe` để thu thập dữ liệu máy trạm tự động.");
         }}
         addNewLabel="Tải AIMS Agent"
-        onExportExcel={() => toast.success("Đang xuất báo cáo kiểm kê máy trạm ra Excel...")}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

@@ -175,7 +175,6 @@ const AssetTypesPage: React.FC = () => {
         }}
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu loại tài sản ra file Excel...")}
         templateFileName="Mau_Nhap_Loai_Tai_San.xlsx"
         templateCsvContent="code,name,description,isactive,displayorder\n"
         importTemplateColumns={ASSET_TYPE_IMPORT_COLUMNS}

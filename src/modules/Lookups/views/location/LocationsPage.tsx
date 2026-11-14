@@ -256,7 +256,6 @@ const LocationsPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu ra file Excel...")}
         templateFileName="Mau_Nhap_Dia_Diem.xlsx"
         templateCsvContent="code,name,address,parentId,description,isactive,displayorder\n"
         importTemplateColumns={LOCATION_IMPORT_COLUMNS}

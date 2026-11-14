@@ -179,7 +179,6 @@ const BrandsPage: React.FC = () => {
         }}
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu hãng sản xuất ra Excel...")}
         templateFileName="Mau_Nhap_Hang_San_Xuat.xlsx"
         templateCsvContent="code,name,description,isactive,displayorder\n"
         importTemplateColumns={BRAND_IMPORT_COLUMNS}

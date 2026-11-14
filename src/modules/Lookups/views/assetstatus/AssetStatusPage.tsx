@@ -229,7 +229,6 @@ const AssetStatusPage: React.FC = () => {
         }}
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu trạng thái tài sản ra file Excel...")}
         templateFileName="Mau_Nhap_Trang_Thai_Tai_San.xlsx"
         templateCsvContent="code,name,colorCode,allowAllocation,description,isactive,displayorder\n"
         importTemplateColumns={ASSET_STATUS_IMPORT_COLUMNS}
