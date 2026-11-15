@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import NotificationDropdown from "../components/header/NotificationDropdown";
+import ActivitiesDropdown from "../components/header/ActivitiesDropdown";
 import UserDropdown from "../components/header/UserDropdown";
 import { useAuth } from "../context/AuthContext";
 
@@ -59,16 +60,12 @@ const AppHeader: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Widget popups
-  const [isActivitiesOpen, setIsActivitiesOpen] = useState(false);
-
   // Multi-tenant Company state
   const [companyName, setCompanyName] = useState<string>(() => {
     return localStorage.getItem("aims_current_company") || "AIMS Enterprise (Hà Nội)";
   });
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
 
-  const activitiesRef = useRef<HTMLDivElement>(null);
   const companyRef = useRef<HTMLDivElement>(null);
 
   // Filter search results
@@ -99,7 +96,6 @@ const AppHeader: React.FC = () => {
       }
       if (e.key === "Escape") {
         setIsSearchOpen(false);
-        setIsActivitiesOpen(false);
         setIsCompanyDropdownOpen(false);
       }
     };
@@ -113,9 +109,6 @@ const AppHeader: React.FC = () => {
       const target = event.target as Node;
       if (searchContainerRef.current && !searchContainerRef.current.contains(target)) {
         setIsSearchOpen(false);
-      }
-      if (activitiesRef.current && !activitiesRef.current.contains(target)) {
-        setIsActivitiesOpen(false);
       }
       if (companyRef.current && !companyRef.current.contains(target)) {
         setIsCompanyDropdownOpen(false);
@@ -282,46 +275,7 @@ const AppHeader: React.FC = () => {
           </div>
 
           {/* Activities / Schedule clock with badge 32 */}
-          <div className="relative" ref={activitiesRef}>
-            <button
-              onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
-              className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-              title="Hoạt động & Công việc cần xử lý"
-              aria-label="Activities"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-xs ring-2 ring-white dark:ring-gray-900">
-                32
-              </span>
-            </button>
-
-            {isActivitiesOpen && (
-              <div className="absolute right-0 mt-2 w-80 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-700">
-                  <span className="font-semibold text-sm text-gray-900 dark:text-white">Công việc cần xử lý (32)</span>
-                  <button onClick={() => setIsActivitiesOpen(false)} className="text-xs text-brand-600 hover:underline cursor-pointer">
-                    Đóng
-                  </button>
-                </div>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300">
-                    <span>12 Tài sản đến hạn bảo trì định kỳ</span>
-                    <span className="font-bold">Hôm nay</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300">
-                    <span>8 Giấy phép sắp hết hạn (30 ngày)</span>
-                    <span className="font-bold">Gấp</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
-                    <span>12 Yêu cầu cấp phát máy trạm</span>
-                    <span className="font-bold">Đang chờ</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <ActivitiesDropdown />
 
           {/* Branch Quick Switch / Sync Icon */}
           <button
