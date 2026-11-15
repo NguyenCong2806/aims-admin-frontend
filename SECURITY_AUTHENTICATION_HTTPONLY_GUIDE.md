@@ -215,7 +215,7 @@ return ResponseEntity.ok()
    - Splash Screen mượt mà trong khi xác thực cookie ban đầu (`isInitializing`).
    - Tự động chuyển hướng về `/signin?redirect=...` khi chưa đăng nhập.
    - Hỗ trợ chặn quyền 403 Forbidden theo vai trò (RBAC).
-6. **`src/components/auth/PublicOnlyRoute.tsx`**: Chuyển hướng người dùng đã có phiên làm việc ra khỏi trang `/signin`, `/signup`.
+6. **`src/components/auth/PublicOnlyRoute.tsx`**: Chuyển hướng người dùng đã có phiên làm việc ra khỏi trang `/signin`.
 7. **`src/pages/AuthPages/SignIn.tsx`**: Tích hợp gọi `auth.login()`, hỗ trợ nút chọn tài khoản mẫu (Super Admin, IT Admin, HR Manager), và banner bảo mật HttpOnly Cookie.
 8. **`src/components/header/UserDropdown.tsx`**: Hiển thị thông tin thực tế của tài khoản đang đăng nhập và nút "Đăng xuất an toàn" giải phóng cookie & memory.
 9. **`src/App.tsx`**: Tích hợp bọc `<AuthProvider>`, `<ProtectedRoute>`, và `<PublicOnlyRoute>`.

@@ -9,7 +9,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PublicOnlyRoute from "./components/auth/PublicOnlyRoute";
 
 // Auth & Dashboard Modules
-import { SignIn, SignUp } from "./modules/Auth";
+import { SignIn } from "./modules/Auth";
 import { Home } from "./modules/Dashboard";
 
 // Business Modules
@@ -41,7 +41,6 @@ import { AnalyticsReportsPage } from "./modules/Reports";
 import {
   Blank,
   BarChart,
-  BasicTables,
   FormElements,
   Images,
   Videos,
@@ -90,9 +89,6 @@ export default function App() {
                 <Route path="/tai-nguyen-so/tao-moi" element={<CreateDigitalAssetsPage />} />
                 <Route path="/tai-nguyen-so/:id/chinh-sua" element={<CreateDigitalAssetsPage />} />
               </Route>
-
-              {/* Tables */}
-              <Route path="/tao-moi-tai-nguyen-so" element={<BasicTables />} />
 
               {/* Ui Elements / Lookups */}
               <Route path="/hang-san-xuat" element={<BrandsPage />} />
@@ -149,14 +145,6 @@ export default function App() {
               element={
                 <PublicOnlyRoute>
                   <SignIn />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route
-              path="/signup"
-              element={
-                <PublicOnlyRoute>
-                  <SignUp />
                 </PublicOnlyRoute>
               }
             />
