@@ -23,7 +23,6 @@ export default function AppLauncherHome() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [companyName, setCompanyName] = useState("AIMS Enterprise (Hà Nội)");
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isActivitiesOpen, setIsActivitiesOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -1200,48 +1199,6 @@ export default function AppLauncherHome() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
             </button>
-
-            {/* Chat / Messages with unread badge 7 */}
-            <div className="relative">
-              <button
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
-                title="Tin nhắn & Trao đổi nội bộ"
-                aria-label="Messages"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-rose-500 rounded-full shadow-xs ring-2 ring-white dark:ring-gray-900">
-                  7
-                </span>
-              </button>
-
-              {/* Chat Quick Popup */}
-              {isChatOpen && (
-                <div className="absolute right-0 mt-2 w-80 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="font-semibold text-sm">Tin nhắn nội bộ (7)</span>
-                    <button
-                      onClick={() => setIsChatOpen(false)}
-                      className="text-xs text-brand-600 hover:underline"
-                    >
-                      Đóng
-                    </button>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">Kế toán IT: Bàn giao máy chủ mới</p>
-                      <p className="text-gray-500 dark:text-gray-400 mt-0.5">Vừa nhận được 5 biên bản từ phòng Kho...</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">Phòng Hành chính: Yêu cầu License</p>
-                      <p className="text-gray-500 dark:text-gray-400 mt-0.5">Cần cấp thêm 10 key Adobe Photoshop...</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Activities / Schedule clock with badge 32 */}
             <div className="relative">
