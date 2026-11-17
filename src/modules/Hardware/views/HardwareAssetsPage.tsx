@@ -239,7 +239,6 @@ export const HardwareAssetsPage: React.FC = () => {
         }}
         onAddNew={handleAddNew}
         addNewLabel="Thêm thiết bị"
-        onExportExcel={() => toast.success("Đang xuất danh sách thiết bị phần cứng ra file Excel...")}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

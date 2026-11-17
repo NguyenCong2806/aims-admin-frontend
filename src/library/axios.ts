@@ -52,7 +52,7 @@ if (typeof window !== "undefined") {
 }
 
 // Callbacks thông báo cho tầng UI / AuthContext
-type AuthEventCallback = () => void;
+type AuthEventCallback = (message?: string) => void;
 let sessionExpiredCallback: AuthEventCallback | null = null;
 let tokenRefreshedCallback: ((newToken: string) => void) | null = null;
 
@@ -182,6 +182,20 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Helper kích hoạt thông báo hết phiên an toàn, không kích hoạt kép
+    const triggerSessionExpired = (msg?: string) => {
+      const finalMsg = msg || error.message || APP_MESSAGES.HTTP_STATUS[401];
+      if (sessionExpiredCallback) {
+        sessionExpiredCallback(finalMsg);
+      } else if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("aims:auth-expired", {
+            detail: { message: finalMsg },
+          })
+        );
+      }
+    };
+
     // Kiểm tra nếu tài khoản bị khóa, token bị thu hồi hoặc phiên bị thay thế bởi thiết bị khác -> Đăng xuất ngay, không thử refresh
     const errorData = error.response?.data as Record<string, unknown> | string | undefined;
     const errorDetail = typeof errorData === "string"
@@ -192,34 +206,32 @@ api.interceptors.response.use(
     if (isSessionTerminated) {
       setAccessToken(null);
       clearAuthSession();
-      if (sessionExpiredCallback) sessionExpiredCallback();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("aims:auth-expired", {
-            detail: { message: error.message || APP_MESSAGES.HTTP_STATUS[401] },
-          })
-        );
-      }
+      triggerSessionExpired(error.message || APP_MESSAGES.HTTP_STATUS[401]);
       return Promise.reject(error);
     }
 
-    // [Nguyên tắc 5]: Không retry nếu chính endpoint Refresh, Login hoặc Logout bị 401
-    const isAuthEndpoint =
-      originalRequest.url?.includes(API_ENDPOINTS.AUTH.REFRESH) ||
-      originalRequest.url?.includes(API_ENDPOINTS.AUTH.LOGIN) ||
-      originalRequest.url?.includes(API_ENDPOINTS.AUTH.LOGOUT);
-
-    if (isAuthEndpoint) {
+    // [Nguyên tắc 5]: Xử lý các endpoint xác thực đặc biệt
+    // 1. Khi đang gọi Logout bị lỗi 401 (token đã hết hạn hoặc cookie đã mất):
+    // Tuyệt đối KHÔNG báo lỗi hết hạn hay thông báo tài khoản bị khóa!
+    const isLogoutEndpoint = originalRequest.url?.includes(API_ENDPOINTS.AUTH.LOGOUT);
+    if (isLogoutEndpoint) {
       setAccessToken(null);
       clearAuthSession();
-      if (sessionExpiredCallback) sessionExpiredCallback();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("aims:auth-expired", {
-            detail: { message: error.message || APP_MESSAGES.HTTP_STATUS[401] },
-          })
-        );
-      }
+      return Promise.reject(error);
+    }
+
+    // 2. Khi gọi Login bị 401 (sai mật khẩu/tài khoản): Form đăng nhập tự xử lý
+    const isLoginEndpoint = originalRequest.url?.includes(API_ENDPOINTS.AUTH.LOGIN);
+    if (isLoginEndpoint) {
+      return Promise.reject(error);
+    }
+
+    // 3. Khi chính endpoint Refresh bị 401: Hết phiên làm việc
+    const isRefreshEndpoint = originalRequest.url?.includes(API_ENDPOINTS.AUTH.REFRESH);
+    if (isRefreshEndpoint) {
+      setAccessToken(null);
+      clearAuthSession();
+      triggerSessionExpired();
       return Promise.reject(error);
     }
 
@@ -227,14 +239,7 @@ api.interceptors.response.use(
     if (originalRequest._retry) {
       setAccessToken(null);
       clearAuthSession();
-      if (sessionExpiredCallback) sessionExpiredCallback();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("aims:auth-expired", {
-            detail: { message: error.message || APP_MESSAGES.HTTP_STATUS[401] },
-          })
-        );
-      }
+      triggerSessionExpired();
       return Promise.reject(error);
     }
 
@@ -244,14 +249,7 @@ api.interceptors.response.use(
     if (!currentToken || currentToken.trim() === "") {
       setAccessToken(null);
       clearAuthSession();
-      if (sessionExpiredCallback) sessionExpiredCallback();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("aims:auth-expired", {
-            detail: { message: error.message || APP_MESSAGES.HTTP_STATUS[401] },
-          })
-        );
-      }
+      triggerSessionExpired();
       return Promise.reject(error);
     }
 
@@ -338,19 +336,17 @@ api.interceptors.response.use(
       setAccessToken(null);
       clearAuthSession();
 
-      if (sessionExpiredCallback) {
-        sessionExpiredCallback();
-      }
+      const refreshMsg =
+        refreshError instanceof Error && refreshError.message
+          ? refreshError.message
+          : APP_MESSAGES.HTTP_STATUS[401];
 
-      if (typeof window !== "undefined") {
+      if (sessionExpiredCallback) {
+        sessionExpiredCallback(refreshMsg);
+      } else if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("aims:auth-expired", {
-            detail: {
-              message:
-                refreshError instanceof Error && refreshError.message
-                  ? refreshError.message
-                  : APP_MESSAGES.HTTP_STATUS[401],
-            },
+            detail: { message: refreshMsg },
           })
         );
       }

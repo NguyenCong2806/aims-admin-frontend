@@ -67,13 +67,11 @@ const LocationsPage: React.FC = () => {
     try {
       if (locationId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createlocation);
-        toast.success("Thêm mới địa điểm thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: locationId,
           params: { id: locationId, ...formData } as updatelocation,
         });
-        toast.success("Cập nhật địa điểm thành công!");
       }
       closeModal();
     } catch (err) {
@@ -258,7 +256,6 @@ const LocationsPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu ra file Excel...")}
         templateFileName="Mau_Nhap_Dia_Diem.xlsx"
         templateCsvContent="code,name,address,parentId,description,isactive,displayorder\n"
         importTemplateColumns={LOCATION_IMPORT_COLUMNS}

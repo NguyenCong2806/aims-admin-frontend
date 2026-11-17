@@ -715,7 +715,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
         { id, params: hardwarePayload },
         {
           onSuccess: () => {
-            toast.success("Cập nhật thiết bị thành công");
             navigate("/thiet-bi-phan-cung");
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -727,7 +726,6 @@ export const CreateHardwareAssetPage: React.FC = () => {
     } else {
       addMutation.mutate(hardwarePayload, {
         onSuccess: () => {
-          toast.success("Tạo mới thiết bị phần cứng thành công");
           navigate("/thiet-bi-phan-cung");
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

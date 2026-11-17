@@ -23,7 +23,6 @@ export default function SignIn() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -46,7 +45,6 @@ export default function SignIn() {
       const res = await login({
         username: trimmedUsername,
         password,
-        rememberMe,
       });
 
       // Kiểm tra bảo vệ bổ sung: Nếu isSuccess là false thì hiển thị lỗi và không cho vào
@@ -292,21 +290,6 @@ export default function SignIn() {
                     <span>{errorMessage}</span>
                   </div>
                 )}
-
-                {/* Remember Me */}
-                <div className="flex items-center">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 cursor-pointer"
-                    />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      Duy trì đăng nhập trên thiết bị này
-                    </span>
-                  </label>
-                </div>
 
                 {/* Submit Button */}
                 <button

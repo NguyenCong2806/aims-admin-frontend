@@ -196,10 +196,9 @@ const ContractModal: React.FC<ContractModalProps> = ({
     const errorKeys = Object.keys(fieldErrors) as (keyof ContractInput)[];
     if (errorKeys.length > 0) {
       const firstKey = String(errorKeys[0]);
-      const firstError = fieldErrors[errorKeys[0]];
-      toast.error(`Vui lòng kiểm tra: ${firstError?.message || "Dữ liệu hợp đồng chưa hợp lệ"}`);
 
       // Tự động chuyển tab đến trường bị lỗi để người dùng thấy ngay
+      // (Không hiển thị toast vì đã có thông báo validate hiển thị trực tiếp dưới từng ô nhập liệu)
       if (
         [
           "contractNumber",

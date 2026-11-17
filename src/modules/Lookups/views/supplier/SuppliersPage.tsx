@@ -66,13 +66,11 @@ const SuppliersPage: React.FC = () => {
     try {
       if (supplierId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createsupplier);
-        toast.success("Thêm mới nhà cung cấp thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: supplierId,
           params: { id: supplierId, ...formData } as updatesupplier,
         });
-        toast.success("Cập nhật nhà cung cấp thành công!");
       }
       closeModal();
     } catch (err) {
@@ -167,7 +165,6 @@ const SuppliersPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu nhà cung cấp ra file Excel...")}
         templateFileName="Mau_Nhap_Nha_Cung_Cap.csv"
         templateUrl="/templates/Mau_Nhap_Nha_Cung_Cap.csv"
         importTemplateColumns={SUPPLIER_IMPORT_COLUMNS}

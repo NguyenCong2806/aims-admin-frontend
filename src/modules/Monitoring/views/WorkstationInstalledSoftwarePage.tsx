@@ -9,7 +9,6 @@ import type { SoftwareDto } from "../models";
 import {
   InstallTypeBadge,
   detectSoftwareIcon,
-  exportSoftwareToCsv,
 } from "./installedSoftwareHelper";
 import {
   useComputerAuditsParams,
@@ -186,22 +185,6 @@ export const WorkstationInstalledSoftwarePage: React.FC = () => {
     });
   };
 
-  // Xuất file CSV
-  const handleExportCsv = () => {
-    if (filteredSoftware.length === 0) {
-      toast.error("Không có phần mềm nào để xuất file!");
-      return;
-    }
-    try {
-      exportSoftwareToCsv(currentWorkstation, filteredSoftware);
-      toast.success(
-        `Đã xuất ${filteredSoftware.length} phần mềm của máy [${currentWorkstation?.hostName || "thiết bị"}] ra file CSV!`
-      );
-    } catch {
-      toast.error("Không thể xuất file kiểm kê phần mềm");
-    }
-  };
-
   // Chuyển đổi máy trạm
   const handleSwitchWorkstation = (newId: string) => {
     setSelectedWorkstationId(newId);
@@ -318,7 +301,6 @@ export const WorkstationInstalledSoftwarePage: React.FC = () => {
           setKeyword(val);
           setPageIndex(1);
         }}
-        onExportExcel={handleExportCsv}
         selectedCount={selectedSoftwareNames.size}
         onClearSelection={() => setSelectedSoftwareNames(new Set())}
         viewMode={viewMode}

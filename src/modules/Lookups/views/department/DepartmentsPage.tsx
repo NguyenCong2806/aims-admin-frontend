@@ -71,13 +71,11 @@ const DepartmentsPage: React.FC = () => {
     try {
       if (departmentId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createdepartment);
-        toast.success("Thêm mới phòng ban thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: departmentId,
           params: { id: departmentId, ...formData } as updatedepartment,
         });
-        toast.success("Cập nhật phòng ban thành công!");
       }
       closeModal();
     } catch (err) {
@@ -252,7 +250,6 @@ const DepartmentsPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu ra file Excel...")}
         templateFileName="Mau_Nhap_Phong_Ban.xlsx"
         templateCsvContent="code,name,parentId,managerName,description,isactive,displayorder\n"
         importTemplateColumns={DEPARTMENT_IMPORT_COLUMNS}

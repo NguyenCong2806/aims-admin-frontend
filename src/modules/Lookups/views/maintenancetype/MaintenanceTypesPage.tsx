@@ -65,13 +65,11 @@ const MaintenanceTypesPage: React.FC = () => {
     try {
       if (maintenanceTypeId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createmaintenancetype);
-        toast.success("Thêm mới loại bảo trì thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: maintenanceTypeId,
           params: { id: maintenanceTypeId, ...formData } as updatemaintenancetype,
         });
-        toast.success("Cập nhật loại bảo trì thành công!");
       }
       closeModal();
     } catch (err) {
@@ -163,7 +161,6 @@ const MaintenanceTypesPage: React.FC = () => {
           setIsModalOpen(true);
         }}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu loại bảo trì ra file Excel...")}
         templateFileName="Mau_Nhap_Loai_Bao_Tri.xlsx"
         templateCsvContent="code,name,isPreventive,description,isactive,displayorder\n"
         importTemplateColumns={MAINTENANCE_TYPE_IMPORT_COLUMNS}

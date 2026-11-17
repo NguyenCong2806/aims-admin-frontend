@@ -118,7 +118,10 @@ export const AimsBasePageLayout: React.FC<AimsBasePageLayoutProps> = ({
   const showImportButton = Boolean(
     onImportExcel !== undefined
       ? Boolean(onImportExcel)
-      : Boolean(onImportData || (enableDefaultImport && onExportExcel))
+      : Boolean(
+          onImportData ||
+          (enableDefaultImport && (importTemplateColumns || templateCsvContent || templateUrl || Boolean(onImportData)))
+        )
   );
 
   const handleImportClick = () => {

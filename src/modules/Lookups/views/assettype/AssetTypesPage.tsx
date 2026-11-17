@@ -74,7 +74,6 @@ const AssetTypesPage: React.FC = () => {
           id: 0,
         };
         await createAssetType.mutateAsync(payload);
-        toast.success("Thêm mới loại tài sản thành công!");
       } else {
         const payload: updateassettype = {
           name: formData.name,
@@ -85,7 +84,6 @@ const AssetTypesPage: React.FC = () => {
           id: assetTypeId,
           params: payload,
         });
-        toast.success("Cập nhật loại tài sản thành công!");
       }
 
       handleCloseModal();
@@ -177,7 +175,6 @@ const AssetTypesPage: React.FC = () => {
         }}
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu loại tài sản ra file Excel...")}
         templateFileName="Mau_Nhap_Loai_Tai_San.xlsx"
         templateCsvContent="code,name,description,isactive,displayorder\n"
         importTemplateColumns={ASSET_TYPE_IMPORT_COLUMNS}

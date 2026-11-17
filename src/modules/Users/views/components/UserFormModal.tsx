@@ -83,9 +83,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
         const mapped = initialData.roleids
           .map((id) => ID_TO_ROLE_MAP[id])
           .filter(Boolean) as UserRole[];
-        setSelectedRoles(mapped.length > 0 ? mapped : ["Staff"]);
+        setSelectedRoles(mapped.length > 0 ? [mapped[0]] : ["Staff"]);
       } else if (initialData.roles && initialData.roles.length > 0) {
-        setSelectedRoles(initialData.roles);
+        setSelectedRoles([initialData.roles[0]]);
       } else {
         setSelectedRoles(["Staff"]);
       }
@@ -144,17 +144,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   };
 
   const toggleRole = (role: UserRole) => {
-    setSelectedRoles((prev) => {
-      if (prev.includes(role)) {
-        if (prev.length === 1) {
-          toast.warning("Người dùng phải có ít nhất 1 vai trò!");
-          return prev;
-        }
-        return prev.filter((r) => r !== role);
-      } else {
-        return [...prev, role];
-      }
-    });
+    setSelectedRoles([role]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -362,15 +352,20 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
           {/* ROLES SELECTION */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Phân quyền & Vai trò hệ thống (RBAC) <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Phân quyền & Vai trò hệ thống (RBAC) <span className="text-rose-500">*</span>
+              </label>
+              <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                (Chỉ chọn 1 quyền)
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {ALL_ROLES.map((role) => {
                 const isSelected = selectedRoles.includes(role);
                 const roleMeta = (USER_ROLE_META as Record<string, any>)[role] || USER_ROLE_META.Staff;
                 return (
-                  <label
+                  <div
                     key={role}
                     onClick={() => toggleRole(role)}
                     className={`flex items-start gap-2.5 p-3 rounded-xl border transition cursor-pointer select-none ${
@@ -382,8 +377,8 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={() => {}}
-                      className="w-4 h-4 mt-0.5 text-indigo-600 rounded border-gray-300"
+                      onChange={() => toggleRole(role)}
+                      className="w-4 h-4 mt-0.5 text-indigo-600 rounded border-gray-300 cursor-pointer pointer-events-none"
                     />
                     <div>
                       <div className="flex items-center gap-1.5 font-bold text-xs text-gray-900 dark:text-white">
@@ -394,7 +389,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                         {roleMeta.description}
                       </p>
                     </div>
-                  </label>
+                  </div>
                 );
               })}
             </div>

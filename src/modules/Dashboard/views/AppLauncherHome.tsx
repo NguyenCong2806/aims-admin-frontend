@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
 import NotificationDropdown from "../../../components/header/NotificationDropdown";
+import ActivitiesDropdown from "../../../components/header/ActivitiesDropdown";
 import UserDropdown from "../../../components/header/UserDropdown";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -21,10 +22,6 @@ export default function AppLauncherHome() {
   const { hasPermission } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [companyName, setCompanyName] = useState("AIMS Enterprise (Hà Nội)");
-  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isActivitiesOpen, setIsActivitiesOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -1104,7 +1101,7 @@ export default function AppLauncherHome() {
 
       {/* Main AIMS Enterprise background */}
       <div className="relative min-h-screen bg-gradient-to-br from-[#f3eff8] via-[#e8e4f5] to-[#d8d3ec] dark:from-[#0b0f19] dark:via-[#111827] dark:to-[#0d121f] text-gray-800 dark:text-gray-100 transition-colors duration-300">
-        
+
         {/* Subtle diagonal ambient light beam (Signature AIMS angled sheen) */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-[40%] -left-[20%] w-[140%] h-[140%] bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent dark:from-indigo-500/10 dark:via-transparent dark:to-transparent opacity-70" />
@@ -1114,7 +1111,7 @@ export default function AppLauncherHome() {
 
         {/* TOP BAR - AIMS Enterprise Header */}
         <header className="relative z-30 flex items-center justify-between px-4 py-3 sm:px-6 md:px-8 border-b border-black/[0.04] dark:border-white/[0.06] backdrop-blur-md bg-white/40 dark:bg-gray-900/40">
-          
+
           {/* Left: Brand & Search bar */}
           <div className="flex items-center gap-4 flex-1 max-w-xl">
             {/* System Logo / Home */}
@@ -1176,7 +1173,7 @@ export default function AppLauncherHome() {
 
           {/* Right: AIMS Status & Notification widgets */}
           <div className="flex items-center gap-1 sm:gap-2.5">
-            
+
             {/* Live System Status Dot */}
             <div
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40 text-xs font-medium cursor-default"
@@ -1189,168 +1186,8 @@ export default function AppLauncherHome() {
               <span className="hidden xl:inline">Sẵn sàng</span>
             </div>
 
-            {/* Support / Headset icon */}
-            <button
-              onClick={() => alert("Tổng đài hỗ trợ kỹ thuật AIMS: 1900-8888\nEmail: support@aims.vn")}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
-              title="Trung tâm hỗ trợ kỹ thuật"
-              aria-label="Support"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </button>
-
-            {/* Chat / Messages with unread badge 7 */}
-            <div className="relative">
-              <button
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
-                title="Tin nhắn & Trao đổi nội bộ"
-                aria-label="Messages"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-rose-500 rounded-full shadow-xs ring-2 ring-white dark:ring-gray-900">
-                  7
-                </span>
-              </button>
-
-              {/* Chat Quick Popup */}
-              {isChatOpen && (
-                <div className="absolute right-0 mt-2 w-80 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="font-semibold text-sm">Tin nhắn nội bộ (7)</span>
-                    <button
-                      onClick={() => setIsChatOpen(false)}
-                      className="text-xs text-brand-600 hover:underline"
-                    >
-                      Đóng
-                    </button>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">Kế toán IT: Bàn giao máy chủ mới</p>
-                      <p className="text-gray-500 dark:text-gray-400 mt-0.5">Vừa nhận được 5 biên bản từ phòng Kho...</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">Phòng Hành chính: Yêu cầu License</p>
-                      <p className="text-gray-500 dark:text-gray-400 mt-0.5">Cần cấp thêm 10 key Adobe Photoshop...</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Activities / Schedule clock with badge 32 */}
-            <div className="relative">
-              <button
-                onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
-                className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
-                title="Hoạt động & Công việc cần xử lý"
-                aria-label="Activities"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-xs ring-2 ring-white dark:ring-gray-900">
-                  32
-                </span>
-              </button>
-
-              {/* Activities Quick Popup */}
-              {isActivitiesOpen && (
-                <div className="absolute right-0 mt-2 w-80 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-700">
-                    <span className="font-semibold text-sm">Công việc cần xử lý (32)</span>
-                    <button
-                      onClick={() => setIsActivitiesOpen(false)}
-                      className="text-xs text-brand-600 hover:underline"
-                    >
-                      Đóng
-                    </button>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300">
-                      <span>12 Tài sản đến hạn bảo trì định kỳ</span>
-                      <span className="font-bold">Hôm nay</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300">
-                      <span>8 Giấy phép sắp hết hạn (30 ngày)</span>
-                      <span className="font-bold">Gấp</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
-                      <span>12 Yêu cầu cấp phát máy trạm</span>
-                      <span className="font-bold">Đang chờ</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Split / Branch Quick switch icon */}
-            <button
-              onClick={() => alert("Đang ở nhánh chính: Production Server (DC Hà Nội)")}
-              className="hidden sm:flex p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
-              title="Nhánh dữ liệu & Đồng bộ"
-              aria-label="Branch"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-            </button>
-
-            {/* Company / Tenant Selector Dropdown (AIMS Multi-Tenant: "AIMS Enterprise (Hà Nội)") */}
-            <div className="relative hidden md:block">
-              <button
-                onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl transition-all shadow-2xs"
-              >
-                <svg className="w-3.5 h-3.5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span>{companyName}</span>
-                <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {isCompanyDropdownOpen && (
-                <div className="absolute right-0 mt-1.5 w-60 py-1.5 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 z-50">
-                  <div className="px-3 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                    Chọn chi nhánh / Đơn vị
-                  </div>
-                  {[
-                    "AIMS Enterprise (Hà Nội)",
-                    "AIMS Chi nhánh TP. Hồ Chí Minh",
-                    "AIMS Chi nhánh Đà Nẵng",
-                    "Trung tâm Dữ liệu & Nghiên cứu AI",
-                  ].map((comp) => (
-                    <button
-                      key={comp}
-                      onClick={() => {
-                        setCompanyName(comp);
-                        setIsCompanyDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between ${
-                        companyName === comp
-                          ? "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-semibold"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                      }`}
-                    >
-                      <span>{comp}</span>
-                      {companyName === comp && (
-                        <svg className="w-4 h-4 text-brand-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
+            <ActivitiesDropdown />
             {/* Notification Dropdown */}
             <NotificationDropdown />
 
@@ -1362,18 +1199,17 @@ export default function AppLauncherHome() {
 
         {/* MAIN BODY: APP LAUNCHER GRID */}
         <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
-          
+
           {/* Category Filter Tabs */}
           <div className="flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto py-2 mb-8 scrollbar-none">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  selectedCategory === cat.id
-                    ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-md shadow-black/5 border border-brand-200/50 dark:border-brand-800/50 font-semibold"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-800/50"
-                }`}
+                className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${selectedCategory === cat.id
+                  ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-md shadow-black/5 border border-brand-200/50 dark:border-brand-800/50 font-semibold"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-800/50"
+                  }`}
               >
                 {cat.label}
               </button>
@@ -1438,9 +1274,8 @@ export default function AppLauncherHome() {
                     {/* Badge if present */}
                     {app.badge && (
                       <span
-                        className={`absolute -top-1 -right-2 px-1.5 py-0.5 text-[9px] font-bold text-white rounded-full shadow-sm ring-2 ring-white dark:ring-gray-900 ${
-                          app.badgeColor || "bg-brand-500"
-                        }`}
+                        className={`absolute -top-1 -right-2 px-1.5 py-0.5 text-[9px] font-bold text-white rounded-full shadow-sm ring-2 ring-white dark:ring-gray-900 ${app.badgeColor || "bg-brand-500"
+                          }`}
                       >
                         {app.badge}
                       </span>

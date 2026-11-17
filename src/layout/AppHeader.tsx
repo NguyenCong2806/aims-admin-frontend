@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import NotificationDropdown from "../components/header/NotificationDropdown";
+import ActivitiesDropdown from "../components/header/ActivitiesDropdown";
 import UserDropdown from "../components/header/UserDropdown";
 import { useAuth } from "../context/AuthContext";
 
@@ -22,7 +23,7 @@ const SEARCHABLE_MODULES: SearchableItem[] = [
   { name: "Thêm tài nguyên số mới", path: "/tai-nguyen-so/tao-moi", category: "Tài sản IT", keywords: "tao moi digital asset cloud", permission: "digital.create" },
   { name: "Giám sát máy trạm", path: "/giam-sat-may-tram", category: "Giám sát IT", keywords: "workstation agent ram cpu disk online offline", badge: "Live", permission: "monitoring.view" },
   { name: "Phần mềm cài đặt máy trạm", path: "/giam-sat-may-tram/phan-mem", category: "Giám sát IT", keywords: "installed software audit agent app", permission: "monitoring.view" },
-  
+
   // Vận hành & Bảo trì
   { name: "Hợp đồng & Bảo hành", path: "/hop-dong-bao-hanh", category: "Vận hành", keywords: "contracts warranty bao hanh hop dong ncc", badge: "Hợp đồng", permission: "contracts.view" },
   { name: "Lịch bảo trì & Kiểm định", path: "/lich-bao-tri", category: "Vận hành", keywords: "maintenance schedule lich bao tri ke hoach", badge: "Lịch", permission: "maintenance.view" },
@@ -59,20 +60,12 @@ const AppHeader: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Widget popups
-  const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isActivitiesOpen, setIsActivitiesOpen] = useState(false);
-
   // Multi-tenant Company state
   const [companyName, setCompanyName] = useState<string>(() => {
     return localStorage.getItem("aims_current_company") || "AIMS Enterprise (Hà Nội)";
   });
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
 
-  const supportRef = useRef<HTMLDivElement>(null);
-  const chatRef = useRef<HTMLDivElement>(null);
-  const activitiesRef = useRef<HTMLDivElement>(null);
   const companyRef = useRef<HTMLDivElement>(null);
 
   // Filter search results
@@ -103,9 +96,6 @@ const AppHeader: React.FC = () => {
       }
       if (e.key === "Escape") {
         setIsSearchOpen(false);
-        setIsSupportOpen(false);
-        setIsChatOpen(false);
-        setIsActivitiesOpen(false);
         setIsCompanyDropdownOpen(false);
       }
     };
@@ -119,15 +109,6 @@ const AppHeader: React.FC = () => {
       const target = event.target as Node;
       if (searchContainerRef.current && !searchContainerRef.current.contains(target)) {
         setIsSearchOpen(false);
-      }
-      if (supportRef.current && !supportRef.current.contains(target)) {
-        setIsSupportOpen(false);
-      }
-      if (chatRef.current && !chatRef.current.contains(target)) {
-        setIsChatOpen(false);
-      }
-      if (activitiesRef.current && !activitiesRef.current.contains(target)) {
-        setIsActivitiesOpen(false);
       }
       if (companyRef.current && !companyRef.current.contains(target)) {
         setIsCompanyDropdownOpen(false);
@@ -164,10 +145,10 @@ const AppHeader: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 flex w-full border-b border-black/[0.06] dark:border-white/[0.08] backdrop-blur-md bg-white/80 dark:bg-gray-900/80 transition-colors shadow-2xs">
       <div className="flex items-center justify-between w-full px-4 py-2.5 sm:px-6 md:px-8 gap-4">
-        
+
         {/* Left: Brand Logo & Global Live Search */}
         <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-xl">
-          
+
           {/* System Logo / App Launcher Button */}
           <Link
             to="/"
@@ -280,7 +261,7 @@ const AppHeader: React.FC = () => {
 
         {/* Right: Status, Quick Tools, Multi-Tenant, Notifications & User */}
         <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
-          
+
           {/* Live System Status Dot */}
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40 text-xs font-medium cursor-default shadow-2xs"
@@ -293,124 +274,8 @@ const AppHeader: React.FC = () => {
             <span className="hidden xl:inline">Sẵn sàng</span>
           </div>
 
-          {/* Support Hotline / Phone Icon */}
-          <div className="relative" ref={supportRef}>
-            <button
-              onClick={() => setIsSupportOpen(!isSupportOpen)}
-              className="p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-              title="Trung tâm hỗ trợ kỹ thuật AIMS"
-              aria-label="Support Hotline"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </button>
-
-            {isSupportOpen && (
-              <div className="absolute right-0 mt-2 w-72 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-700">
-                  <span className="font-semibold text-sm text-gray-900 dark:text-white">Trung tâm hỗ trợ kỹ thuật</span>
-                  <button onClick={() => setIsSupportOpen(false)} className="text-xs text-brand-600 hover:underline cursor-pointer">
-                    Đóng
-                  </button>
-                </div>
-                <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                    <span className="font-semibold">📞 Hotline:</span>
-                    <span className="font-mono font-bold text-brand-600 dark:text-brand-400">1900-8888</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                    <span className="font-semibold">✉️ Email:</span>
-                    <span>support@aims.vn</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                    <span className="font-semibold">⏰ Làm việc:</span>
-                    <span>8:00 - 18:00 (Thứ 2 - Thứ 6)</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Chat / Messages with unread badge 7 */}
-          <div className="relative" ref={chatRef}>
-            <button
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-              title="Tin nhắn & Trao đổi nội bộ"
-              aria-label="Messages"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-rose-500 rounded-full shadow-xs ring-2 ring-white dark:ring-gray-900">
-                7
-              </span>
-            </button>
-
-            {isChatOpen && (
-              <div className="absolute right-0 mt-2 w-80 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-700">
-                  <span className="font-semibold text-sm text-gray-900 dark:text-white">Tin nhắn nội bộ (7)</span>
-                  <button onClick={() => setIsChatOpen(false)} className="text-xs text-brand-600 hover:underline cursor-pointer">
-                    Đóng
-                  </button>
-                </div>
-                <div className="space-y-2 text-xs">
-                  <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                    <p className="font-medium text-gray-800 dark:text-gray-200">Kế toán IT: Bàn giao máy chủ mới</p>
-                    <p className="text-gray-500 dark:text-gray-400 mt-0.5">Vừa nhận được 5 biên bản từ phòng Kho...</p>
-                  </div>
-                  <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                    <p className="font-medium text-gray-800 dark:text-gray-200">Phòng Hành chính: Yêu cầu License</p>
-                    <p className="text-gray-500 dark:text-gray-400 mt-0.5">Cần cấp thêm 10 key Adobe Photoshop...</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Activities / Schedule clock with badge 32 */}
-          <div className="relative" ref={activitiesRef}>
-            <button
-              onClick={() => setIsActivitiesOpen(!isActivitiesOpen)}
-              className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-              title="Hoạt động & Công việc cần xử lý"
-              aria-label="Activities"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full shadow-xs ring-2 ring-white dark:ring-gray-900">
-                32
-              </span>
-            </button>
-
-            {isActivitiesOpen && (
-              <div className="absolute right-0 mt-2 w-80 p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100 dark:border-gray-700">
-                  <span className="font-semibold text-sm text-gray-900 dark:text-white">Công việc cần xử lý (32)</span>
-                  <button onClick={() => setIsActivitiesOpen(false)} className="text-xs text-brand-600 hover:underline cursor-pointer">
-                    Đóng
-                  </button>
-                </div>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300">
-                    <span>12 Tài sản đến hạn bảo trì định kỳ</span>
-                    <span className="font-bold">Hôm nay</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300">
-                    <span>8 Giấy phép sắp hết hạn (30 ngày)</span>
-                    <span className="font-bold">Gấp</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
-                    <span>12 Yêu cầu cấp phát máy trạm</span>
-                    <span className="font-bold">Đang chờ</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <ActivitiesDropdown />
 
           {/* Branch Quick Switch / Sync Icon */}
           <button
@@ -453,11 +318,10 @@ const AppHeader: React.FC = () => {
                   <button
                     key={comp}
                     onClick={() => handleSelectCompany(comp)}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between cursor-pointer ${
-                      companyName === comp
-                        ? "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-semibold"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between cursor-pointer ${companyName === comp
+                      ? "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      }`}
                   >
                     <span>{comp}</span>
                     {companyName === comp && (

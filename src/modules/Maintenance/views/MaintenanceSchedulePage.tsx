@@ -6,7 +6,6 @@ import {
   MaintenanceTask,
   MaintenanceStatus,
 } from "../models/maintenancePlan";
-import { maintenanceService } from "../services/maintenanceService";
 import { INITIAL_MAINTENANCE_TASKS } from "../services/maintenanceMockData";
 import { MaintenanceCalendarGrid } from "./components/MaintenanceCalendarGrid";
 import { MaintenanceKanbanBoard } from "./components/MaintenanceKanbanBoard";
@@ -236,15 +235,6 @@ export const MaintenanceSchedulePage: React.FC = () => {
     });
   };
 
-  const handleExport = () => {
-    const toExport =
-      selectedIds.size > 0
-        ? tasks.filter((t) => selectedIds.has(t.id))
-        : filteredTasks;
-    maintenanceService.exportToCsv(toExport);
-    toast.success(`Đã xuất ${toExport.length} kế hoạch bảo trì ra file CSV thành công!`);
-  };
-
   return (
     <>
       <PageMeta
@@ -274,7 +264,6 @@ export const MaintenanceSchedulePage: React.FC = () => {
         onSearchChange={setKeyword}
         onAddNew={handleAddNew}
         addNewLabel="+ Lên lịch bảo trì"
-        onExportExcel={handleExport}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         viewMode={viewMode}

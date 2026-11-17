@@ -78,7 +78,6 @@ const AssetCategorysPage: React.FC = () => {
           id: 0,
         };
         await createMutation.mutateAsync(payload);
-        toast.success("Thêm mới nhóm danh mục thành công!");
       } else {
         const payload: updateassetcategorie = {
           name: formData.name,
@@ -89,7 +88,6 @@ const AssetCategorysPage: React.FC = () => {
           id: assetCategoryId,
           params: payload,
         });
-        toast.success("Cập nhật nhóm danh mục thành công!");
       }
 
       handleCloseModal();
@@ -180,7 +178,6 @@ const AssetCategorysPage: React.FC = () => {
         }}
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu danh mục ra file Excel...")}
         templateFileName="Mau_Nhap_Nhom_Danh_Muc.xlsx"
         templateCsvContent="code,name,description,isactive,displayorder\n"
         importTemplateColumns={ASSET_CATEGORY_IMPORT_COLUMNS}

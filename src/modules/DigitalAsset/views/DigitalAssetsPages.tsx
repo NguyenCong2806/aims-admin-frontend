@@ -344,7 +344,6 @@ export const DigitalAssetsPages: React.FC = () => {
         }}
         onAddNew={handleAddNew}
         addNewLabel="Thêm tài nguyên"
-        onExportExcel={() => toast.success("Đang xuất danh sách tài nguyên số ra file Excel...")}
         selectedCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
         onBatchDelete={handleBatchDelete}

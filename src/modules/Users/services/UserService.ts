@@ -71,6 +71,8 @@ export class UserService
       payload
     );
 
+    toast.success(APP_MESSAGES.COMMON.UPDATE_SUCCESS);
+
     const resData = response.data as Result<UserAccount> | undefined;
     return (
       resData ||

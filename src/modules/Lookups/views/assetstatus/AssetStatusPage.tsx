@@ -129,7 +129,6 @@ const AssetStatusPage: React.FC = () => {
           id: 0,
         };
         await createAssetStatus.mutateAsync(payload);
-        toast.success("Thêm mới trạng thái tài sản thành công!");
       } else {
         const payload: updateassetstatus = {
           name: formData.name,
@@ -140,7 +139,6 @@ const AssetStatusPage: React.FC = () => {
           id: assetStatusId,
           params: payload,
         });
-        toast.success("Cập nhật trạng thái tài sản thành công!");
       }
 
       handleCloseModal();
@@ -231,7 +229,6 @@ const AssetStatusPage: React.FC = () => {
         }}
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu trạng thái tài sản ra file Excel...")}
         templateFileName="Mau_Nhap_Trang_Thai_Tai_San.xlsx"
         templateCsvContent="code,name,colorCode,allowAllocation,description,isactive,displayorder\n"
         importTemplateColumns={ASSET_STATUS_IMPORT_COLUMNS}

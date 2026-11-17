@@ -74,7 +74,6 @@ const BrandsPage: React.FC = () => {
           id: 0,
         };
         await createBrand.mutateAsync(payload);
-        toast.success("Thêm mới hãng sản xuất thành công!");
       } else {
         const payload: updatebrand = {
           name: formData.name,
@@ -85,7 +84,6 @@ const BrandsPage: React.FC = () => {
           id: brandId,
           params: payload,
         });
-        toast.success("Cập nhật hãng sản xuất thành công!");
       }
 
       handleCloseModal();
@@ -181,7 +179,6 @@ const BrandsPage: React.FC = () => {
         }}
         onAddNew={handleAdd}
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu hãng sản xuất ra Excel...")}
         templateFileName="Mau_Nhap_Hang_San_Xuat.xlsx"
         templateCsvContent="code,name,description,isactive,displayorder\n"
         importTemplateColumns={BRAND_IMPORT_COLUMNS}

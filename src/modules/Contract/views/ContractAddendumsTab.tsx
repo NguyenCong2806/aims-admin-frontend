@@ -164,12 +164,7 @@ export const ContractAddendumsTab: React.FC<ContractAddendumsTabProps> = ({ cont
 
   const onAddendumError = (fieldErrors: FieldErrors<ContractAddendumInput>) => {
     console.warn("Lỗi xác thực phụ lục:", fieldErrors);
-    const errorKeys = Object.keys(fieldErrors) as (keyof ContractAddendumInput)[];
-    if (errorKeys.length > 0) {
-      const firstKey = errorKeys[0];
-      const firstError = fieldErrors[firstKey];
-      toast.error(`Vui lòng kiểm tra: ${firstError?.message || "Thông tin phụ lục chưa hợp lệ"}`);
-    }
+    // Không hiển thị toast lỗi vì đã có chữ đỏ validate hiển thị trực tiếp dưới từng ô nhập liệu
   };
 
   // Lưu phụ lục (Create / Update)
@@ -213,10 +208,8 @@ export const ContractAddendumsTab: React.FC<ContractAddendumsTabProps> = ({ cont
           id: editingAddendum.id,
           payload: { ...payload, id: editingAddendum.id },
         });
-        toast.success(`Cập nhật phụ lục ${data.addendumNumber} thành công!`);
       } else {
         await createMutation.mutateAsync(payload);
-        toast.success(`Thêm mới phụ lục ${data.addendumNumber} thành công!`);
       }
 
       setIsModalOpen(false);

@@ -65,13 +65,11 @@ const UnitsPage: React.FC = () => {
     try {
       if (unitId === null) {
         await createMutation.mutateAsync({ id: 0, ...formData } as createunit);
-        toast.success("Thêm mới đơn vị tính thành công!");
       } else {
         await updateMutation.mutateAsync({
           id: unitId,
           params: { id: unitId, ...formData } as updateunit,
         });
-        toast.success("Cập nhật đơn vị tính thành công!");
       }
       closeModal();
     } catch (err) {
@@ -170,7 +168,6 @@ const UnitsPage: React.FC = () => {
             : undefined
         }
         addNewLabel="Thêm mới"
-        onExportExcel={() => toast.success("Đang xuất dữ liệu đơn vị tính ra file Excel...")}
         templateFileName="Mau_Nhap_Don_Vi_Tinh.csv"
         templateUrl="/templates/Mau_Nhap_Don_Vi_Tinh.csv"
         importTemplateColumns={UNIT_IMPORT_COLUMNS}
