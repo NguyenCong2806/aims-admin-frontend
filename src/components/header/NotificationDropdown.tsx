@@ -7,7 +7,7 @@ export interface NotificationItem {
   title: string;
   message: string;
   timestamp: string;
-  type: "asset" | "alert" | "contract" | "security" | "system";
+  type: "asset" | "alert" | "contract" | "security" | "system" | "disk" | "ram";
   link: string;
   isRead: boolean;
   priority?: "urgent" | "normal" | "info";
@@ -15,52 +15,52 @@ export interface NotificationItem {
 
 const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
-    id: "notif-1",
-    type: "asset",
-    title: "Bàn giao thiết bị thành công",
-    message: "Laptop Dell Latitude [LAP-012] vừa được bàn giao cho Nguyễn Văn Công (Kỹ thuật IT).",
+    id: "notif-disk-1",
+    type: "disk",
+    title: "Cảnh báo ổ cứng sắp đầy (96%)",
+    message: "Máy trạm [WS-DESIGN-03] - Ổ C: chỉ còn 3.8 GB trống / 128 GB. Cần dọn dẹp gấp để tránh treo máy.",
     timestamp: "10 phút trước",
-    link: "/thiet-bi-phan-cung",
-    isRead: false,
-    priority: "normal",
-  },
-  {
-    id: "notif-2",
-    type: "alert",
-    title: "Cảnh báo AIMS Telemetry Agent",
-    message: "Máy chủ [SRV-DATABASE-HN] mất tín hiệu Telemetry trên 24 giờ qua.",
-    timestamp: "45 phút trước",
     link: "/giam-sat-may-tram",
     isRead: false,
     priority: "urgent",
   },
   {
-    id: "notif-3",
-    type: "contract",
-    title: "Hợp đồng mới được kích hoạt",
-    message: "Hợp đồng thuê bao Cloud FPT Telecom 2026 đã được phê duyệt và đưa vào giám sát.",
-    timestamp: "2 giờ trước",
-    link: "/hop-dong-bao-hanh",
+    id: "notif-ram-1",
+    type: "ram",
+    title: "Cảnh báo RAM quá tải (>90%)",
+    message: "Máy chủ [SRV-APP-PROD] sử dụng 15.2 / 16 GB RAM (95%) duy trì liên tục trên 20 phút.",
+    timestamp: "25 phút trước",
+    link: "/giam-sat-may-tram",
     isRead: false,
-    priority: "info",
+    priority: "urgent",
   },
   {
-    id: "notif-4",
+    id: "notif-sec-1",
     type: "security",
-    title: "Cập nhật quyền hạn tài khoản",
-    message: "Tài khoản của bạn đã được quản trị viên cấp thêm quyền [Quản lý Tài nguyên số].",
-    timestamp: "Hôm qua",
-    link: "/phan-quyen",
-    isRead: true,
-    priority: "info",
+    title: "Phát hiện phần mềm chưa cấp phép",
+    message: "Máy trạm [WS-DEV-09] vừa cài đặt phần mềm lạ (uTorrent Client) không thuộc danh mục cho phép.",
+    timestamp: "1 giờ trước",
+    link: "/giam-sat-may-tram/phan-mem",
+    isRead: false,
+    priority: "urgent",
   },
   {
-    id: "notif-5",
+    id: "notif-agent-1",
+    type: "alert",
+    title: "Mất tín hiệu Agent giám sát",
+    message: "Máy trạm [WS-ACCOUNT-05] không gửi tín hiệu Telemetry trong hơn 48 giờ qua.",
+    timestamp: "3 giờ trước",
+    link: "/giam-sat-may-tram",
+    isRead: true,
+    priority: "normal",
+  },
+  {
+    id: "notif-sys-1",
     type: "system",
-    title: "Sao lưu hệ thống tự động",
-    message: "Bản sao lưu dữ liệu toàn hệ thống định kỳ (backup_20261115.sql) đã hoàn tất (125 MB).",
-    timestamp: "02:00 sáng",
-    link: "/nhat-ky-he-thong",
+    title: "Tài nguyên CPU đã khôi phục ổn định",
+    message: "Mức tải CPU trên máy chủ [SRV-DATABASE] đã hạ nhiệt an toàn về mức 16% (dưới ngưỡng cảnh báo).",
+    timestamp: "Hôm qua",
+    link: "/giam-sat-may-tram",
     isRead: true,
     priority: "normal",
   },
@@ -125,6 +125,24 @@ export default function NotificationDropdown() {
   // Render Icon theo loại thông báo
   const renderTypeIcon = (type: NotificationItem["type"]) => {
     switch (type) {
+      case "disk":
+        return (
+          <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200/60 dark:border-rose-800/40">
+            {/* Storage / Hard Disk Icon */}
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7zm0 5h16M7 16h.01M7 8h.01" />
+            </svg>
+          </div>
+        );
+      case "ram":
+        return (
+          <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/60 dark:border-amber-800/40">
+            {/* RAM / Microchip Icon */}
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m14-6h2m-2 6h2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+            </svg>
+          </div>
+        );
       case "asset":
         return (
           <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/40">

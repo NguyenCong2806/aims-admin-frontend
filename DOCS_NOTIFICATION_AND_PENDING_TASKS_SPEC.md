@@ -4,72 +4,66 @@
 
 ---
 
-## 1. TỔNG QUAN & PHÂN BIỆT BẢN CHẤT NGHIỆP VỤ
+## 1. TỔNG QUAN & ĐỊNH HƯỚNG NGHIỆP VỤ THỰC TẾ
 
-Trong hệ thống AIMS, thanh Header chứa 2 widget tương tác quan trọng thường dễ bị nhầm lẫn nhưng bản chất nghiệp vụ hoàn toàn khác nhau:
+Trong hệ thống AIMS, module **Giám sát máy trạm** (`/giam-sat-may-tram`) đã thu thập dữ liệu Telemetry trực tiếp từ thiết bị (RAM, Ổ cứng, CPU, Trạng thái Online/Offline, Phần mềm cài đặt). Do đó, thanh Header được chuẩn hóa nghiệp vụ theo đúng luồng thực tế của hệ thống:
 
 ```mermaid
 flowchart LR
-    A[AIMS Top Header] --> B["🔔 Quả chuông: Notifications (Thông báo)"]
-    A --> C["🕒 Đồng hồ: Actionable Tasks (Việc cần xử lý)"]
+    A[AIMS Top Header] --> B["🔔 Quả chuông: Cảnh báo Giám sát & Sự kiện (Alerts)"]
+    A --> C["🕒 Đồng hồ: Công việc cần xử lý (Actionable Tasks)"]
     
     B --> B1["Bản chất: Hướng sự kiện (Event-driven)"]
-    B --> B2["Mục đích: Thông tin cho người dùng biết điều vừa xảy ra"]
+    B --> B2["Mục đích: Báo động tức thì tài nguyên quá tải (RAM, Ổ cứng, Offline, Phần mềm lạ)"]
     B --> B3["Tương tác: Đọc / Chưa đọc (Read / Unread)"]
     
     C --> C1["Bản chất: Hướng quy trình (State-driven)"]
-    C --> C2["Mục đích: Danh sách việc đang CHỜ giải quyết (SLA/Deadlines)"]
-    C --> C3["Tương tác: Xử lý -> Hoàn thành / Duyệt (Biến mất khi xong)"]
+    C --> C2["Mục đích: Danh sách máy trạm & license cần can thiệp xử lý ngay"]
+    C --> C3["Tương tác: Xử lý -> Hoàn thành (Biến mất khỏi danh sách chờ khi xong)"]
 ```
 
-| Tiêu chí | 🔔 Quả chuông (Notification Center) | 🕒 Đồng hồ (Pending Work / SLA Tasks) |
+| Tiêu chí | 🔔 Quả chuông (Alerts & Notifications) | 🕒 Đồng hồ (Actionable Tasks / SLA) |
 | :--- | :--- | :--- |
-| **Bản chất** | **Event-driven (Nhật ký thông báo)** | **State-driven (Công việc hành động)** |
-| **Vòng đời** | Tạo ra khi có sự kiện $\rightarrow$ Đọc $\rightarrow$ Lưu lịch sử lâu dài. | Tạo ra khi có việc $\rightarrow$ Đang chờ $\rightarrow$ Hoàn tất thì biến mất khỏi danh sách chờ. |
-| **Ví dụ thực tế** | - *"Admin vừa bàn giao Laptop Dell cho NV A"*\n- *"Máy trạm WS-05 phát hiện phần mềm lạ"* | - *"12 Tài sản đến hạn bảo trì hôm nay"*\n- *"8 License sắp hết hạn (30 ngày)"*\n- *"5 Yêu cầu cấp phát máy chờ duyệt"* |
-| **Hành động người dùng** | Đánh dấu đã đọc, bấm vào để xem log/chi tiết. | Nhấp vào để xử lý trực tiếp, phê duyệt hoặc hoàn thành công việc. |
+| **Bản chất** | **Event-driven (Cảnh báo sự kiện tức thời)** | **State-driven (Công việc cần can thiệp)** |
+| **Vòng đời** | Phát sinh khi vượt ngưỡng $\rightarrow$ Người dùng xem/đọc $\rightarrow$ Lưu lịch sử. | Phát sinh khi có sự cố $\rightarrow$ Đang chờ IT xử lý $\rightarrow$ Hoàn tất thì biến mất khỏi danh sách chờ. |
+| **Nghiệp vụ thực tế** | - 🔴 *Ổ cứng C: máy WS-DESIGN-03 sắp đầy (chỉ còn 3.8 GB - 96%)*\n- 🔴 *RAM máy chủ SRV-01 vượt 95% liên tục 20 phút*\n- 🟠 *Phát hiện phần mềm chưa cấp phép (uTorrent)*\n- 🟠 *Máy trạm WS-ACC-05 mất tín hiệu Agent > 48h* | - 🔴 *5 Máy trạm quá tải tài nguyên (RAM/Ổ cứng) cần dọn dẹp*\n- 🟠 *3 Máy trạm có phần mềm lạ cần gỡ bỏ*\n- 🔵 *8 Giấy phép phần mềm sắp hết hạn (30 ngày)* |
+| **Hành động người dùng** | Nhấp vào để xem chi tiết thông báo, nhảy tới máy trạm bị lỗi. | Nhấp vào để xử lý dọn dẹp ổ đĩa, gỡ phần mềm hoặc duyệt gia hạn bản quyền. |
 
 ---
 
-## 2. ĐẶC TẢ NGHIỆP VỤ CHI TIẾT (FUNCTIONAL REQUIREMENTS)
+## 2. ĐẶC TẢ NGHIỆP VỤ CHI TIẾT
 
-### 2.1. Quả chuông - Thông báo hệ thống (Notifications)
-1. **Phân loại thông báo (`type`)**:
-   - `INFO`: Thông báo sự kiện bình thường (bàn giao thiết bị, cập nhật hợp đồng, thêm mới tài nguyên số).
-   - `WARNING`: Cảnh báo rủi ro (thiết bị sắp hết bảo hành, máy trạm offline bất thường, cảnh báo giấy phép sắp đạt hạn mức).
-   - `CRITICAL`: Báo động nghiêm trọng (phát hiện phần mềm chưa cấp phép/vi phạm bảo mật, thiết bị báo mất, máy chủ sập).
-   - `SUCCESS`: Thông báo kết quả tác vụ bất đồng bộ hoàn thành (ví dụ: import file Excel 10.000 tài sản thành công).
-2. **Quy tắc gửi nhận (Targeting)**:
-   - Gửi cho một người dùng cụ thể (`user_id`).
-   - Gửi theo nhóm vai trò (`role`: ví dụ tất cả `IT_ADMIN`, `SUPPORT_ENGINEER`).
-   - Gửi Broadcast toàn hệ sinh thái AIMS (`is_broadcast = true`).
-3. **Trạng thái đọc cá nhân hóa**:
-   - Khi thông báo gửi theo vai trò (Role), trạng thái đọc (`is_read`) phải được quản lý riêng theo từng User ID để việc User này đọc không làm mất trạng thái của User khác.
-4. **Deep-linking (Điều hướng nhanh)**:
-   - Mỗi thông báo mang `action_url` (ví dụ: `/thiet-bi-phan-cung/123`, `/nhat-ky-he-thong`) giúp người dùng nhấp vào là mở ngay bản ghi liên quan.
+### 2.1. Quả chuông - Cảnh báo giám sát & Thông báo (Notifications / Alerts)
+Tập trung vào cảnh báo tài nguyên máy trạm và bảo mật ứng dụng:
 
-### 2.2. Đồng hồ - Công việc cần xử lý (Actionable Tasks / SLA)
-1. **Nguồn phát sinh công việc**:
-   - **Tự động từ Hệ thống (System Auto-generated qua Cronjob)**:
-     - *Bảo trì định kỳ*: Quét lịch bảo trì (`maintenance_schedules`) có `next_run_date <= TODAY`.
-     - *Bảo hành & Giấy phép*: Quét hợp đồng/license có ngày hết hạn trong vòng 30 ngày tới.
-     - *Kiểm định / Thu hồi thiết bị*: Thiết bị được giao tạm thời đến hạn trả.
-   - **Thủ công từ Người dùng (Workflow Requests)**:
-     - Nhân viên gửi yêu cầu cấp phát máy tính/bản quyền phần mềm mới.
-     - Yêu cầu thanh lý, chuyển kho tài sản.
-2. **Mức độ khẩn cấp (`priority` & `urgency`)**:
-   - `Hôm nay (Today)`: Quá hạn hoặc rơi đúng hạn trong ngày.
-   - `Gấp (Urgent)`: Sắp quá hạn trong 3-7 ngày tới.
-   - `Đang chờ (Pending)`: Trong thời gian xử lý bình thường (SLA chuẩn).
-3. **Tương tác**:
-   - Bấm vào đầu mục công việc trên dropdown sẽ chuyển hướng đến danh sách đã lọc sẵn (ví dụ: `/lich-bao-tri?filter=DUE_TODAY`).
-   - Khi công việc được xử lý hoàn tất (`status = COMPLETED`), công việc đó tự động biến mất khỏi danh sách chờ của Dropdown đồng hồ.
+1. **Cảnh báo dung lượng ổ cứng (Disk Space Alert)**:
+   - `DISK_WARNING`: Ổ C: dung lượng trống $\le$ 15% (hoặc $\le$ 10 GB).
+   - `DISK_CRITICAL`: Ổ C: dung lượng trống $\le$ 5% (hoặc $\le$ 3 GB) $\rightarrow$ Nguy cơ treo máy, không lưu được file.
+2. **Cảnh báo bộ nhớ RAM (Memory Usage Alert)**:
+   - `RAM_CRITICAL`: Mức sử dụng RAM $\ge$ 90% kéo dài liên tục trên 15 phút.
+3. **Cảnh báo trạng thái kết nối Agent (Agent Offline Alert)**:
+   - `AGENT_OFFLINE`: Máy trạm không gửi dữ liệu Telemetry về hệ thống quá 24h (hoặc 48h).
+4. **Cảnh báo phần mềm chưa được cấp phép (Security Compliance Alert)**:
+   - `UNAUTHORIZED_SOFTWARE`: Phát hiện phần mềm mới cài đặt không nằm trong danh mục White-list (ví dụ: game, phần mềm download torrent, tool bẻ khóa...).
+5. **Thông báo khôi phục (Recovery)**:
+   - Khi tài nguyên hạ nhiệt về mức an toàn (CPU/RAM giảm dưới ngưỡng), hệ thống thông báo trạng thái đã ổn định.
+
+### 2.2. Đồng hồ - Công việc cần xử lý (Actionable Tasks)
+Danh sách các đầu việc đang chờ IT can thiệp trực tiếp (không phụ thuộc vào bảng bảo trì):
+
+1. **Nhóm 1: Máy trạm quá tải tài nguyên (Hôm nay / Đỏ)**:
+   - Các máy trạm có ổ C: gần cạn kiệt hoặc RAM luôn ở ngưỡng đỉnh $\rightarrow$ Cần IT vào dọn dẹp file tạm, gỡ ứng dụng rác hoặc nâng cấp phần cứng.
+   - *Đường dẫn điều hướng*: `/giam-sat-may-tram`.
+2. **Nhóm 2: Phần mềm lạ cần kiểm tra & gỡ bỏ (Gấp / Cam)**:
+   - Các máy trạm phát hiện phần mềm lạ $\rightarrow$ Cần IT xác minh với nhân viên và gửi lệnh hoặc can thiệp gỡ bỏ.
+   - *Đường dẫn điều hướng*: `/giam-sat-may-tram/phan-mem`.
+3. **Nhóm 3: Giấy phép / License phần mềm sắp hết hạn (Đang chờ / Xanh)**:
+   - Các bản quyền phần mềm (Office 365, Antivirus, Cloud Server) còn hạn dưới 30 ngày $\rightarrow$ Cần kế toán/IT duyệt mua gia hạn.
+   - *Đường dẫn điều hướng*: `/hop-dong-bao-hanh`.
 
 ---
 
 ## 3. THIẾT KẾ CƠ SỞ DỮ LIỆU (DATABASE SCHEMA)
-
-*Gợi ý sử dụng cho PostgreSQL, MySQL 8+, SQL Server hoặc Oracle Database.*
 
 ```mermaid
 erDiagram
@@ -81,9 +75,9 @@ erDiagram
         bigint id PK
         varchar title
         text content
-        varchar type "INFO, WARNING, CRITICAL, SUCCESS"
-        varchar category "HARDWARE, DIGITAL, MONITORING, SYSTEM"
-        varchar reference_module
+        varchar type "disk, ram, alert, security, system, asset"
+        varchar category "MONITORING, SECURITY, CONTRACT, HARDWARE"
+        varchar reference_module "workstations, installed_software, contracts"
         varchar reference_id
         varchar action_url
         boolean is_broadcast
@@ -106,7 +100,7 @@ erDiagram
         varchar task_code UK
         varchar title
         text description
-        varchar task_type "MAINTENANCE, LICENSE_EXPIRY, ASSET_REQUEST"
+        varchar task_type "RESOURCE_OVERLOAD, UNAUTHORIZED_APP, LICENSE_EXPIRY"
         varchar priority "LOW, MEDIUM, HIGH, URGENT"
         varchar status "PENDING, IN_PROGRESS, COMPLETED, CANCELLED"
         timestamp due_date
@@ -121,34 +115,33 @@ erDiagram
     }
 ```
 
-### 3.1. DDL Bảng Thông Báo (Notifications)
+### 3.1. DDL Bảng Thông Báo & Cảnh Báo (Notifications)
 
 ```sql
--- 1. Bảng lưu trữ nội dung thông báo
+-- 1. Bảng lưu trữ thông báo & cảnh báo
 CREATE TABLE notifications (
     id BIGSERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    content TEXT,
-    type VARCHAR(30) NOT NULL DEFAULT 'INFO',       -- 'INFO', 'WARNING', 'CRITICAL', 'SUCCESS'
-    category VARCHAR(50) NOT NULL,                  -- 'HARDWARE', 'DIGITAL', 'CONTRACT', 'MONITORING', 'SECURITY'
-    reference_module VARCHAR(50),                   -- 'hardware_assets', 'licenses', 'workstations', v.v.
-    reference_id VARCHAR(100),                      -- Khóa chính thực thể liên quan
-    action_url VARCHAR(255),                        -- URL router trên frontend (vd: /thiet-bi-phan-cung/5)
-    is_broadcast BOOLEAN DEFAULT FALSE,             -- TRUE: Gửi toàn hệ thống
-    target_role VARCHAR(50),                        -- NULL hoặc Role cụ thể (vd: 'ADMIN', 'IT_STAFF')
+    content TEXT NOT NULL,
+    type VARCHAR(30) NOT NULL DEFAULT 'alert',      -- 'disk', 'ram', 'alert', 'security', 'system', 'asset'
+    category VARCHAR(50) NOT NULL,                  -- 'MONITORING', 'SECURITY', 'CONTRACT', 'HARDWARE'
+    reference_module VARCHAR(50),                   -- 'workstations', 'installed_software', 'contracts'
+    reference_id VARCHAR(100),                      -- ID bản ghi nguồn (vd: workstation_id)
+    action_url VARCHAR(255),                        -- URL frontend (vd: /giam-sat-may-tram, /giam-sat-may-tram/9/phan-mem)
+    is_broadcast BOOLEAN DEFAULT FALSE,             -- TRUE: Tất cả quản trị viên đều thấy
+    target_role VARCHAR(50),                        -- NULL hoặc 'ADMIN', 'IT_STAFF'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(100) DEFAULT 'SYSTEM'
+    created_by VARCHAR(100) DEFAULT 'TELEMETRY_ENGINE'
 );
 
--- Index tối ưu truy vấn thông báo mới nhất
 CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
 CREATE INDEX idx_notifications_type ON notifications(type);
 
--- 2. Bảng lưu trạng thái đọc/nhận thông báo của từng người dùng
+-- 2. Bảng quản lý trạng thái đọc cá nhân hóa từng User
 CREATE TABLE user_notifications (
     id BIGSERIAL PRIMARY KEY,
     notification_id BIGINT NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
-    user_id VARCHAR(100) NOT NULL,                  -- Mã/ID của tài khoản người dùng
+    user_id VARCHAR(100) NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     read_at TIMESTAMP WITH TIME ZONE,
     is_archived BOOLEAN DEFAULT FALSE,
@@ -156,7 +149,6 @@ CREATE TABLE user_notifications (
     CONSTRAINT uq_user_notification UNIQUE (notification_id, user_id)
 );
 
--- Index tối ưu tốc độ đếm số unread (Cực kỳ quan trọng để Header load tức thì)
 CREATE INDEX idx_user_notif_unread ON user_notifications(user_id, is_read, is_archived) 
 WHERE is_read = FALSE AND is_archived = FALSE;
 ```
@@ -164,35 +156,32 @@ WHERE is_read = FALSE AND is_archived = FALSE;
 ### 3.2. DDL Bảng Công Việc Chờ Xử Lý (Actionable Tasks)
 
 ```sql
--- 3. Bảng công việc cần hành động / SLA
+-- 3. Bảng công việc cần hành động
 CREATE TABLE actionable_tasks (
     id BIGSERIAL PRIMARY KEY,
-    task_code VARCHAR(50) UNIQUE NOT NULL,          -- Mã công việc: vd 'TSK-2026-0001'
-    title VARCHAR(255) NOT NULL,                    -- Tiêu đề ngắn gọn: 'Bảo trì định kỳ máy chủ SRV-01'
-    description TEXT,                               -- Chi tiết nội dung công việc
-    task_type VARCHAR(50) NOT NULL,                 -- 'MAINTENANCE_DUE', 'LICENSE_EXPIRING', 'REQUEST_APPROVAL', 'AUDIT'
+    task_code VARCHAR(50) UNIQUE NOT NULL,          -- Mã: 'TSK-2026-0001'
+    title VARCHAR(255) NOT NULL,                    -- 'Xử lý ổ đĩa C: sắp đầy máy WS-DESIGN-03'
+    description TEXT,                               -- Chi tiết vấn đề cần IT can thiệp
+    task_type VARCHAR(50) NOT NULL,                 -- 'RESOURCE_OVERLOAD', 'UNAUTHORIZED_APP', 'LICENSE_EXPIRY'
     priority VARCHAR(20) NOT NULL DEFAULT 'MEDIUM', -- 'LOW', 'MEDIUM', 'HIGH', 'URGENT'
     status VARCHAR(30) NOT NULL DEFAULT 'PENDING',  -- 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
-    due_date TIMESTAMP WITH TIME ZONE NOT NULL,     -- Hạn chót hoàn thành (Deadline)
+    due_date TIMESTAMP WITH TIME ZONE NOT NULL,     -- Deadline xử lý
     
-    assigned_user_id VARCHAR(100),                  -- Chỉ định đích danh user (nếu có)
-    assigned_role VARCHAR(50),                      -- Hoặc chỉ định theo Role (vd: 'IT_ADMIN')
+    assigned_user_id VARCHAR(100),                  -- Gán đích danh hoặc theo Role
+    assigned_role VARCHAR(50),                      -- 'IT_ADMIN', 'SUPPORT_ENGINEER'
     
-    reference_module VARCHAR(50),                   -- 'maintenance_schedules', 'contracts', 'devices'
-    reference_id VARCHAR(100),                      -- ID bản ghi nguồn
+    reference_module VARCHAR(50),                   -- 'workstations', 'installed_software'
+    reference_id VARCHAR(100),
     action_url VARCHAR(255),                        -- URL dẫn thẳng đến trang xử lý
     
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP WITH TIME ZONE,          -- Thời điểm hoàn thành
-    completed_by VARCHAR(100)                       -- User bấm hoàn tất
+    completed_at TIMESTAMP WITH TIME ZONE,
+    completed_by VARCHAR(100)
 );
 
--- Index tối ưu lọc danh sách công việc đang chờ
 CREATE INDEX idx_tasks_pending ON actionable_tasks(status, due_date ASC) 
 WHERE status IN ('PENDING', 'IN_PROGRESS');
-
-CREATE INDEX idx_tasks_assignee ON actionable_tasks(assigned_user_id, assigned_role, status);
 ```
 
 ---
@@ -201,55 +190,58 @@ CREATE INDEX idx_tasks_assignee ON actionable_tasks(assigned_user_id, assigned_r
 
 ### 4.1. Nhóm API Quả Chuông (Notifications)
 
-#### 1. Lấy số lượng thông báo chưa đọc (Unread Count)
-> Dùng để hiển thị chấm đỏ badge (ví dụ: `7`) trên icon chuông ở Header.
-
+#### 1. Lấy số lượng thông báo chưa đọc
 - **Endpoint**: `GET /api/v1/notifications/unread-count`
 - **Response**:
 ```json
 {
   "isSuccess": true,
   "data": {
-    "unreadCount": 7
+    "unreadCount": 3
   }
 }
 ```
 
 #### 2. Lấy danh sách thông báo (Phân trang & Lọc)
-> Dùng khi người dùng nhấp mở dropdown chuông hoặc trang xem toàn bộ.
-
 - **Endpoint**: `GET /api/v1/notifications`
-- **Query Params**:
-  - `page`: int (default `1`)
-  - `pageSize`: int (default `10`)
-  - `filter`: string (`all` | `unread` | `warning`)
+- **Query Params**: `page=1&pageSize=10&filter=all|unread|alert`
 - **Response**:
 ```json
 {
   "isSuccess": true,
   "data": {
-    "totalCount": 42,
-    "unreadCount": 7,
+    "totalCount": 18,
+    "unreadCount": 3,
     "items": [
       {
         "id": 101,
-        "title": "Bảo trì thiết bị hoàn tất",
-        "content": "Laptop Dell Precision 5570 (NV Nguyễn Văn A) đã được hoàn thành bảo dưỡng.",
-        "type": "SUCCESS",
-        "category": "HARDWARE",
-        "actionUrl": "/thiet-bi-phan-cung/5",
+        "title": "Cảnh báo ổ cứng sắp đầy (96%)",
+        "content": "Máy trạm [WS-DESIGN-03] - Ổ C: chỉ còn 3.8 GB trống / 128 GB. Cần dọn dẹp gấp để tránh treo máy.",
+        "type": "disk",
+        "category": "MONITORING",
+        "actionUrl": "/giam-sat-may-tram",
         "isRead": false,
-        "createdAt": "2026-11-16T08:15:00Z"
+        "createdAt": "2026-11-21T08:15:00Z"
       },
       {
         "id": 102,
-        "title": "Cảnh báo phần mềm chưa cấp phép",
-        "content": "Máy trạm WS-DEV-09 phát hiện cài đặt uTorrent không thuộc danh mục cho phép.",
-        "type": "WARNING",
+        "title": "Cảnh báo RAM quá tải (>90%)",
+        "content": "Máy chủ [SRV-APP-PROD] sử dụng 15.2 / 16 GB RAM (95%) duy trì liên tục trên 20 phút.",
+        "type": "ram",
         "category": "MONITORING",
-        "actionUrl": "/giam-sat-may-tram/9/phan-mem",
+        "actionUrl": "/giam-sat-may-tram",
         "isRead": false,
-        "createdAt": "2026-11-16T07:45:00Z"
+        "createdAt": "2026-11-21T08:00:00Z"
+      },
+      {
+        "id": 103,
+        "title": "Phát hiện phần mềm chưa cấp phép",
+        "content": "Máy trạm [WS-DEV-09] vừa cài đặt phần mềm lạ (uTorrent Client) không thuộc danh mục cho phép.",
+        "type": "security",
+        "category": "SECURITY",
+        "actionUrl": "/giam-sat-may-tram/phan-mem",
+        "isRead": false,
+        "createdAt": "2026-11-21T07:30:00Z"
       }
     ]
   }
@@ -269,62 +261,52 @@ CREATE INDEX idx_tasks_assignee ON actionable_tasks(assigned_user_id, assigned_r
 ### 4.2. Nhóm API Đồng Hồ (Pending Tasks & SLA)
 
 #### 1. Lấy dữ liệu tóm tắt công việc chờ xử lý (Dropdown Summary)
-> Dùng để render dropdown đồng hồ Header như giao diện hiện tại:
-> - Tổng 32 việc
-> - 12 Tài sản đến hạn bảo trì định kỳ - Hôm nay
-> - 8 Giấy phép sắp hết hạn (30 ngày) - Gấp
-> - 12 Yêu cầu cấp phát máy trạm - Đang chờ
-
 - **Endpoint**: `GET /api/v1/tasks/summary`
 - **Response**:
 ```json
 {
   "isSuccess": true,
   "data": {
-    "totalPendingCount": 32,
+    "totalPendingCount": 16,
     "groups": [
       {
-        "groupKey": "MAINTENANCE_DUE",
-        "title": "Tài sản đến hạn bảo trì định kỳ",
-        "count": 12,
+        "groupKey": "RESOURCE_OVERLOAD",
+        "title": "Máy trạm quá tải tài nguyên (RAM/Ổ cứng)",
+        "count": 5,
         "urgency": "TODAY",
         "urgencyLabel": "Hôm nay",
         "badgeColor": "red",
-        "targetUrl": "/lich-bao-tri?status=DUE_TODAY"
+        "targetUrl": "/giam-sat-may-tram"
       },
       {
-        "groupKey": "LICENSE_EXPIRING",
-        "title": "Giấy phép sắp hết hạn (30 ngày)",
-        "count": 8,
+        "groupKey": "UNAUTHORIZED_APP",
+        "title": "Phần mềm lạ cần kiểm tra & gỡ bỏ",
+        "count": 3,
         "urgency": "URGENT",
         "urgencyLabel": "Gấp",
         "badgeColor": "orange",
-        "targetUrl": "/hop-dong-bao-hanh?tab=license&filter=EXPIRING_30_DAYS"
+        "targetUrl": "/giam-sat-may-tram/phan-mem"
       },
       {
-        "groupKey": "WORKSTATION_REQUEST",
-        "title": "Yêu cầu cấp phát máy trạm",
-        "count": 12,
+        "groupKey": "LICENSE_EXPIRING",
+        "title": "Giấy phép / License sắp hết hạn (30 ngày)",
+        "count": 8,
         "urgency": "PENDING",
         "urgencyLabel": "Đang chờ",
         "badgeColor": "blue",
-        "targetUrl": "/giam-sat-may-tram?tab=requests"
+        "targetUrl": "/hop-dong-bao-hanh"
       }
     ]
   }
 }
 ```
 
-#### 2. Lấy danh sách chi tiết các công việc
-- **Endpoint**: `GET /api/v1/tasks`
-- **Query Params**: `page`, `pageSize`, `status` (`PENDING`, `IN_PROGRESS`, `COMPLETED`), `type`, `priority`.
-
-#### 3. Cập nhật tiến độ / Hoàn tất công việc
+#### 2. Cập nhật tiến độ / Hoàn tất công việc
 - **Endpoint**: `PUT /api/v1/tasks/{id}/complete`
 - **Request Body**:
 ```json
 {
-  "notes": "Đã tiến hành tra keo tản nhiệt và vệ sinh quạt máy chủ.",
+  "notes": "Đã dọn dẹp temp files, giải phóng được 22 GB dung lượng ổ C:.",
   "status": "COMPLETED"
 }
 ```
@@ -332,20 +314,25 @@ CREATE INDEX idx_tasks_assignee ON actionable_tasks(assigned_user_id, assigned_r
 
 ---
 
-## 5. CƠ CHẾ CRONJOB & BACKGROUND WORKER (QUAN TRỌNG CHO BACKEND)
+## 5. CƠ CHẾ CRONJOB & BACKGROUND WORKER CỦA BACKEND
 
-Để hai tính năng này hoạt động tự động mà không cần nhập liệu thủ công, Backend cần cấu hình 3 Cronjob chạy định kỳ:
+Backend cần cấu hình các worker định kỳ để tự động phát hiện sự cố từ dữ liệu telemetry:
 
-| Tên Job | Tần suất | Nhiệm vụ chính | Hành động sinh ra |
+| Tên Job | Tần suất | Điều kiện quét Telemetry | Hành động sinh ra |
 | :--- | :--- | :--- | :--- |
-| **`SyncMaintenanceTasksJob`** | Mỗi ngày lúc **00:05** | Quét bảng `maintenance_schedules` tìm thiết bị đến hạn bảo trì trong ngày hoặc đã quá hạn | Sinh bản ghi `actionable_tasks` loại `MAINTENANCE_DUE` + Bắn thông báo `WARNING` vào `notifications`. |
-| **`SyncExpiringLicensesJob`** | Mỗi ngày lúc **01:00** | Quét các hợp đồng bản quyền (`licenses` / `contracts`) có ngày hết hạn $\le$ 30 ngày | Sinh bản ghi `actionable_tasks` loại `LICENSE_EXPIRING` độ khẩn cấp `URGENT`. |
-| **`AgentOfflineDetectorJob`** | Mỗi **15 phút** | Quét các máy trạm không gửi dữ liệu giám sát quá thời gian quy định (vd > 48h) | Bắn thông báo `WARNING` cảnh báo máy trạm mất kết nối. |
+| **`TelemetryThresholdMonitorJob`** | Mỗi **5 phút** | Ổ đĩa C: còn $< 10\%$ dung lượng HOẶC RAM $> 90\%$ liên tục 15 phút | Bắn thông báo `type = disk / ram` vào `notifications` + Tạo `actionable_tasks` mức khẩn `Hôm nay`. |
+| **`AgentOfflineDetectorJob`** | Mỗi **15 phút** | Không nhận được heartbeat telemetry từ máy trạm quá 24h hoặc 48h | Bắn thông báo `type = alert` (Mất tín hiệu Agent). |
+| **`SoftwareAuditJob`** | Khi Agent gửi danh sách app mới | Ứng dụng mới cài đặt không nằm trong whitelist cho phép | Bắn thông báo `type = security` + Tạo task `UNAUTHORIZED_APP` mức `Gấp`. |
+| **`SyncExpiringLicensesJob`** | Mỗi ngày lúc **01:00** | Hợp đồng / License phần mềm có ngày hết hạn $\le$ 30 ngày | Tạo task `LICENSE_EXPIRING` mức `Đang chờ`. |
 
 ---
 
-## 6. KHUYẾN NGHỊ REAL-TIME (SERVER-SENT EVENTS / WEBSOCKET)
+## 6. KHUYẾN NGHỊ REAL-TIME (SERVER-SENT EVENTS)
 
-- Để icon chuông và đồng hồ trên giao diện tự động cập nhật số nhảy mà người dùng không cần bấm F5:
-  - Khuyến nghị Backend hỗ trợ **Server-Sent Events (SSE)** tại `GET /api/v1/events/subscribe` (nhẹ và dễ tích hợp hơn WebSocket nếu chỉ cần nhận tin nhắn 1 chiều từ server xuống client).
-  - Khi có sự cố bảo mật hoặc một tác vụ dài chạy xong, Backend phát tín hiệu event `{ type: "NEW_NOTIFICATION", count: 8 }` để Frontend cập nhật tức thì.
+- Cung cấp endpoint SSE: `GET /api/v1/events/subscribe`
+- Khi Telemetry phát hiện ổ cứng đầy hoặc RAM quá tải nguy hiểm, Backend gửi ngay event:
+  ```json
+  event: telemetry_alert
+  data: {"type": "disk", "machine": "WS-DESIGN-03", "title": "Ổ cứng sắp đầy (96%)", "unreadCount": 4}
+  ```
+- Nhờ đó, icon chuông và đồng hồ trên thanh Header của người quản trị sẽ lập tức phát sáng và nhảy số cảnh báo theo thời gian thực mà không cần người dùng tải lại trang.

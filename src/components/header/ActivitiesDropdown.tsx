@@ -14,31 +14,31 @@ export interface ActivityTaskGroup {
 
 const INITIAL_TASKS: ActivityTaskGroup[] = [
   {
-    id: "task-maintenance",
-    title: "Tài sản đến hạn bảo trì định kỳ",
-    count: 12,
+    id: "task-resource-alert",
+    title: "Máy trạm quá tải tài nguyên (RAM/Ổ cứng)",
+    count: 5,
     urgencyLabel: "Hôm nay",
     urgencyType: "danger",
-    path: "/lich-bao-tri",
-    description: "Cần phân công kỹ thuật viên thực hiện bảo dưỡng máy chủ & máy trạm.",
+    path: "/giam-sat-may-tram",
+    description: "5 thiết bị vượt ngưỡng 90% RAM hoặc ổ C: dưới 10% cần xử lý gấp.",
+  },
+  {
+    id: "task-unauthorized-app",
+    title: "Phần mềm lạ cần kiểm tra & gỡ bỏ",
+    count: 3,
+    urgencyLabel: "Gấp",
+    urgencyType: "warning",
+    path: "/giam-sat-may-tram/phan-mem",
+    description: "3 máy trạm cài đặt phần mềm ngoài danh mục cho phép.",
   },
   {
     id: "task-license",
-    title: "Giấy phép sắp hết hạn (30 ngày)",
+    title: "Giấy phép / License sắp hết hạn (30 ngày)",
     count: 8,
-    urgencyLabel: "Gấp",
-    urgencyType: "warning",
-    path: "/hop-dong-bao-hanh",
-    description: "License phần mềm máy chủ & bản quyền Office sắp hết hạn hiệu lực.",
-  },
-  {
-    id: "task-workstation-requests",
-    title: "Yêu cầu cấp phát máy trạm",
-    count: 12,
     urgencyLabel: "Đang chờ",
     urgencyType: "info",
-    path: "/giam-sat-may-tram",
-    description: "Yêu cầu trang bị máy tính cho nhân viên mới đang chờ quản trị viên duyệt.",
+    path: "/hop-dong-bao-hanh",
+    description: "License bản quyền hệ điều hành & ứng dụng sắp đến ngày hết hạn.",
   },
 ];
 
@@ -164,10 +164,10 @@ export default function ActivitiesDropdown() {
         {/* Footer điều hướng nhanh */}
         <div className="p-2.5 bg-gray-50/80 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800 text-center">
           <button
-            onClick={() => handleNavigate("/lich-bao-tri")}
+            onClick={() => handleNavigate("/giam-sat-may-tram")}
             className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
           >
-            <span>Xem toàn bộ lịch trình & công việc</span>
+            <span>Xem danh sách giám sát & tài nguyên máy trạm</span>
             <svg
               className="w-3.5 h-3.5"
               fill="none"
