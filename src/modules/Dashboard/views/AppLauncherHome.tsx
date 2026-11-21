@@ -1,9 +1,7 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
-import NotificationDropdown from "../../../components/header/NotificationDropdown";
-import ActivitiesDropdown from "../../../components/header/ActivitiesDropdown";
-import UserDropdown from "../../../components/header/UserDropdown";
+import AppHeader from "../../../layout/AppHeader";
 import { useAuth } from "../../../context/AuthContext";
 
 interface AppModule {
@@ -23,25 +21,7 @@ export default function AppLauncherHome() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-
-
-  // Keyboard shortcut Ctrl+K or / to focus search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-      if (e.key === "/" && document.activeElement !== searchInputRef.current) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   const appModules: AppModule[] = [
     // 1. Quản lý tài sản
@@ -1109,92 +1089,12 @@ export default function AppLauncherHome() {
           <div className="absolute bottom-10 left-10 w-[400px] h-[400px] bg-blue-300/20 dark:bg-blue-900/15 rounded-full blur-3xl pointer-events-none" />
         </div>
 
-        {/* TOP BAR - AIMS Enterprise Header */}
-        <header className="relative z-30 flex items-center justify-between px-4 py-3 sm:px-6 md:px-8 border-b border-black/[0.04] dark:border-white/[0.06] backdrop-blur-md bg-white/40 dark:bg-gray-900/40">
-
-          {/* Left: Brand & Search bar */}
-          <div className="flex items-center gap-4 flex-1 max-w-xl">
-            {/* System Logo / Home */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 text-white shadow-md shadow-brand-500/20">
-                <svg
-                  className="w-6 h-6"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                </svg>
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-base font-bold tracking-tight text-gray-900 dark:text-white leading-none">
-                  AIMS ERP
-                </h1>
-                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
-                  Asset Management
-                </span>
-              </div>
-            </div>
-
-            {/* Live Search Input */}
-            <div className="relative flex-1">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </span>
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm kiếm ứng dụng, chức năng... (phím / hoặc Ctrl+K)"
-                className="w-full pl-9 pr-8 py-2 text-sm bg-white/70 dark:bg-gray-800/70 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-xs backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                  aria-label="Xóa tìm kiếm"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Right: AIMS Status & Notification widgets */}
-          <div className="flex items-center gap-1 sm:gap-2.5">
-
-            {/* Live System Status Dot */}
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40 text-xs font-medium cursor-default"
-              title="Hệ thống trực tuyến ổn định"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="hidden xl:inline">Sẵn sàng</span>
-            </div>
-
-            {/* Activities / Schedule clock with badge 32 */}
-            <ActivitiesDropdown />
-            {/* Notification Dropdown */}
-            <NotificationDropdown />
-
-            {/* User Profile Avatar & Menu */}
-            <UserDropdown />
-          </div>
-        </header>
+        {/* TOP BAR - AIMS Unified Header */}
+        <AppHeader
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          variant="translucent"
+        />
 
 
         {/* MAIN BODY: APP LAUNCHER GRID */}

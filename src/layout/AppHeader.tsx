@@ -1,10 +1,16 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
-import { toast } from "sonner";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import ActivitiesDropdown from "../components/header/ActivitiesDropdown";
 import UserDropdown from "../components/header/UserDropdown";
 import { useAuth } from "../context/AuthContext";
+
+export interface AppHeaderProps {
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
+  variant?: "default" | "translucent";
+  className?: string;
+}
 
 interface SearchableItem {
   name: string;
@@ -50,28 +56,30 @@ const SEARCHABLE_MODULES: SearchableItem[] = [
   { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", category: "Hệ thống", keywords: "system settings cau hinh backup security", permission: "settings.view" },
 ];
 
-const AppHeader: React.FC = () => {
+const AppHeader: React.FC<AppHeaderProps> = ({
+  searchTerm: controlledSearchTerm,
+  onSearchChange,
+  variant = "default",
+  className = "",
+}) => {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
 
-  // Search state
-  const [searchTerm, setSearchTerm] = useState("");
+  const isControlled = typeof onSearchChange === "function";
+
+  // Uncontrolled search state (used when on module pages)
+  const [internalSearchTerm, setInternalSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Multi-tenant Company state
-  const [companyName, setCompanyName] = useState<string>(() => {
-    return localStorage.getItem("aims_current_company") || "AIMS Enterprise (Hà Nội)";
-  });
-  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  const activeSearchTerm = isControlled ? (controlledSearchTerm ?? "") : internalSearchTerm;
 
-  const companyRef = useRef<HTMLDivElement>(null);
-
-  // Filter search results
+  // Filter search results (only active in uncontrolled / module-page mode)
   const searchResults = useMemo(() => {
-    if (!searchTerm.trim()) return [];
-    const q = searchTerm.toLowerCase().trim();
+    if (isControlled || !activeSearchTerm.trim()) return [];
+    const q = activeSearchTerm.toLowerCase().trim();
     return SEARCHABLE_MODULES.filter(
       (m) =>
         (!m.permission || hasPermission(m.permission)) &&
@@ -79,7 +87,7 @@ const AppHeader: React.FC = () => {
           m.category.toLowerCase().includes(q) ||
           (m.keywords && m.keywords.toLowerCase().includes(q)))
     ).slice(0, 8);
-  }, [searchTerm, hasPermission]);
+  }, [isControlled, activeSearchTerm, hasPermission]);
 
   // Global Keyboard Shortcuts (Ctrl+K or / to focus search, Esc to close)
   useEffect(() => {
@@ -87,66 +95,82 @@ const AppHeader: React.FC = () => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         searchInputRef.current?.focus();
-        setIsSearchOpen(true);
+        if (!isControlled) setIsSearchOpen(true);
       }
       if (e.key === "/" && document.activeElement !== searchInputRef.current) {
         e.preventDefault();
         searchInputRef.current?.focus();
-        setIsSearchOpen(true);
+        if (!isControlled) setIsSearchOpen(true);
       }
       if (e.key === "Escape") {
-        setIsSearchOpen(false);
-        setIsCompanyDropdownOpen(false);
+        if (!isControlled) setIsSearchOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isControlled]);
 
-  // Click outside to close dropdowns
+  // Click outside to close dropdown in uncontrolled mode
   useEffect(() => {
+    if (isControlled) return;
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       if (searchContainerRef.current && !searchContainerRef.current.contains(target)) {
         setIsSearchOpen(false);
       }
-      if (companyRef.current && !companyRef.current.contains(target)) {
-        setIsCompanyDropdownOpen(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isControlled]);
+
+  const handleSearchChange = (value: string) => {
+    if (isControlled) {
+      onSearchChange(value);
+    } else {
+      setInternalSearchTerm(value);
+      setIsSearchOpen(true);
+    }
+  };
+
+  const handleClearSearch = () => {
+    if (isControlled) {
+      onSearchChange("");
+    } else {
+      setInternalSearchTerm("");
+      setIsSearchOpen(false);
+    }
+    searchInputRef.current?.focus();
+  };
 
   const handleSelectModule = (path: string) => {
     navigate(path);
     setIsSearchOpen(false);
-    setSearchTerm("");
+    setInternalSearchTerm("");
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (searchResults.length > 0) {
-        handleSelectModule(searchResults[0].path);
-      } else if (searchTerm.trim()) {
-        navigate(`/?search=${encodeURIComponent(searchTerm.trim())}`);
-        setIsSearchOpen(false);
+      if (!isControlled) {
+        if (searchResults.length > 0) {
+          handleSelectModule(searchResults[0].path);
+        } else if (activeSearchTerm.trim()) {
+          navigate(`/?search=${encodeURIComponent(activeSearchTerm.trim())}`);
+          setIsSearchOpen(false);
+        }
       }
     }
   };
 
-  const handleSelectCompany = (comp: string) => {
-    setCompanyName(comp);
-    localStorage.setItem("aims_current_company", comp);
-    setIsCompanyDropdownOpen(false);
-    toast.success(`Đã chuyển sang chi nhánh: ${comp}`);
-  };
+  const containerBg =
+    variant === "translucent"
+      ? "backdrop-blur-md bg-white/40 dark:bg-gray-900/40 border-b border-black/[0.04] dark:border-white/[0.06]"
+      : "backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-black/[0.06] dark:border-white/[0.08] shadow-2xs";
 
   return (
-    <header className="sticky top-0 z-40 flex w-full border-b border-black/[0.06] dark:border-white/[0.08] backdrop-blur-md bg-white/80 dark:bg-gray-900/80 transition-colors shadow-2xs">
-      <div className="flex items-center justify-between w-full px-4 py-2.5 sm:px-6 md:px-8 gap-4">
+    <header className={`sticky top-0 z-40 flex w-full transition-colors ${containerBg} ${className}`}>
+      <div className="flex items-center justify-between w-full px-4 py-3 sm:px-6 md:px-8 gap-4">
 
-        {/* Left: Brand Logo & Global Live Search */}
+        {/* Left: Brand Logo & Global Search */}
         <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-xl">
 
           {/* System Logo / App Launcher Button */}
@@ -173,9 +197,9 @@ const AppHeader: React.FC = () => {
               </svg>
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-base font-bold tracking-tight text-gray-900 dark:text-white leading-none">
+              <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white leading-none block">
                 AIMS ERP
-              </h1>
+              </span>
               <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 block mt-0.5">
                 Asset Management
               </span>
@@ -192,22 +216,19 @@ const AppHeader: React.FC = () => {
             <input
               ref={searchInputRef}
               type="text"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setIsSearchOpen(true);
+              value={activeSearchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => {
+                if (!isControlled) setIsSearchOpen(true);
               }}
-              onFocus={() => setIsSearchOpen(true)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Tìm kiếm ứng dụng, chức năng... (phím / hoặc Ctrl+K)"
-              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-white/70 dark:bg-gray-800/70 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-xs backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
+              className="w-full pl-9 pr-8 py-2 text-sm bg-white/70 dark:bg-gray-800/70 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-xs backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
-            {searchTerm && (
+            {activeSearchTerm && (
               <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setIsSearchOpen(false);
-                }}
+                type="button"
+                onClick={handleClearSearch}
                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
                 aria-label="Xóa tìm kiếm"
               >
@@ -217,8 +238,8 @@ const AppHeader: React.FC = () => {
               </button>
             )}
 
-            {/* Quick Search Dropdown Results */}
-            {isSearchOpen && searchTerm.trim() && (
+            {/* Quick Search Dropdown Results (for module pages) */}
+            {!isControlled && isSearchOpen && activeSearchTerm.trim() && (
               <div className="absolute left-0 mt-2 w-full min-w-[280px] sm:min-w-[360px] max-h-[70vh] overflow-y-auto p-2 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 z-50 animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between">
                   <span>Kết quả tìm kiếm ({searchResults.length})</span>
@@ -251,7 +272,7 @@ const AppHeader: React.FC = () => {
                   </div>
                 ) : (
                   <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-400">
-                    Không tìm thấy ứng dụng phù hợp với &ldquo;{searchTerm}&rdquo;
+                    Không tìm thấy ứng dụng phù hợp với &ldquo;{activeSearchTerm}&rdquo;
                   </div>
                 )}
               </div>
@@ -259,13 +280,13 @@ const AppHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Status, Quick Tools, Multi-Tenant, Notifications & User */}
+        {/* Right: Status Dot, Tasks/Activities, Notifications & User Avatar */}
         <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
 
           {/* Live System Status Dot */}
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40 text-xs font-medium cursor-default shadow-2xs"
-            title="Hệ thống trực tuyến ổn định • Server DC Hà Nội"
+            title="Hệ thống trực tuyến ổn định"
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -274,66 +295,8 @@ const AppHeader: React.FC = () => {
             <span className="hidden xl:inline">Sẵn sàng</span>
           </div>
 
-          {/* Activities / Schedule clock with badge 32 */}
+          {/* Activities / Schedule clock */}
           <ActivitiesDropdown />
-
-          {/* Branch Quick Switch / Sync Icon */}
-          <button
-            onClick={() => toast.success("Đang kết nối: Production Server (DC Hà Nội)\nTrạng thái: Đồng bộ dữ liệu thời gian thực")}
-            className="hidden sm:flex p-2 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-            title="Nhánh dữ liệu & Đồng bộ thời gian thực"
-            aria-label="Branch"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-          </button>
-
-          {/* Company / Multi-Tenant Selector Dropdown */}
-          <div className="relative hidden md:block" ref={companyRef}>
-            <button
-              onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl transition-all shadow-2xs cursor-pointer"
-            >
-              <svg className="w-3.5 h-3.5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-              <span>{companyName}</span>
-              <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {isCompanyDropdownOpen && (
-              <div className="absolute right-0 mt-1.5 w-60 py-1.5 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-100">
-                <div className="px-3 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                  Chọn chi nhánh / Đơn vị
-                </div>
-                {[
-                  "AIMS Enterprise (Hà Nội)",
-                  "AIMS Chi nhánh TP. Hồ Chí Minh",
-                  "AIMS Chi nhánh Đà Nẵng",
-                  "Trung tâm Dữ liệu & Nghiên cứu AI",
-                ].map((comp) => (
-                  <button
-                    key={comp}
-                    onClick={() => handleSelectCompany(comp)}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between cursor-pointer ${companyName === comp
-                      ? "bg-brand-50 text-brand-700 dark:bg-brand-950/40 dark:text-brand-300 font-semibold"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                      }`}
-                  >
-                    <span>{comp}</span>
-                    {companyName === comp && (
-                      <svg className="w-4 h-4 text-brand-600" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Notification Bell Dropdown */}
           <NotificationDropdown />
