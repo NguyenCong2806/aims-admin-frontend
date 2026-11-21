@@ -11,11 +11,10 @@ const LayoutContent: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen flex flex-col transition-colors duration-300 ${
-        isHomePage
-          ? "bg-gradient-to-br from-[#f3eff8] via-[#e8e4f5] to-[#d8d3ec] dark:from-[#0b0f19] dark:via-[#111827] dark:to-[#0d121f] text-gray-800 dark:text-gray-100"
-          : "bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-100"
-      }`}
+      className={`min-h-screen flex flex-col transition-colors duration-300 ${isHomePage
+        ? "bg-gradient-to-br from-[#f3eff8] via-[#e8e4f5] to-[#d8d3ec] dark:from-[#0b0f19] dark:via-[#111827] dark:to-[#0d121f] text-gray-800 dark:text-gray-100"
+        : "bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-100"
+        }`}
     >
       {/* DUY NHẤT 1 HEADER TRÊN TOÀN HỆ THỐNG */}
       <AppHeader />
