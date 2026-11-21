@@ -732,6 +732,125 @@ export default function AppLauncherHome() {
         </svg>
       ),
     },
+    // 4. Vận hành & Cảnh báo (Operations & Alerts)
+    {
+      id: "notifications",
+      name: "Thông báo & Cảnh báo",
+      path: "/thong-bao",
+      category: "operation",
+      badge: "Alerts",
+      badgeColor: "bg-amber-500",
+      description: "Trung tâm quản lý thông báo, cảnh báo tài nguyên hệ thống (RAM, Disk, Offline)",
+      renderIcon: () => (
+        <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_12px_rgba(245,158,11,0.32)]">
+          <defs>
+            <radialGradient id="g3d_notif_shadow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#78350f" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#78350f" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="g3d_notif_body" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="50%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#d97706" />
+            </linearGradient>
+            <linearGradient id="g3d_notif_rim" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fef3c7" />
+              <stop offset="100%" stopColor="#d97706" />
+            </linearGradient>
+            <linearGradient id="g3d_notif_clapper" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#b45309" />
+              <stop offset="100%" stopColor="#78350f" />
+            </linearGradient>
+            <linearGradient id="g3d_notif_pulse" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#f43f5e" />
+              <stop offset="100%" stopColor="#e11d48" />
+            </linearGradient>
+          </defs>
+          <ellipse cx="32" cy="56" rx="22" ry="5" fill="url(#g3d_notif_shadow)" />
+          <ellipse cx="32" cy="11" rx="5" ry="3.5" fill="#b45309" />
+          <ellipse cx="32" cy="10" rx="5" ry="3.5" fill="#fcd34d" />
+          <ellipse cx="32" cy="10" rx="2.5" ry="1.8" fill="#78350f" />
+          <circle cx="32" cy="48" r="5" fill="url(#g3d_notif_clapper)" />
+          <circle cx="32.5" cy="47.5" r="3.5" fill="#d97706" />
+          <path
+            d="M32 14c-8 0-14 6-14 16v11c-3 1.5-6 3.5-6 6h40c0-2.5-3-4.5-6-6V30c0-10-6-16-14-16z"
+            fill="#b45309"
+            transform="translate(0, 2)"
+          />
+          <path
+            d="M32 14c-8 0-14 6-14 16v11c-3 1.5-6 3.5-6 6h40c0-2.5-3-4.5-6-6V30c0-10-6-16-14-16z"
+            fill="url(#g3d_notif_body)"
+          />
+          <path
+            d="M12 47c0-2.5 3-4.5 6-6h28c3 1.5 6 3.5 6 6 0 2-4 3.5-8 3.5H20c-4 0-8-1.5-8-3.5z"
+            fill="url(#g3d_notif_rim)"
+          />
+          <path
+            d="M24 18c-4 3-7 8-7 14v10c0 1-1 2-2 3 0-8 3-15 9-19v-8z"
+            fill="#ffffff"
+            fillOpacity="0.45"
+          />
+          <ellipse cx="28" cy="22" rx="3" ry="1.5" fill="#ffffff" fillOpacity="0.6" transform="rotate(-30 28 22)" />
+          <path d="M7 25c-2.5 3-4 6.5-4 10.5s1.5 7.5 4 10.5" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.85" />
+          <path d="M57 25c2.5 3 4 6.5 4 10.5s-1.5 7.5-4 10.5" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.85" />
+          <circle cx="46" cy="15" r="5.5" fill="url(#g3d_notif_pulse)" />
+          <circle cx="46" cy="15" r="2.5" fill="#ffffff" />
+          <circle cx="46" cy="15" r="7" stroke="#f43f5e" strokeWidth="1" opacity="0.4" fill="none" />
+        </svg>
+      ),
+    },
+    {
+      id: "actionable-tasks",
+      name: "Công việc cần xử lý",
+      path: "/cong-viec-xu-ly",
+      category: "operation",
+      badge: "Action",
+      badgeColor: "bg-rose-500",
+      description: "Danh sách nhiệm vụ vận hành, dọn dẹp máy trạm quá tải và xử lý vi phạm license",
+      renderIcon: () => (
+        <svg viewBox="0 0 64 64" className="w-full h-full filter drop-shadow-[0_6px_12px_rgba(244,63,94,0.32)]">
+          <defs>
+            <radialGradient id="g3d_tsk_shadow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#4c0519" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#4c0519" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="g3d_tsk_outer" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fb7185" />
+              <stop offset="50%" stopColor="#f43f5e" />
+              <stop offset="100%" stopColor="#be123c" />
+            </linearGradient>
+            <linearGradient id="g3d_tsk_inner" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="100%" stopColor="#f1f5f9" />
+            </linearGradient>
+            <linearGradient id="g3d_tsk_check" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#34d399" />
+              <stop offset="100%" stopColor="#059669" />
+            </linearGradient>
+          </defs>
+          <ellipse cx="32" cy="56" rx="22" ry="5" fill="url(#g3d_tsk_shadow)" />
+          <path d="M29 6h6v4h-6z" fill="#9f1239" />
+          <path d="M28 4h8v3h-8z" fill="#fda4af" />
+          <rect x="15" y="11" width="4" height="4" rx="1" fill="#be123c" transform="rotate(-35 17 13)" />
+          <rect x="45" y="11" width="4" height="4" rx="1" fill="#be123c" transform="rotate(35 47 13)" />
+          <circle cx="32" cy="34" r="22" fill="#881337" />
+          <circle cx="32" cy="32" r="22" fill="url(#g3d_tsk_outer)" />
+          <circle cx="32" cy="32" r="17" fill="url(#g3d_tsk_inner)" />
+          <circle cx="32" cy="18" r="1.5" fill="#f43f5e" />
+          <circle cx="46" cy="32" r="1.5" fill="#94a3b8" />
+          <circle cx="32" cy="46" r="1.5" fill="#94a3b8" />
+          <circle cx="18" cy="32" r="1.5" fill="#94a3b8" />
+          <path d="M32 32l6-8" stroke="#e11d48" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M32 32l-5 4" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="32" cy="32" r="2.5" fill="#881337" />
+          <circle cx="32" cy="32" r="1.2" fill="#ffffff" />
+          <path d="M20 20a17 17 0 0124 0l-12 12z" fill="#ffffff" fillOpacity="0.25" />
+          <circle cx="44" cy="43" r="8.5" fill="#065f46" />
+          <circle cx="44" cy="42" r="8" fill="url(#g3d_tsk_check)" />
+          <path d="M40.5 42l2.5 2.5 5-5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+      ),
+    },
     {
       id: "contracts",
       name: "Hợp đồng & Bảo hành",

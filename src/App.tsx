@@ -36,6 +36,7 @@ import { PermissionsPage } from "./modules/Permissions";
 import { MaintenanceSchedulePage } from "./modules/Maintenance";
 import { SystemLogsPage, SystemSettingsPage } from "./modules/System";
 import { AnalyticsReportsPage } from "./modules/Reports";
+import { NotificationsPage, ActionableTasksPage } from "./modules/Operations";
 
 // Template & Common Pages
 import {
@@ -101,6 +102,12 @@ export default function App() {
               <Route path="/dia-diem" element={<LocationsPage />} />
               <Route path="/loai-bao-tri" element={<MaintenanceTypesPage />} />
               <Route path="/lich-bao-tri" element={<MaintenanceSchedulePage />} />
+
+              {/* Operations: Notifications & Actionable Tasks */}
+              <Route path="/thong-bao" element={<NotificationsPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/cong-viec-xu-ly" element={<ActionableTasksPage />} />
+              <Route path="/tasks" element={<ActionableTasksPage />} />
               <Route path="/chuc-vu" element={<PositionsPage />} />
               <Route path="/nha-cung-cap" element={<SuppliersPage />} />
               <Route path="/hop-dong-bao-hanh" element={<ContractsPage />} />

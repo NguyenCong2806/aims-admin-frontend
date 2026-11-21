@@ -345,14 +345,14 @@ export default function NotificationDropdown() {
           )}
         </div>
 
-        {/* Footer: Liên kết đến Nhật Ký Hệ Thống */}
+        {/* Footer: Liên kết đến Trung Tâm Thông Báo & Cảnh Báo */}
         <div className="p-2 border-t border-gray-100 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/50">
           <Link
-            to="/nhat-ky-he-thong"
+            to="/thong-bao"
             onClick={closeDropdown}
-            className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 hover:bg-brand-50/50 dark:hover:bg-brand-950/30 rounded-xl transition-colors"
+            className="flex items-center justify-center gap-1.5 w-full py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 hover:bg-brand-50/50 dark:hover:bg-brand-950/30 rounded-xl transition-colors cursor-pointer"
           >
-            <span>Xem tất cả nhật ký kiểm toán</span>
+            <span>Xem tất cả thông báo & cảnh báo</span>
             <span>→</span>
           </Link>
         </div>

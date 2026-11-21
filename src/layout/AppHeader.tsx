@@ -29,6 +29,8 @@ const SEARCHABLE_MODULES: SearchableItem[] = [
   { name: "Phần mềm cài đặt máy trạm", path: "/giam-sat-may-tram/phan-mem", category: "Giám sát IT", keywords: "installed software audit agent app", permission: "monitoring.view" },
 
   // Vận hành & Bảo trì
+  { name: "Trung tâm Thông báo & Cảnh báo", path: "/thong-bao", category: "Vận hành", keywords: "notifications thong bao canh bao disk ram alert telemetry", badge: "Chuông" },
+  { name: "Công việc cần xử lý", path: "/cong-viec-xu-ly", category: "Vận hành", keywords: "tasks actionable cong viec xu ly lich cho sla don dep", badge: "Đồng hồ" },
   { name: "Hợp đồng & Bảo hành", path: "/hop-dong-bao-hanh", category: "Vận hành", keywords: "contracts warranty bao hanh hop dong ncc", badge: "Hợp đồng", permission: "contracts.view" },
   { name: "Lịch bảo trì & Kiểm định", path: "/lich-bao-tri", category: "Vận hành", keywords: "maintenance schedule lich bao tri ke hoach", badge: "Lịch", permission: "maintenance.view" },
   { name: "Báo cáo & Thống kê", path: "/line-chart", category: "Báo cáo", keywords: "analytics reports dashboard chart thong ke", badge: "BI", permission: "reports.view" },

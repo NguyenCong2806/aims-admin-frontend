@@ -164,10 +164,10 @@ export default function ActivitiesDropdown() {
         {/* Footer điều hướng nhanh */}
         <div className="p-2.5 bg-gray-50/80 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800 text-center">
           <button
-            onClick={() => handleNavigate("/giam-sat-may-tram")}
-            className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+            onClick={() => handleNavigate("/cong-viec-xu-ly")}
+            className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
           >
-            <span>Xem danh sách giám sát & tài nguyên máy trạm</span>
+            <span>Xem toàn bộ công việc cần xử lý</span>
             <svg
               className="w-3.5 h-3.5"
               fill="none"
