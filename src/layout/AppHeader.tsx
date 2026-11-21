@@ -1,14 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 import NotificationDropdown from "../components/header/NotificationDropdown";
 import ActivitiesDropdown from "../components/header/ActivitiesDropdown";
 import UserDropdown from "../components/header/UserDropdown";
 import { useAuth } from "../context/AuthContext";
+import { useSearch } from "../context/SearchContext";
 
 export interface AppHeaderProps {
-  searchTerm?: string;
-  onSearchChange?: (value: string) => void;
-  variant?: "default" | "translucent";
   className?: string;
 }
 
@@ -56,30 +54,25 @@ const SEARCHABLE_MODULES: SearchableItem[] = [
   { name: "Cấu hình hệ thống", path: "/cau-hinh-he-thong", category: "Hệ thống", keywords: "system settings cau hinh backup security", permission: "settings.view" },
 ];
 
-const AppHeader: React.FC<AppHeaderProps> = ({
-  searchTerm: controlledSearchTerm,
-  onSearchChange,
-  variant = "default",
-  className = "",
-}) => {
+const AppHeader: React.FC<AppHeaderProps> = ({ className = "" }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = useAuth();
+  const { searchTerm, setSearchTerm, clearSearch, searchInputRef } = useSearch();
 
-  const isControlled = typeof onSearchChange === "function";
+  const isHomePage = location.pathname === "/";
 
-  // Uncontrolled search state (used when on module pages)
-  const [internalSearchTerm, setInternalSearchTerm] = useState("");
+  // Uncontrolled search state for module pages
+  const [moduleSearchTerm, setModuleSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const activeSearchTerm = isControlled ? (controlledSearchTerm ?? "") : internalSearchTerm;
+  const activeValue = isHomePage ? searchTerm : moduleSearchTerm;
 
-  // Filter search results (only active in uncontrolled / module-page mode)
+  // Filter search results (only active on module pages)
   const searchResults = useMemo(() => {
-    if (isControlled || !activeSearchTerm.trim()) return [];
-    const q = activeSearchTerm.toLowerCase().trim();
+    if (isHomePage || !moduleSearchTerm.trim()) return [];
+    const q = moduleSearchTerm.toLowerCase().trim();
     return SEARCHABLE_MODULES.filter(
       (m) =>
         (!m.permission || hasPermission(m.permission)) &&
@@ -87,7 +80,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           m.category.toLowerCase().includes(q) ||
           (m.keywords && m.keywords.toLowerCase().includes(q)))
     ).slice(0, 8);
-  }, [isControlled, activeSearchTerm, hasPermission]);
+  }, [isHomePage, moduleSearchTerm, hasPermission]);
 
   // Global Keyboard Shortcuts (Ctrl+K or / to focus search, Esc to close)
   useEffect(() => {
@@ -95,24 +88,24 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         searchInputRef.current?.focus();
-        if (!isControlled) setIsSearchOpen(true);
+        if (!isHomePage) setIsSearchOpen(true);
       }
       if (e.key === "/" && document.activeElement !== searchInputRef.current) {
         e.preventDefault();
         searchInputRef.current?.focus();
-        if (!isControlled) setIsSearchOpen(true);
+        if (!isHomePage) setIsSearchOpen(true);
       }
       if (e.key === "Escape") {
-        if (!isControlled) setIsSearchOpen(false);
+        if (!isHomePage) setIsSearchOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isControlled]);
+  }, [isHomePage, searchInputRef]);
 
-  // Click outside to close dropdown in uncontrolled mode
+  // Click outside to close dropdown in module pages
   useEffect(() => {
-    if (isControlled) return;
+    if (isHomePage) return;
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       if (searchContainerRef.current && !searchContainerRef.current.contains(target)) {
@@ -121,22 +114,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isControlled]);
+  }, [isHomePage]);
 
-  const handleSearchChange = (value: string) => {
-    if (isControlled) {
-      onSearchChange(value);
+  const handleInputChange = (val: string) => {
+    if (isHomePage) {
+      setSearchTerm(val);
     } else {
-      setInternalSearchTerm(value);
+      setModuleSearchTerm(val);
       setIsSearchOpen(true);
     }
   };
 
-  const handleClearSearch = () => {
-    if (isControlled) {
-      onSearchChange("");
+  const handleClear = () => {
+    if (isHomePage) {
+      clearSearch();
     } else {
-      setInternalSearchTerm("");
+      setModuleSearchTerm("");
       setIsSearchOpen(false);
     }
     searchInputRef.current?.focus();
@@ -145,26 +138,27 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const handleSelectModule = (path: string) => {
     navigate(path);
     setIsSearchOpen(false);
-    setInternalSearchTerm("");
+    setModuleSearchTerm("");
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (!isControlled) {
+      if (!isHomePage) {
         if (searchResults.length > 0) {
           handleSelectModule(searchResults[0].path);
-        } else if (activeSearchTerm.trim()) {
-          navigate(`/?search=${encodeURIComponent(activeSearchTerm.trim())}`);
+        } else if (moduleSearchTerm.trim()) {
+          setSearchTerm(moduleSearchTerm.trim());
+          navigate("/");
           setIsSearchOpen(false);
+          setModuleSearchTerm("");
         }
       }
     }
   };
 
-  const containerBg =
-    variant === "translucent"
-      ? "backdrop-blur-md bg-white/40 dark:bg-gray-900/40 border-b border-black/[0.04] dark:border-white/[0.06]"
-      : "backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-black/[0.06] dark:border-white/[0.08] shadow-2xs";
+  const containerBg = isHomePage
+    ? "backdrop-blur-md bg-white/40 dark:bg-gray-900/40 border-b border-black/[0.04] dark:border-white/[0.06]"
+    : "backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-black/[0.06] dark:border-white/[0.08] shadow-2xs";
 
   return (
     <header className={`sticky top-0 z-40 flex w-full transition-colors ${containerBg} ${className}`}>
@@ -216,19 +210,19 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             <input
               ref={searchInputRef}
               type="text"
-              value={activeSearchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              value={activeValue}
+              onChange={(e) => handleInputChange(e.target.value)}
               onFocus={() => {
-                if (!isControlled) setIsSearchOpen(true);
+                if (!isHomePage) setIsSearchOpen(true);
               }}
               onKeyDown={handleSearchKeyDown}
               placeholder="Tìm kiếm ứng dụng, chức năng... (phím / hoặc Ctrl+K)"
               className="w-full pl-9 pr-8 py-2 text-sm bg-white/70 dark:bg-gray-800/70 border border-gray-200/80 dark:border-gray-700/80 rounded-xl shadow-xs backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
             />
-            {activeSearchTerm && (
+            {activeValue && (
               <button
                 type="button"
-                onClick={handleClearSearch}
+                onClick={handleClear}
                 className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
                 aria-label="Xóa tìm kiếm"
               >
@@ -239,7 +233,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             )}
 
             {/* Quick Search Dropdown Results (for module pages) */}
-            {!isControlled && isSearchOpen && activeSearchTerm.trim() && (
+            {!isHomePage && isSearchOpen && moduleSearchTerm.trim() && (
               <div className="absolute left-0 mt-2 w-full min-w-[280px] sm:min-w-[360px] max-h-[70vh] overflow-y-auto p-2 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 z-50 animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between">
                   <span>Kết quả tìm kiếm ({searchResults.length})</span>
@@ -272,7 +266,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                   </div>
                 ) : (
                   <div className="p-4 text-center text-xs text-gray-500 dark:text-gray-400">
-                    Không tìm thấy ứng dụng phù hợp với &ldquo;{activeSearchTerm}&rdquo;
+                    Không tìm thấy ứng dụng phù hợp với &ldquo;{moduleSearchTerm}&rdquo;
                   </div>
                 )}
               </div>

@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import PageMeta from "../../../components/common/PageMeta";
-import AppHeader from "../../../layout/AppHeader";
 import { useAuth } from "../../../context/AuthContext";
+import { useSearch } from "../../../context/SearchContext";
 
 interface AppModule {
   id: string;
@@ -18,10 +18,8 @@ interface AppModule {
 
 export default function AppLauncherHome() {
   const { hasPermission } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, clearSearch } = useSearch();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-
-  const navigate = useNavigate();
 
   const appModules: AppModule[] = [
     // 1. Quản lý tài sản
@@ -1079,9 +1077,7 @@ export default function AppLauncherHome() {
         description="Màn hình ứng dụng trung tâm điều phối tài sản số và hệ thống quản trị AIMS"
       />
 
-      {/* Main AIMS Enterprise background */}
-      <div className="relative min-h-screen bg-gradient-to-br from-[#f3eff8] via-[#e8e4f5] to-[#d8d3ec] dark:from-[#0b0f19] dark:via-[#111827] dark:to-[#0d121f] text-gray-800 dark:text-gray-100 transition-colors duration-300">
-
+      <div className="relative flex-1 w-full">
         {/* Subtle diagonal ambient light beam (Signature AIMS angled sheen) */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-[40%] -left-[20%] w-[140%] h-[140%] bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent dark:from-indigo-500/10 dark:via-transparent dark:to-transparent opacity-70" />
@@ -1089,16 +1085,8 @@ export default function AppLauncherHome() {
           <div className="absolute bottom-10 left-10 w-[400px] h-[400px] bg-blue-300/20 dark:bg-blue-900/15 rounded-full blur-3xl pointer-events-none" />
         </div>
 
-        {/* TOP BAR - AIMS Unified Header */}
-        <AppHeader
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          variant="translucent"
-        />
-
-
         {/* MAIN BODY: APP LAUNCHER GRID */}
-        <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
 
           {/* Category Filter Tabs */}
           <div className="flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto py-2 mb-8 scrollbar-none">
@@ -1123,8 +1111,8 @@ export default function AppLauncherHome() {
                 Tìm thấy <strong>{filteredModules.length}</strong> chức năng cho từ khóa &quot;{searchTerm}&quot;
               </span>
               <button
-                onClick={() => setSearchTerm("")}
-                className="text-brand-600 dark:text-brand-400 hover:underline font-medium"
+                onClick={clearSearch}
+                className="text-brand-600 dark:text-brand-400 hover:underline font-medium cursor-pointer"
               >
                 Xóa bộ lọc
               </button>
@@ -1147,10 +1135,10 @@ export default function AppLauncherHome() {
               </p>
               <button
                 onClick={() => {
-                  setSearchTerm("");
+                  clearSearch();
                   setSelectedCategory("all");
                 }}
-                className="px-4 py-2 text-xs font-medium text-white bg-brand-600 rounded-xl hover:bg-brand-700 shadow-sm transition-all"
+                className="px-4 py-2 text-xs font-medium text-white bg-brand-600 rounded-xl hover:bg-brand-700 shadow-sm transition-all cursor-pointer"
               >
                 Hiển thị tất cả ứng dụng
               </button>
@@ -1190,26 +1178,7 @@ export default function AppLauncherHome() {
               ))}
             </div>
           )}
-
-          {/* Quick Footer Summary Info */}
-          <div className="mt-16 pt-8 border-t border-black/[0.04] dark:border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 dark:text-gray-400">
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Hệ thống Quản lý Tài sản Doanh nghiệp AIMS (Phiên bản v2.3.0)</span>
-            </div>
-            <div className="flex items-center gap-6">
-              <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" onClick={() => navigate("/blank")}>
-                Chính sách & Bảo mật
-              </span>
-              <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" onClick={() => navigate("/basic-tables")}>
-                Nhật ký phiên làm việc
-              </span>
-              <span className="hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" onClick={() => navigate("/tai-nguyen-so")}>
-                Khám phá kho tài sản
-              </span>
-            </div>
-          </div>
-        </main>
+        </div>
       </div>
     </>
   );
